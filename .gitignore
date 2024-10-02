@@ -6,7 +6,6 @@ bin
 *.sum
 *.sh
 *.bat
-test_token.json
 *.txt
 *.log
 

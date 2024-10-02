@@ -5,9 +5,9 @@ import (
 	"log"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/nicolaics/pos_pharmacy/cmd/api"
-	"github.com/nicolaics/pos_pharmacy/config"
-	"github.com/nicolaics/pos_pharmacy/db"
+	"github.com/nicolaics/jim-carrier/cmd/api"
+	"github.com/nicolaics/jim-carrier/config"
+	"github.com/nicolaics/jim-carrier/db"
 )
 
 func main() {
@@ -42,8 +42,3 @@ func initStorage(db *sql.DB) {
 
 	log.Println("DB: Successfully connected!")
 }
-
-// TODO: add static routes if the frontend is in the server already
-// func setupStaticRoutes() {
-	
-// }

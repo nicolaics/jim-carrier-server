@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nicolaics/pos_pharmacy/logger"
-	"github.com/nicolaics/pos_pharmacy/service/auth"
-	"github.com/nicolaics/pos_pharmacy/types"
+	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/types"
 )
 
 type Store struct {
@@ -214,17 +213,7 @@ func (s *Store) CreateUser(user types.User) error {
 }
 
 func (s *Store) DeleteUser(user *types.User, deletedByUser *types.User) error {
-	data, err := s.GetUserByID(user.ID)
-	if err != nil {
-		return err
-	}
-
-	err = logger.WriteLog("delete", "user", deletedByUser.Name, data.ID, data)
-	if err != nil {
-		return fmt.Errorf("error write log file")
-	}
-
-	_, err = s.db.Exec("DELETE FROM user WHERE id = ?", user.ID)
+	_, err := s.db.Exec("DELETE FROM user WHERE id = ?", user.ID)
 	if err != nil {
 		return err
 	}
@@ -266,23 +255,9 @@ func (s *Store) UpdateLastLoggedIn(id int) error {
 }
 
 func (s *Store) ModifyUser(id int, user types.User, modifiedByUser *types.User) error {
-	data, err := s.GetUserByID(user.ID)
-	if err != nil {
-		return err
-	}
-
-	writeData := map[string]interface{}{
-		"previous_data": data,
-	}
-
-	err = logger.WriteLog("modify", "user", modifiedByUser.Name, data.ID, writeData)
-	if err != nil {
-		return fmt.Errorf("error write log file")
-	}
-
 	query := `UPDATE user SET name = ?, password = ?, admin = ?, phone_number = ? 
 				WHERE id = ?`
-	_, err = s.db.Exec(query,
+	_, err := s.db.Exec(query,
 		user.Name, user.Password, user.Admin, user.PhoneNumber, id)
 
 	if err != nil {

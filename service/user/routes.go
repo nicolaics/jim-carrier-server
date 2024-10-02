@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/nicolaics/pos_pharmacy/service/auth"
-	"github.com/nicolaics/pos_pharmacy/types"
-	"github.com/nicolaics/pos_pharmacy/utils"
+	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/types"
+	"github.com/nicolaics/jim-carrier/utils"
 )
 
 type Handler struct {
@@ -298,7 +298,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(users) == 1 || payload.ID == 1{
+	if len(users) == 1 || payload.ID == 1 {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("cannot delete initial admin"))
 		return
 	}

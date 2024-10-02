@@ -1,13 +1,13 @@
 # with @, doesn't show the command in the CLI
 
 build:
-	@go build -o bin/pos_pharmacy cmd/main.go
+	@go build -o bin/jim-carrier cmd/main.go
 
 test:
 	@go test -v ./...
 	
 run: build
-	@./bin/pos_pharmacy
+	@./bin/jim-carrier
 
 # run:
 # 	@go run cmd/main.go
@@ -38,9 +38,3 @@ dummy-data:
 
 get-dummy-data:
 	@python3 -u cmd/init/get_dummy_data.py
-
-read-log:
-	@go run cmd/readLog/ReadLog.go
-
-# deploy:
-# https://medium.com/nerd-for-tech/build-cross-platform-executables-in-go-94b84686fb44
