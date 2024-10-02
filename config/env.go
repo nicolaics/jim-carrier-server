@@ -31,9 +31,9 @@ func initConfig() Config {
 		DBPassword: getEnv("DB_PASSWORD", ""),
 		DBAddress: fmt.Sprintf("%s:%s", getEnv("DB_HOST", "127.0.0.1"),
 			getEnv("DB_PORT", "3306")),
-		DBName:                        getEnv("DB_NAME", "pos_pharmacy"),
-		JWTExpirationInSeconds:        getEnvAsInt("JWT_EXP", (3600 * 12)),         // for 12 hours
-		JWTSecret:                     getEnv("JWT_SECRET", "access-secret"),
+		DBName:                 getEnv("DB_NAME", "jim-carrier"),
+		JWTExpirationInSeconds: getEnvAsInt("JWT_EXP", (3600 * 12)), // for 12 hours
+		JWTSecret:              getEnv("JWT_SECRET", "access-secret"),
 	}
 }
 
