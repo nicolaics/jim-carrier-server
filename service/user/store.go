@@ -19,6 +19,30 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
+func (s *Store) GetUserByEmail(email string) (*types.User, error) {
+	rows, err := s.db.Query("SELECT * FROM user WHERE email = ? ", email)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	user := new(types.User)
+
+	for rows.Next() {
+		user, err = scanRowIntoUser(rows)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if user.ID == 0 {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return user, nil
+}
+
 func (s *Store) GetUserByName(name string) (*types.User, error) {
 	rows, err := s.db.Query("SELECT * FROM user WHERE name = ? ", name)
 	if err != nil {
@@ -202,9 +226,8 @@ func (s *Store) GetUserByID(id int) (*types.User, error) {
 }
 
 func (s *Store) CreateUser(user types.User) error {
-	_, err := s.db.Exec("INSERT INTO user (name, password, admin, phone_number) VALUES (?, ?, ?, ?)",
-		user.Name, user.Password, user.Admin, user.PhoneNumber)
-
+	query := `INSERT INTO user (name, email, password, phone_number) VALUES (?, ?, ?, ?)`
+	_, err := s.db.Exec(query, user.Name, user.Email, user.Password, user.PhoneNumber)
 	if err != nil {
 		return err
 	}
@@ -212,35 +235,13 @@ func (s *Store) CreateUser(user types.User) error {
 	return nil
 }
 
-func (s *Store) DeleteUser(user *types.User, deletedByUser *types.User) error {
+func (s *Store) DeleteUser(user *types.User) error {
 	_, err := s.db.Exec("DELETE FROM user WHERE id = ?", user.ID)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (s *Store) GetAllUsers() ([]types.User, error) {
-	rows, err := s.db.Query("SELECT * FROM user")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	users := make([]types.User, 0)
-
-	for rows.Next() {
-		user, err := scanRowIntoUser(rows)
-
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, *user)
-	}
-
-	return users, nil
 }
 
 func (s *Store) UpdateLastLoggedIn(id int) error {
@@ -254,12 +255,9 @@ func (s *Store) UpdateLastLoggedIn(id int) error {
 	return nil
 }
 
-func (s *Store) ModifyUser(id int, user types.User, modifiedByUser *types.User) error {
-	query := `UPDATE user SET name = ?, password = ?, admin = ?, phone_number = ? 
-				WHERE id = ?`
-	_, err := s.db.Exec(query,
-		user.Name, user.Password, user.Admin, user.PhoneNumber, id)
-
+func (s *Store) ModifyUser(id int, user types.User) error {
+	query := `UPDATE user SET name = ?, password = ?, phone_number = ? WHERE id = ?`
+	_, err := s.db.Exec(query, user.Name, user.Password, user.PhoneNumber, id)
 	if err != nil {
 		return err
 	}
@@ -289,8 +287,7 @@ func (s *Store) DeleteToken(userId int) error {
 	return nil
 }
 
-// TODO: think about whether need to verify count or not
-func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request, needAdmin bool) (*types.User, error) {
+func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request) (*types.User, error) {
 	query := "DELETE FROM verify_token WHERE expired_at < ?"
 	_, err := s.db.Exec(query, time.Now().UTC().Format("2006-01-02 15:04:05"))
 	if err != nil {
@@ -345,13 +342,6 @@ func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request, needAd
 		return nil, fmt.Errorf("token expired, log in again")
 	}
 
-	// if the account must be admin
-	if needAdmin {
-		if !user.Admin {
-			return nil, fmt.Errorf("unauthorized! not admin")
-		}
-	}
-
 	return user, nil
 }
 
@@ -361,8 +351,8 @@ func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	err := rows.Scan(
 		&user.ID,
 		&user.Name,
+		&user.Email,
 		&user.Password,
-		&user.Admin,
 		&user.PhoneNumber,
 		&user.LastLoggedIn,
 		&user.CreatedAt,
