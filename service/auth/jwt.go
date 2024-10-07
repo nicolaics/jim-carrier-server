@@ -18,14 +18,13 @@ type contextKey string
 
 const UserKey contextKey = "userID"
 
-func CreateJWT(userId int, admin bool) (*types.TokenDetails, error) {
+func CreateJWT(userId int) (*types.TokenDetails, error) {
 	tokenDetails := new(types.TokenDetails)
 
 	tokenExp := time.Second * time.Duration(config.Envs.JWTExpirationInSeconds)
 
 	tokenDetails.TokenExp = time.Now().Add(tokenExp).Unix()
 	log.Println("tokenExp:", tokenDetails.TokenExp)
-	// tokenDetails.TokenExp = time.Now().Add(tokenExp)
 
 	tempUUID, err := uuid.NewV7()
 	if err != nil {
@@ -33,11 +32,10 @@ func CreateJWT(userId int, admin bool) (*types.TokenDetails, error) {
 	}
 	tokenDetails.UUID = tempUUID.String()
 
-	//Creating Access Token
+	// Creating Access Token
 	tokenSecret := []byte(config.Envs.JWTSecret)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"authorized": true,
-		"admin":      admin,
 		"tokenUuid":  tokenDetails.UUID,
 		"userId":     userId,
 		"expiredAt":  tokenDetails.TokenExp, // expired of the token
