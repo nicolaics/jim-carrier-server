@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier/logger"
 	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/service/listing"
 	"github.com/nicolaics/jim-carrier/service/user"
 )
 
@@ -32,10 +33,14 @@ func (s *APIServer) Run() error {
 	subrouterUnprotected := router.PathPrefix("/api/v1").Subrouter()
 
 	userStore := user.NewStore(s.db)
+	listingStore := listing.NewStore(s.db)
 
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(subrouter)
 	userHandler.RegisterUnprotectedRoutes(subrouterUnprotected)
+
+	listingHandler := listing.NewHandler(listingStore, userStore)
+	listingHandler.RegisterRoutes(subrouter)
 
 	log.Println("Listening on: ", s.addr)
 
