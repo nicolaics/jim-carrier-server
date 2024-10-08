@@ -236,7 +236,22 @@ func (s *Store) CreateUser(user types.User) error {
 }
 
 func (s *Store) DeleteUser(user *types.User) error {
-	_, err := s.db.Exec("DELETE FROM user WHERE id = ?", user.ID)
+	_, err := s.db.Exec("DELETE FROM review WHERE reviewer_id = ?", user.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec("DELETE FROM order WHERE giver_id = ?", user.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec("DELETE FROM listing WHERE carrier_id = ?", user.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec("DELETE FROM user WHERE id = ?", user.ID)
 	if err != nil {
 		return err
 	}
