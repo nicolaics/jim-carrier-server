@@ -175,11 +175,6 @@ func (s *Store) DeleteListing(id int) error {
 }
 
 func (s *Store) ModifyListing(id int, listing types.Listing) error {
-	values := "?"
-	for i := 0; i < 6; i++ {
-		values += ", ?"
-	}
-
 	query := `UPDATE listing 
 				SET destination = ?, weight_available = ?, 
 					price_per_kg = ?, departure_date = ?, exp_status = ?, 
@@ -189,6 +184,56 @@ func (s *Store) ModifyListing(id int, listing types.Listing) error {
 	_, err := s.db.Exec(query, listing.Destination, listing.WeightAvailable,
 		listing.PricePerKg, listing.DepartureDate, listing.ExpStatus,
 		listing.Description, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) SubtractWeightAvailable(listingId int, minusValue float64) error {
+	query := `SELECT weight_available FROM lising WHERE id = ? AND deleted_at IS NULL`
+	row := s.db.QueryRow(query, listingId)
+	if row.Err() != nil {
+		return row.Err()
+	}
+
+	var oldWeightAvail float64
+	err := row.Scan(&oldWeightAvail)
+	if err != nil {
+		return err
+	}
+
+	if (oldWeightAvail - minusValue) < 0.0 {
+		return fmt.Errorf("weight available is not enough")
+	}
+
+	query = `UPDATE listing SET weight_available = ? 
+				WHERE id = ? AND deleted_at IS NULL`
+	_, err = s.db.Exec(query, (oldWeightAvail - minusValue), listingId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) AddWeightAvailable(listingId int, addValue float64) error {
+	query := `SELECT weight_available FROM lising WHERE id = ? AND deleted_at IS NULL`
+	row := s.db.QueryRow(query, listingId)
+	if row.Err() != nil {
+		return row.Err()
+	}
+
+	var oldWeightAvail float64
+	err := row.Scan(&oldWeightAvail)
+	if err != nil {
+		return err
+	}
+
+	query = `UPDATE listing SET weight_available = ? 
+				WHERE id = ? AND deleted_at IS NULL`
+	_, err = s.db.Exec(query, (oldWeightAvail + addValue), listingId)
 	if err != nil {
 		return err
 	}

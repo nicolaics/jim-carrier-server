@@ -18,6 +18,9 @@ type ListingStore interface {
 	DeleteListing(id int) error
 
 	ModifyListing(int, Listing) error
+
+	SubtractWeightAvailable(listindId int, minusValue float64) error
+	AddWeightAvailable(listindId int, addValue float64) error
 }
 
 type PostListingPayload struct {
