@@ -43,6 +43,7 @@ func (s *Store) GetOrderByID(id int) (*types.Order, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	order := new(types.Order)
 
@@ -77,6 +78,7 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnPayload, 
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	orders := make([]types.OrderCarrierReturnPayload, 0)
 
@@ -109,6 +111,7 @@ func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnPayload, erro
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	orders := make([]types.OrderGiverReturnPayload, 0)
 
@@ -142,6 +145,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	order := new(types.OrderCarrierReturnPayload)
 
@@ -177,6 +181,7 @@ func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverRet
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	order := new(types.OrderGiverReturnPayload)
 
@@ -216,6 +221,25 @@ func (s *Store) ModifyOrder(id int, order types.Order) error {
 	}
 
 	return nil
+}
+
+func (s *Store) IsOrderDuplicate(userId int, listingId int) (bool, error) {
+	query := `SELECT COUNT(*) FROM order WHERE listing_id = ? 
+											AND giver_id = ?
+											AND deleted_at IS NULL`
+
+	row := s.db.QueryRow(query, listingId, userId)
+	if row.Err() != nil {
+		return true, row.Err()
+	}
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return true, err
+	}
+
+	return (count > 0), nil
 }
 
 
