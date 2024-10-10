@@ -29,7 +29,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/listing", h.handleGetAll).Methods(http.MethodGet)
 
-	router.HandleFunc("/listing/detail", h.handleGetDetail).Methods(http.MethodGet)
+	router.HandleFunc("/listing/detail", h.handleGetDetail).Methods(http.MethodPost)
 	router.HandleFunc("/listing/detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	router.HandleFunc("/listing", h.handleDelete).Methods(http.MethodDelete)
