@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jim/src/constants/image_strings.dart';
 import 'package:jim/src/constants/sizes.dart';
 import 'package:jim/src/constants/text_strings.dart';
+import 'package:jim/src/screens/forgot_pw.dart';
 import 'base_client.dart';
+import 'package:get/get.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -125,26 +127,97 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               Align(
                                   alignment: Alignment.centerRight,
                                   child: TextButton(
-                                      onPressed: () {}, child: Text(tForgotPw))),
+                                      onPressed: () => Get.to(()=> const ForgetPassword()), child: Text(tForgotPw))),
                               SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                      onPressed: () async{
-                                      await apiService.registerUser(
-                                      name: _nameController.text,
-                                      email: _emailController.text,
-                                      password: _passwordController.text,
-                                      phoneNumber: _phoneController.text,
-                                      api: '/user/register', // Provide your API base URL
-                                      );
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    // Retrieve values from text controllers
+                                    String name = _nameController.text.trim();
+                                    String email = _emailController.text.trim();
+                                    String password = _passwordController.text.trim();
+                                    String phoneNumber = _phoneController.text.trim();
 
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                          shape: RoundedRectangleBorder(),
-                                          backgroundColor: Colors.black),
-                                      child: Text(tsignup.toUpperCase(),
-                                          style: TextStyle(
-                                              color: Colors.white, fontSize: 20)))),
+                                    // Check if any of the fields are empty
+                                    if (name.isEmpty || email.isEmpty || password.isEmpty || phoneNumber.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Please fill in all fields.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return; // Exit if any field is empty
+                                    }
+
+                                    // Name validation: Check length and ensure only alphabets are used
+                                    final RegExp nameRegex = RegExp(r'^[a-zA-Z ]+$');
+                                    if (name.length < 2 || !nameRegex.hasMatch(name)) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Please enter a valid name (only alphabets and at least 2 characters).'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    // Phone number validation (must be exactly 10 digits)
+                                    if (phoneNumber.length != 11 || !RegExp(r'^\d+$').hasMatch(phoneNumber)) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Please enter a valid 11-digit phone number.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return; // Exit if the phone number is invalid
+                                    }
+
+                                    // Email format validation using regex
+                                    final RegExp emailRegex = RegExp(
+                                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                                    );
+
+                                    if (!emailRegex.hasMatch(email)) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Please enter a valid email address.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return; // Exit if the email format is invalid
+                                    }
+
+                                    if (password.length <= 5) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Password must be more than 5 characters.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return; // Exit if the password length is invalid
+                                    }
+
+
+                                    // All validations passed, proceed with registration
+                                    await apiService.registerUser(
+                                      name: name,
+                                      email: email,
+                                      password: password,
+                                      phoneNumber: phoneNumber,
+                                      api: '/user/register', // Provide your API base URL
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(),
+                                    backgroundColor: Colors.black,
+                                  ),
+                                  child: Text(
+                                    tsignup.toUpperCase(),
+                                    style: TextStyle(color: Colors.white, fontSize: 20),
+                                  ),
+                                ),
+                              )
+
                             ],
                           ),
                         )),

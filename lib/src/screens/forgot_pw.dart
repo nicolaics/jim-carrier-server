@@ -46,15 +46,53 @@ class _ForgetPassword extends State<ForgetPassword> {
                         height: 30,
                       ),
                       SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                              onPressed: () => Get.to(()=> const OtpScreen()),
-                              style: OutlinedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(),
-                                  backgroundColor: Colors.black),
-                              child: Text('SEND CODE',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 20)))),
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Check if the email text box is empty
+                            if (_emailController.text.isEmpty) {
+                              // Show a Snackbar for empty email
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Please enter your email.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return; // Exit if the email is empty
+                            }
+
+                            // Email format validation using regex
+                            String email = _emailController.text;
+                            final RegExp emailRegex = RegExp(
+                              r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                            );
+
+                            if (!emailRegex.hasMatch(email)) {
+                              // Show a Snackbar for invalid email format
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Please enter a valid email address.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return; // Exit if the email format is invalid
+                            }
+
+                            // Proceed to the OtpScreen if the email field is filled and valid
+                            Get.to(() => const OtpScreen());
+                          },
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(),
+                            backgroundColor: Colors.black,
+                          ),
+                          child: Text(
+                            'SEND CODE',
+                            style: TextStyle(color: Colors.white, fontSize: 20),
+                          ),
+                        ),
+                      )
+
+
                     ],
                   ),
                 )),

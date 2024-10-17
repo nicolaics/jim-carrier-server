@@ -88,6 +88,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: double.infinity,
                               child: ElevatedButton(
                                   onPressed: () async {
+                                    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+                                      // Show a Snackbar or some other error message
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Please fill in all fields.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                      return; // Exit the onPressed method if fields are empty
+                                    }
+
                                     await apiService.login(
                                       email: _emailController.text,
                                       password: _passwordController.text,
