@@ -20,9 +20,6 @@ func NewHandler(store types.UserStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
-	router.HandleFunc("/user/register", h.handleRegister).Methods(http.MethodPost)
-	router.HandleFunc("/user/register", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
-
 	router.HandleFunc("/user/current", h.handleGetCurrentUser).Methods(http.MethodGet)
 	router.HandleFunc("/user/current", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
@@ -39,6 +36,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 	router.HandleFunc("/user/login", h.handleLogin).Methods(http.MethodPost)
 	router.HandleFunc("/user/login", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/user/register", h.handleRegister).Methods(http.MethodPost)
+	router.HandleFunc("/user/register", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
