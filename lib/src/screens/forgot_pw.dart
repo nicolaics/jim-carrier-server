@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:jim/src/constants/sizes.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
+import 'package:jim/src/screens/otp_screen.dart';
 
 class ForgetPassword extends StatefulWidget {
   const ForgetPassword({Key? key}) : super(key: key);
@@ -46,8 +48,7 @@ class _ForgetPassword extends State<ForgetPassword> {
                       SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                              onPressed: () async {
-                              },
+                              onPressed: () => Get.to(()=> const OtpScreen()),
                               style: OutlinedButton.styleFrom(
                                   shape: RoundedRectangleBorder(),
                                   backgroundColor: Colors.black),

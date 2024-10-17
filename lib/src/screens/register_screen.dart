@@ -18,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   @override
+
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -25,7 +26,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     super.dispose();
   }
-
   void _submitForm() {
     // Get the values from the controllers
     String fullName = _nameController.text;
