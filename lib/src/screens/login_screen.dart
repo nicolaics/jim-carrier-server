@@ -4,8 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:jim/src/constants/image_strings.dart';
 import 'package:jim/src/constants/sizes.dart';
 import 'package:jim/src/constants/text_strings.dart';
+import 'package:jim/src/screens/forgot_pw.dart';
+import 'package:jim/src/screens/register_screen.dart';
 import 'base_client.dart';
-
+import 'package:get/get.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -80,7 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                  onPressed: () {}, child: Text(tForgotPw))),
+                                  onPressed: () => Get.to(()=> const ForgetPassword()),
+                                  child: Text(tForgotPw))),
                           SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -114,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         SizedBox(height: 10,),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () => Get.to(()=> const RegisterScreen()),
                           child: Text.rich(
                             TextSpan(
                               text: "Don't have an Account? ",
