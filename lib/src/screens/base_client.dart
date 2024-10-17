@@ -5,6 +5,7 @@ const baseUrl ="http://ion-suhalim:9988/api/v1";
 
 class ApiService{
   var client = http.Client();
+
   Future<void> login({
       required String email,
       required String password,
@@ -21,13 +22,15 @@ class ApiService{
         url,
         headers: {
           'Content-Type': 'application/json',
+         // 'Authorization': 'Bearer ' + token,
         },
         body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
         // Handle successful response
-        print('User registered successfully');
+        print('User login successfully');
+
       } else {
         // Handle errors, e.g. 400, 500, etc.
         print('Failed to register user: ${response.body}');
@@ -62,7 +65,7 @@ class ApiService{
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         // Handle successful response
         print('User registered successfully');
       } else {
