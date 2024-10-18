@@ -364,10 +364,10 @@ func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request) (*type
 func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {
 	query := `SELECT COUNT(*) FROM verify_code 
 			  WHERE email = ? AND status = ?
-			  AND TIMESTAMPDIFF(MINUTE, created_at, NOW()) <= ?`
+			  AND TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP) <= ?`
 
 	var count int
-	err := s.db.QueryRow(query, email, constants.WAITING, minutes).Scan(&count)
+	err := s.db.QueryRow(query, email, constants.VERIFY_CODE_WAITING, minutes).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("failed to validate login code: %v", err)
 	}
@@ -376,13 +376,21 @@ func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {
 }
 
 func (s *Store) ValidateLoginCodeWithinTime(email, code string, minutes int) (bool, error) {
-	query := `SELECT COUNT(*) FROM verify_code 
+	query := `DELETE FROM verify_code 
+			  WHERE email = ? AND status = ? 
+			  AND TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP) > ?`
+	_, err := s.db.Exec(query, email, constants.VERIFY_CODE_COMPLETE, minutes)
+	if err != nil {
+		return false, err
+	}
+	
+	query = `SELECT COUNT(*) FROM verify_code 
 			  WHERE email = ? AND code = ? AND status = ? 
-			  AND TIMESTAMPDIFF(MINUTE, created_at, NOW()) <= ?`
+			  AND TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP) <= ?`
 	
 	var count int
 	
-	err := s.db.QueryRow(query, email, code, constants.WAITING, minutes).Scan(&count)
+	err = s.db.QueryRow(query, email, code, constants.VERIFY_CODE_WAITING, minutes).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("failed to validate login code: %v", err)
 	}
