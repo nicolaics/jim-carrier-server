@@ -17,8 +17,8 @@ type Config struct {
 	DBName                 string
 	JWTExpirationInSeconds int64
 	JWTSecret              string
-	CompanyEmail string
-	CompanyEmailPassword string
+	CompanyEmail           string
+	CompanyEmailPassword   string
 }
 
 var Envs = initConfig()
@@ -36,8 +36,8 @@ func initConfig() Config {
 		DBName:                 getEnv("DB_NAME", "jim_carrier"),
 		JWTExpirationInSeconds: getEnvAsInt("JWT_EXP", (3600 * 12)), // for 12 hours
 		JWTSecret:              getEnv("JWT_SECRET", "access-secret"),
-		CompanyEmail: getEnv("COMPANY_EMAIL", "abc@gmail.com"),
-		CompanyEmailPassword: getEnv("COMPANY_EMAIL_PASSWORD", "1234"),
+		CompanyEmail:           getEnv("COMPANY_EMAIL", "abc@gmail.com"),
+		CompanyEmailPassword:   getEnv("COMPANY_EMAIL_PASSWORD", "1234"),
 	}
 }
 
