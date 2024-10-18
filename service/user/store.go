@@ -410,6 +410,17 @@ func (s *Store) UpdateVerificationCodeStatus(email string, status int) error {
 	return nil
 }
 
+func (s *Store) IsUserExist(email string) (bool, error) {
+	var count int
+
+	err := s.db.QueryRow("SELECT COUNT(*) FROM user WHERE email = ? ", email).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return (count > 0), nil
+}
+
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	user := new(types.User)
 
