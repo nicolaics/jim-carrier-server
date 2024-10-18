@@ -286,7 +286,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	// check whether there is an active verification code that has been sent within 1 minute
 	valid, err := h.store.DelayCodeWithinTime(payload.Email, 1)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("verify code table error: %v"))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("verify code table error: %v", err))
 		return
 	}
 
@@ -329,6 +329,6 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 		"message": fmt.Sprintf("Verification email for %s sent successfully!", strings.ToLower(accountStatus)),
 		"accountStatus": strings.ToLower(accountStatus),
 	}
-	
+
 	utils.WriteJSON(w, http.StatusOK, res)
 }
