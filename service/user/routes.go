@@ -115,8 +115,26 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// verify the code within 5 minutes
+	valid, err := h.store.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("validate error: %v", err))
+		return
+	}
+
+	if !valid {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid verification code or code has expired"))
+		return
+	}
+
+	err = h.store.UpdateVerificationCodeStatus(payload.Email, constants.COMPLETE)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error updating verification code: %v", err))
+		return
+	}
+
 	// check if the newly created user exists
-	_, err := h.store.GetUserByEmail(payload.Email)
+	_, err = h.store.GetUserByEmail(payload.Email)
 	if err == nil {
 		utils.WriteError(w, http.StatusBadRequest,
 			fmt.Errorf("user with email %s already exists", payload.Email))

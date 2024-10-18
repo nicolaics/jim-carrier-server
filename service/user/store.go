@@ -375,9 +375,34 @@ func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {
 	return count > 0, nil
 }
 
+func (s *Store) ValidateLoginCodeWithinTime(email, code string, minutes int) (bool, error) {
+	query := `SELECT COUNT(*) FROM verify_code 
+			  WHERE email = ? AND code = ? AND status = ? 
+			  AND TIMESTAMPDIFF(MINUTE, created_at, NOW()) <= ?`
+	
+	var count int
+	
+	err := s.db.QueryRow(query, email, code, constants.WAITING, minutes).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to validate login code: %v", err)
+	}
+
+	return count > 0, nil
+}
+
 func (s *Store) SaveVerificationCode(email, code string, requestType int) error {
 	query := `INSERT INTO verify_code(email, code, request_type) VALUES(?, ?, ?)`
 	_, err := s.db.Exec(query, email, code, requestType)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) UpdateVerificationCodeStatus(email string, status int) error {
+	query := "UPDATE verify_code SET status = ? WHERE email = ?"
+	_, err := s.db.Exec(query, status, email)
 	if err != nil {
 		return err
 	}
