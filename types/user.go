@@ -23,6 +23,9 @@ type UserStore interface {
 	SaveToken(int, *TokenDetails) error
 	DeleteToken(int) error
 	ValidateUserToken(http.ResponseWriter, *http.Request) (*User, error)
+
+	DelayCodeWithinTime(email string, minutes int) (bool, error)
+	SaveVerificationCode(email, code string, requestType int) error
 }
 
 // register new user
@@ -57,6 +60,11 @@ type LoginUserPayload struct {
 	Password string `json:"password" validate:"required"`
 }
 
+// request verification code payload
+type UserVerificationCodePayload struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
 // basic user data info
 type User struct {
 	ID           int       `json:"id"`
@@ -64,6 +72,7 @@ type User struct {
 	Email        string    `json:"email"`
 	Password     string    `json:"password"`
 	PhoneNumber  string    `json:"phoneNumber"`
+	Provider     string    `json:"provider"`
 	LastLoggedIn time.Time `json:"lastLoggedIn"`
 	CreatedAt    time.Time `json:"createdAt"`
 }

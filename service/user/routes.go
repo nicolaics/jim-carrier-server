@@ -3,9 +3,11 @@ package user
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/service/auth"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
@@ -36,6 +38,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 	router.HandleFunc("/user/login", h.handleLogin).Methods(http.MethodPost)
 	router.HandleFunc("/user/login", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/user/send-verification", h.handleSendVerification).Methods(http.MethodPost)
+	router.HandleFunc("/user/send-verification", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	router.HandleFunc("/user/register", h.handleRegister).Methods(http.MethodPost)
 	router.HandleFunc("/user/register", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
@@ -130,6 +135,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		Email:       payload.Email,
 		Password:    hashedPassword,
 		PhoneNumber: payload.PhoneNumber,
+		Provider:    constants.PROVIDER_EMAIL,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -254,4 +260,75 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, "successfully logged out")
+}
+
+func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request) {
+	var payload types.UserVerificationCodePayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	user, err := h.store.GetUserByEmail(payload.Email)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user table error: %v", err))
+		return
+	}
+
+	// check whether there is an active verification code that has been sent within 1 minute
+	valid, err := h.store.DelayCodeWithinTime(payload.Email, 1)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("verify code table error: %v"))
+		return
+	}
+
+	if valid {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("verification code has already been sent within 1 minute"))
+		return
+	}
+
+	code := utils.GenerateRandomCodeNumbers(6)
+
+	var accountStatus string
+	var requestType int
+
+	// if email exist, send the message for forget password
+	if user != nil {
+		accountStatus = "Password Reset"
+		requestType = constants.FORGET_PASSWORD
+	} else { // else signup
+		accountStatus = "Signup"
+		requestType = constants.SIGNUP
+	}
+
+	subject := fmt.Sprintf("Your Verification Code for %s", accountStatus)
+	body := fmt.Sprintf("Your verification code for %s is: %s", strings.ToLower(accountStatus), code)
+	err = utils.SendEmail(payload.Email, subject, body)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to send email: %v", err))
+		return
+	}
+
+	// if signup request type is 0, forget password 1
+	err = h.store.SaveVerificationCode(payload.Email, code, requestType)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving verification code: %v", err))
+		return
+	}
+
+	// to notify the front-end where to proceed, home screen or reset password screen
+	res := map[string]string{
+		"message": fmt.Sprintf("Verification email for %s sent successfully!", strings.ToLower(accountStatus)),
+		"accountStatus": strings.ToLower(accountStatus),
+	}
+	
+	utils.WriteJSON(w, http.StatusOK, res)
 }
