@@ -127,7 +127,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.UpdateVerificationCodeStatus(payload.Email, constants.COMPLETE)
+	err = h.store.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error updating verification code: %v", err))
 		return
