@@ -26,14 +26,17 @@ type UserStore interface {
 
 	DelayCodeWithinTime(email string, minutes int) (bool, error)
 	SaveVerificationCode(email, code string, requestType int) error
+	ValidateLoginCodeWithinTime(email, code string, minutes int) (bool, error)
+	UpdateVerificationCodeStatus(email string, status int) error
 }
 
 // register new user
 type RegisterUserPayload struct {
-	Name        string `json:"name" validate:"required"`
-	Email       string `json:"email" validate:"required,email"`
-	Password    string `json:"password" validate:"required,min=3,max=130"`
-	PhoneNumber string `json:"phoneNumber" validate:"required"`
+	Name             string `json:"name" validate:"required"`
+	Email            string `json:"email" validate:"required,email"`
+	Password         string `json:"password" validate:"required,min=3,max=130"`
+	PhoneNumber      string `json:"phoneNumber" validate:"required"`
+	VerificationCode string `json:"verificationCode" validate:"required"`
 }
 
 // delete user account
