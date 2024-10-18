@@ -4,6 +4,7 @@ import 'package:jim/src/constants/image_strings.dart';
 import 'package:jim/src/constants/sizes.dart';
 import 'package:jim/src/constants/text_strings.dart';
 import 'package:jim/src/screens/forgot_pw.dart';
+import 'package:jim/src/screens/otp_screen.dart';
 import 'base_client.dart';
 import 'package:get/get.dart';
 
@@ -122,12 +123,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               SizedBox(
-                                height: 10,
+                                height: 50,
                               ),
+                              /***
                               Align(
                                   alignment: Alignment.centerRight,
                                   child: TextButton(
-                                      onPressed: () => Get.to(()=> const ForgetPassword()), child: Text(tForgotPw))),
+                                      onPressed: () => Get.to(()=> const ForgetPassword()), child: Text(tForgotPw))),***/
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -196,16 +198,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       );
                                       return; // Exit if the password length is invalid
                                     }
-
+                                    await apiService.otpCode(
+                                      email: email,
+                                      api: '/user/send-verification', // Provide your API base URL
+                                    );
+                                    Get.to(() => const OtpScreen(), arguments: {
+                                      'message': 'register_verification',
+                                      'name': name,
+                                      'email': email,
+                                      'password': password,
+                                      'phoneNumber': phoneNumber,
+                                    });
 
                                     // All validations passed, proceed with registration
-                                    await apiService.registerUser(
-                                      name: name,
-                                      email: email,
-                                      password: password,
-                                      phoneNumber: phoneNumber,
-                                      api: '/user/register', // Provide your API base URL
-                                    );
+
+
                                   },
                                   style: OutlinedButton.styleFrom(
                                     shape: RoundedRectangleBorder(),

@@ -3,6 +3,7 @@ import 'package:jim/src/constants/sizes.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:jim/src/screens/otp_screen.dart';
+import 'base_client.dart';
 
 class ForgetPassword extends StatefulWidget {
   const ForgetPassword({Key? key}) : super(key: key);
@@ -10,7 +11,9 @@ class ForgetPassword extends StatefulWidget {
   _ForgetPassword createState() => _ForgetPassword();
 }
 class _ForgetPassword extends State<ForgetPassword> {
+  final ApiService apiService = ApiService();
   final TextEditingController _emailController = TextEditingController();
+
   Widget build(BuildContext context){
     return Scaffold(
       body: SingleChildScrollView(
@@ -48,7 +51,13 @@ class _ForgetPassword extends State<ForgetPassword> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async{
+
+                            await apiService.otpCode(
+                              email: _emailController.text,
+                              api: '/user/send-verification', // Provide your API base URL
+                            );
+
                             // Check if the email text box is empty
                             if (_emailController.text.isEmpty) {
                               // Show a Snackbar for empty email
@@ -78,7 +87,17 @@ class _ForgetPassword extends State<ForgetPassword> {
                               return; // Exit if the email format is invalid
                             }
 
+                            String result= await apiService.forgotPw(
+                              email: email,
+                              api: '/user/send-verification', // Provide your API base URL
+                            );
                             // Proceed to the OtpScreen if the email field is filled and valid
+                            if(result == 'success'){
+                              print("Got Code");
+                            }
+                            else{
+                              print("Failed getting code");
+                            }
                             Get.to(() => const OtpScreen());
                           },
                           style: OutlinedButton.styleFrom(

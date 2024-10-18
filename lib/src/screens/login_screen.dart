@@ -99,11 +99,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                       return; // Exit the onPressed method if fields are empty
                                     }
 
-                                    await apiService.login(
+                                    String result = await apiService.login(
                                       email: _emailController.text,
                                       password: _passwordController.text,
                                       api: '/user/login', // Provide your API base URL
                                     );
+                                      if (result == 'success') { // Replace this with the actual success condition
+                                      // Navigate to the RegisterScreen if login is successful
+                                      Get.to(() => const RegisterScreen());
+                                      } else {
+                                        print("fail");
+                                      }
                                   },
                                   style: OutlinedButton.styleFrom(
                                       shape: RoundedRectangleBorder(),
