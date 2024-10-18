@@ -28,6 +28,8 @@ type UserStore interface {
 	SaveVerificationCode(email, code string, requestType int) error
 	ValidateLoginCodeWithinTime(email, code string, minutes int) (bool, error)
 	UpdateVerificationCodeStatus(email string, status int) error
+
+	IsUserExist(email string) (bool, error)
 }
 
 // register new user

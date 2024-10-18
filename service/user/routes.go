@@ -295,7 +295,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	user, err := h.store.GetUserByEmail(payload.Email)
+	isUserExist, err := h.store.IsUserExist(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user table error: %v", err))
 		return
@@ -319,7 +319,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	var requestType int
 
 	// if email exist, send the message for forget password
-	if user != nil {
+	if isUserExist {
 		accountStatus = "Password Reset"
 		requestType = constants.FORGET_PASSWORD
 	} else { // else signup
@@ -342,11 +342,11 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// to notify the front-end where to proceed, home screen or reset password screen
-	res := map[string]string{
-		"message": fmt.Sprintf("Verification email for %s sent successfully!", strings.ToLower(accountStatus)),
-		"accountStatus": strings.ToLower(accountStatus),
-	}
+	// // to notify the front-end where to proceed, home screen or reset password screen
+	// res := map[string]string{
+	// 	"message": fmt.Sprintf("Verification email for %s sent successfully!", strings.ToLower(accountStatus)),
+	// 	"accountStatus": strings.ToLower(accountStatus),
+	// }
 
-	utils.WriteJSON(w, http.StatusOK, res)
+	utils.WriteJSON(w, http.StatusOK, fmt.Sprintf("Verification email for %s sent successfully!", strings.ToLower(accountStatus)))
 }
