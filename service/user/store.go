@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/service/auth"
 	"github.com/nicolaics/jim-carrier/types"
 )
@@ -226,8 +227,8 @@ func (s *Store) GetUserByID(id int) (*types.User, error) {
 }
 
 func (s *Store) CreateUser(user types.User) error {
-	query := `INSERT INTO user (name, email, password, phone_number) VALUES (?, ?, ?, ?)`
-	_, err := s.db.Exec(query, user.Name, user.Email, user.Password, user.PhoneNumber)
+	query := `INSERT INTO user (name, email, password, phone_number, provider) VALUES (?, ?, ?, ?, ?)`
+	_, err := s.db.Exec(query, user.Name, user.Email, user.Password, user.PhoneNumber, user.Provider)
 	if err != nil {
 		return err
 	}
@@ -360,6 +361,30 @@ func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request) (*type
 	return user, nil
 }
 
+func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {
+	query := `SELECT COUNT(*) FROM verify_code 
+			  WHERE email = ? AND status = ?
+			  AND TIMESTAMPDIFF(MINUTE, created_at, NOW()) <= ?`
+
+	var count int
+	err := s.db.QueryRow(query, email, constants.WAITING, minutes).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to validate login code: %v", err)
+	}
+	
+	return count > 0, nil
+}
+
+func (s *Store) SaveVerificationCode(email, code string, requestType int) error {
+	query := `INSERT INTO verify_code(email, code, request_type) VALUES(?, ?, ?)`
+	_, err := s.db.Exec(query, email, code, requestType)
+	if err != nil {
+		return err
+	}
+	
+	return nil
+}
+
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	user := new(types.User)
 
@@ -369,6 +394,7 @@ func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 		&user.Email,
 		&user.Password,
 		&user.PhoneNumber,
+		&user.Provider,
 		&user.LastLoggedIn,
 		&user.CreatedAt,
 	)
