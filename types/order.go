@@ -9,11 +9,11 @@ type OrderStore interface {
 	CreateOrder(Order) error
 	GetOrderByID(int) (*Order, error)
 
-	GetOrderByCarrierID(int) ([]OrderCarrierReturnPayload, error)
-	GetOrderByGiverID(int) ([]OrderGiverReturnPayload, error)
+	GetOrderByCarrierID(int) ([]OrderCarrierReturnFromDB, error)
+	GetOrderByGiverID(int) ([]OrderGiverReturnFromDB, error)
 
-	GetCarrierOrderByID(orderId int, userId int) (*OrderCarrierReturnPayload, error)
-	GetGiverOrderByID(orderId int, userId int) (*OrderGiverReturnPayload, error)
+	GetCarrierOrderByID(orderId int, userId int) (*OrderCarrierReturnFromDB, error)
+	GetGiverOrderByID(orderId int, userId int) (*OrderGiverReturnFromDB, error)
 
 	DeleteOrder(orderId int, userId int) error
 
@@ -43,7 +43,7 @@ type ModifyOrderPayload struct {
 	NewData RegisterOrderPayload `json:"newData" validate:"required"`
 }
 
-type OrderGiverReturnPayload struct {
+type OrderGiverReturnFromDB struct {
 	ID              int       `json:"id"`
 	Weight          float64   `json:"weight"`
 	Price           float64   `json:"price"`
@@ -61,7 +61,25 @@ type OrderGiverReturnPayload struct {
 	} `json:"listing"`
 }
 
-type OrderCarrierReturnPayload struct {
+type OrderGiverReturnPayload struct {
+	ID              int       `json:"id"`
+	Weight          float64   `json:"weight"`
+	Price           float64   `json:"price"`
+	PaymentStatus   string       `json:"paymentStatus"`
+	OrderStatus     string       `json:"orderStatus"`
+	PackageLocation string    `json:"packageLocation"`
+	Notes           string    `json:"notes"`
+	CreatedAt       time.Time `json:"createdAt"`
+
+	Listing struct {
+		ID            int       `json:"id"`
+		CarrierName   string    `json:"carrierName"`
+		Destination   string    `json:"destination"`
+		DepartureDate time.Time `json:"departureDate"`
+	} `json:"listing"`
+}
+
+type OrderCarrierReturnFromDB struct {
 	Listing struct {
 		ID            int       `json:"id"`
 		Destination   string    `json:"destination"`
@@ -75,6 +93,25 @@ type OrderCarrierReturnPayload struct {
 	Price            float64   `json:"price"`
 	PaymentStatus    int       `json:"paymentStatus"`
 	OrderStatus      int       `json:"orderStatus"`
+	PackageLocation  string    `json:"packageLocation"`
+	Notes            string    `json:"notes"`
+	CreatedAt        time.Time `json:"createdAt"`
+}
+
+type OrderCarrierReturnPayload struct {
+	Listing struct {
+		ID            int       `json:"id"`
+		Destination   string    `json:"destination"`
+		DepartureDate time.Time `json:"departureDate"`
+	} `json:"listing"`
+
+	ID               int       `json:"id"`
+	GiverName        string    `json:"giverName"`
+	GiverPhoneNumber string    `json:"giverPhoneNumber"`
+	Weight           float64   `json:"weight"`
+	Price            float64   `json:"price"`
+	PaymentStatus    string       `json:"paymentStatus"`
+	OrderStatus      string       `json:"orderStatus"`
 	PackageLocation  string    `json:"packageLocation"`
 	Notes            string    `json:"notes"`
 	CreatedAt        time.Time `json:"createdAt"`

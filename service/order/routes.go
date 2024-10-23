@@ -12,15 +12,15 @@ import (
 )
 
 type Handler struct {
-	orderStore types.OrderStore
-	userStore  types.UserStore
+	orderStore   types.OrderStore
+	userStore    types.UserStore
 	listingStore types.ListingStore
 }
 
 func NewHandler(orderStore types.OrderStore, userStore types.UserStore, listingStore types.ListingStore) *Handler {
 	return &Handler{
-		orderStore: orderStore,
-		userStore:  userStore,
+		orderStore:   orderStore,
+		userStore:    userStore,
 		listingStore: listingStore,
 	}
 }
@@ -85,42 +85,44 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var paymentStatus int
-
-	if payload.PaymentStatus == "pending" {
+	switch payload.PaymentStatus {
+	case constants.PENDING_STATUS_STR:
 		paymentStatus = constants.PAYMENT_STATUS_PENDING
-	} else if payload.PaymentStatus == "completed" {
+	case constants.COMPLETED_STATUS_STR:
 		paymentStatus = constants.PAYMENT_STATUS_COMPLETED
-	} else if payload.PaymentStatus == "cancelled" {
+	case constants.CANCELLED_STATUS_STR:
 		paymentStatus = constants.PAYMENT_STATUS_CANCELLED
-	} else {
+	default:
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 		return
 	}
 
 	var orderStatus int
-
-	if payload.OrderStatus == "waiting" {
+	switch payload.OrderStatus {
+	case constants.WAITING_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_WAITING
-	} else if payload.OrderStatus == "completed" {
+	case constants.COMPLETED_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_COMPLETED
-	} else if payload.OrderStatus == "cancelled" {
+	case constants.CANCELLED_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_CANCELLED
-	} else if payload.OrderStatus == "verifying" {
+	case constants.VERIFYING_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_VERIFYING
-	} else {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
+	case constants.EN_ROUTE_STATUS_STR:
+		orderStatus = constants.ORDER_STATUS_EN_ROUTE
+	default:
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 		return
 	}
 
 	err = h.orderStore.CreateOrder(types.Order{
-		ListingID: listing.ID,
-		GiverID: user.ID,
-		Weight: payload.Weight,
-		Price: payload.Price,
-		PaymentStatus: paymentStatus,
-		OrderStatus: orderStatus,
+		ListingID:       listing.ID,
+		GiverID:         user.ID,
+		Weight:          payload.Weight,
+		Price:           payload.Price,
+		PaymentStatus:   paymentStatus,
+		OrderStatus:     orderStatus,
 		PackageLocation: payload.PackageLocation,
-		Notes: payload.Notes,
+		Notes:           payload.Notes,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create order: %v", err))
@@ -157,30 +159,112 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	reqType := vars["reqType"]
 
-	var orders interface{}
+	var ordersReturn interface{}
 	if reqType == "carrier" {
-		orders, err = h.orderStore.GetOrderByCarrierID(user.ID)
+		orders, err := h.orderStore.GetOrderByCarrierID(user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
+
+		ordersReturnTemp := make([]types.OrderCarrierReturnPayload, 0)
+		for _, order := range orders {
+			var paymentStatus string
+			switch order.PaymentStatus {
+			case constants.PAYMENT_STATUS_CANCELLED:
+				paymentStatus = constants.CANCELLED_STATUS_STR
+			case constants.PAYMENT_STATUS_PENDING:
+				paymentStatus = constants.PENDING_STATUS_STR
+			case constants.PAYMENT_STATUS_COMPLETED:
+				paymentStatus = constants.COMPLETED_STATUS_STR
+			}
+
+			var orderStatus string
+			switch order.OrderStatus {
+			case constants.ORDER_STATUS_CANCELLED:
+				orderStatus = constants.CANCELLED_STATUS_STR
+			case constants.ORDER_STATUS_WAITING:
+				orderStatus = constants.WAITING_STATUS_STR
+			case constants.ORDER_STATUS_COMPLETED:
+				orderStatus = constants.COMPLETED_STATUS_STR
+			case constants.ORDER_STATUS_EN_ROUTE:
+				orderStatus = constants.EN_ROUTE_STATUS_STR
+			case constants.ORDER_STATUS_VERIFYING:
+				orderStatus = constants.VERIFYING_STATUS_STR
+			}
+
+			temp := types.OrderCarrierReturnPayload{
+				Listing:          order.Listing,
+				ID:               order.ID,
+				GiverName:        order.GiverName,
+				GiverPhoneNumber: order.GiverPhoneNumber,
+				Weight:           order.Weight,
+				Price:            order.Price,
+				PaymentStatus:    paymentStatus,
+				OrderStatus:      orderStatus,
+				PackageLocation:  order.PackageLocation,
+				Notes:            order.Notes,
+				CreatedAt:        order.CreatedAt,
+			}
+			ordersReturnTemp = append(ordersReturnTemp, temp)
+		}
+
+		ordersReturn = ordersReturnTemp
 	} else if reqType == "giver" {
-		orders, err = h.orderStore.GetOrderByGiverID(user.ID)
+		orders, err := h.orderStore.GetOrderByGiverID(user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
+
+		ordersReturnTemp := make([]types.OrderGiverReturnPayload, 0)
+		for _, order := range orders {
+			var paymentStatus string
+			switch order.PaymentStatus {
+			case constants.PAYMENT_STATUS_CANCELLED:
+				paymentStatus = constants.CANCELLED_STATUS_STR
+			case constants.PAYMENT_STATUS_PENDING:
+				paymentStatus = constants.PENDING_STATUS_STR
+			case constants.PAYMENT_STATUS_COMPLETED:
+				paymentStatus = constants.COMPLETED_STATUS_STR
+			}
+
+			var orderStatus string
+			switch order.OrderStatus {
+			case constants.ORDER_STATUS_CANCELLED:
+				orderStatus = constants.CANCELLED_STATUS_STR
+			case constants.ORDER_STATUS_WAITING:
+				orderStatus = constants.WAITING_STATUS_STR
+			case constants.ORDER_STATUS_COMPLETED:
+				orderStatus = constants.COMPLETED_STATUS_STR
+			case constants.ORDER_STATUS_EN_ROUTE:
+				orderStatus = constants.EN_ROUTE_STATUS_STR
+			case constants.ORDER_STATUS_VERIFYING:
+				orderStatus = constants.VERIFYING_STATUS_STR
+			}
+
+			temp := types.OrderGiverReturnPayload{
+				Listing:         order.Listing,
+				ID:              order.ID,
+				Weight:          order.Weight,
+				Price:           order.Price,
+				PaymentStatus:   paymentStatus,
+				OrderStatus:     orderStatus,
+				PackageLocation: order.PackageLocation,
+				Notes:           order.Notes,
+				CreatedAt:       order.CreatedAt,
+			}
+			ordersReturnTemp = append(ordersReturnTemp, temp)
+		}
+
+		ordersReturn = ordersReturnTemp
+
 	} else {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown request parameter"))
 		return
 	}
 
-	if orders == nil {
-		utils.WriteJSON(w, http.StatusOK, "no order found")
-		return
-	}
-	
-	utils.WriteJSON(w, http.StatusOK, orders)
+	utils.WriteJSON(w, http.StatusOK, ordersReturn)
 }
 
 func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
@@ -218,31 +302,100 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	reqType := vars["reqType"]
 
-	var order interface{}
+	var returnOrder interface{}
 
 	if reqType == "carrier" {
-		order, err = h.orderStore.GetCarrierOrderByID(payload.ID, user.ID)
+		order, err := h.orderStore.GetCarrierOrderByID(payload.ID, user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
+
+		var paymentStatus string
+		switch order.PaymentStatus {
+			case constants.PAYMENT_STATUS_CANCELLED:
+				paymentStatus = constants.CANCELLED_STATUS_STR
+			case constants.PAYMENT_STATUS_PENDING:
+				paymentStatus = constants.PENDING_STATUS_STR
+			case constants.PAYMENT_STATUS_COMPLETED:
+				paymentStatus = constants.COMPLETED_STATUS_STR
+		}
+
+		var orderStatus string
+		switch order.OrderStatus {
+			case constants.ORDER_STATUS_CANCELLED:
+				orderStatus = constants.CANCELLED_STATUS_STR
+			case constants.ORDER_STATUS_WAITING:
+				orderStatus = constants.WAITING_STATUS_STR
+			case constants.ORDER_STATUS_COMPLETED:
+				orderStatus = constants.COMPLETED_STATUS_STR
+			case constants.ORDER_STATUS_EN_ROUTE:
+				orderStatus = constants.EN_ROUTE_STATUS_STR
+			case constants.ORDER_STATUS_VERIFYING:
+				orderStatus = constants.VERIFYING_STATUS_STR
+		}
+		
+		returnOrder = types.OrderCarrierReturnPayload{
+			Listing:          order.Listing,
+			ID:               order.ID,
+			GiverName:        order.GiverName,
+			GiverPhoneNumber: order.GiverPhoneNumber,
+			Weight:           order.Weight,
+			Price:            order.Price,
+			PaymentStatus:    paymentStatus,
+			OrderStatus:      orderStatus,
+			PackageLocation:  order.PackageLocation,
+			Notes:            order.Notes,
+			CreatedAt:        order.CreatedAt,
+		}
 	} else if reqType == "giver" {
-		order, err = h.orderStore.GetGiverOrderByID(payload.ID, user.ID)
+		order, err := h.orderStore.GetGiverOrderByID(payload.ID, user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
+		}
+
+		var paymentStatus string
+		switch order.PaymentStatus {
+			case constants.PAYMENT_STATUS_CANCELLED:
+				paymentStatus = constants.CANCELLED_STATUS_STR
+			case constants.PAYMENT_STATUS_PENDING:
+				paymentStatus = constants.PENDING_STATUS_STR
+			case constants.PAYMENT_STATUS_COMPLETED:
+				paymentStatus = constants.COMPLETED_STATUS_STR
+		}
+
+		var orderStatus string
+		switch order.OrderStatus {
+			case constants.ORDER_STATUS_CANCELLED:
+				orderStatus = constants.CANCELLED_STATUS_STR
+			case constants.ORDER_STATUS_WAITING:
+				orderStatus = constants.WAITING_STATUS_STR
+			case constants.ORDER_STATUS_COMPLETED:
+				orderStatus = constants.COMPLETED_STATUS_STR
+			case constants.ORDER_STATUS_EN_ROUTE:
+				orderStatus = constants.EN_ROUTE_STATUS_STR
+			case constants.ORDER_STATUS_VERIFYING:
+				orderStatus = constants.VERIFYING_STATUS_STR
+		}
+	
+		returnOrder = types.OrderGiverReturnPayload{
+			Listing:         order.Listing,
+			ID:              order.ID,
+			Weight:          order.Weight,
+			Price:           order.Price,
+			PaymentStatus:   paymentStatus,
+			OrderStatus:     orderStatus,
+			PackageLocation: order.PackageLocation,
+			Notes:           order.Notes,
+			CreatedAt:       order.CreatedAt,
 		}
 	} else {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown request parameter"))
 		return
 	}
 
-	if order == nil {
-		utils.WriteJSON(w, http.StatusOK, "no order found")
-		return
-	}
-	
-	utils.WriteJSON(w, http.StatusOK, order)
+	utils.WriteJSON(w, http.StatusOK, returnOrder)
 }
 
 func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +435,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error deleting order: %v", err))
 		return
 	}
-	
+
 	utils.WriteJSON(w, http.StatusOK, "delete order success")
 }
 
@@ -331,40 +484,42 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var paymentStatus int
-
-	if payload.NewData.PaymentStatus == "pending" {
+	switch payload.NewData.PaymentStatus {
+	case constants.PENDING_STATUS_STR:
 		paymentStatus = constants.PAYMENT_STATUS_PENDING
-	} else if payload.NewData.PaymentStatus == "completed" {
+	case constants.COMPLETED_STATUS_STR:
 		paymentStatus = constants.PAYMENT_STATUS_COMPLETED
-	} else if payload.NewData.PaymentStatus == "cancelled" {
+	case constants.CANCELLED_STATUS_STR:
 		paymentStatus = constants.PAYMENT_STATUS_CANCELLED
-	} else {
+	default:
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 		return
 	}
 
 	var orderStatus int
-
-	if payload.NewData.OrderStatus == "waiting" {
+	switch payload.NewData.OrderStatus {
+	case constants.WAITING_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_WAITING
-	} else if payload.NewData.OrderStatus == "completed" {
+	case constants.COMPLETED_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_COMPLETED
-	} else if payload.NewData.OrderStatus == "cancelled" {
+	case constants.CANCELLED_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_CANCELLED
-	} else if payload.NewData.OrderStatus == "verifying" {
+	case constants.VERIFYING_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_VERIFYING
-	} else {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
+	case constants.EN_ROUTE_STATUS_STR:
+		orderStatus = constants.ORDER_STATUS_EN_ROUTE
+	default:
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 		return
 	}
 
 	err = h.orderStore.ModifyOrder(order.ID, types.Order{
-		Weight: payload.NewData.Weight,
-		Price: payload.NewData.Price,
-		PaymentStatus: paymentStatus,
-		OrderStatus: orderStatus,
+		Weight:          payload.NewData.Weight,
+		Price:           payload.NewData.Price,
+		PaymentStatus:   paymentStatus,
+		OrderStatus:     orderStatus,
 		PackageLocation: payload.NewData.PackageLocation,
-		Notes: payload.NewData.Notes,
+		Notes:           payload.NewData.Notes,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify order: %v", err))

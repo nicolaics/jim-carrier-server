@@ -61,7 +61,7 @@ func (s *Store) GetOrderByID(id int) (*types.Order, error) {
 	return order, nil
 }
 
-func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnPayload, error) {
+func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, error) {
 	query := `SELECT l.id, l.destination, l.departure_date, 
 					 o.id, 
 					 user.name, user.phone_number, 
@@ -80,7 +80,7 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnPayload, 
 	}
 	defer rows.Close()
 
-	orders := make([]types.OrderCarrierReturnPayload, 0)
+	orders := make([]types.OrderCarrierReturnFromDB, 0)
 
 	for rows.Next() {
 		order, err := scanRowIntoOrderForCarrier(rows)
@@ -94,7 +94,7 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnPayload, 
 	return orders, nil
 }
 
-func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnPayload, error) {
+func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, o.payment_status, 
 						o.order_status, o.notes, o.created_at, 
 						l.id, 
@@ -113,7 +113,7 @@ func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnPayload, erro
 	}
 	defer rows.Close()
 
-	orders := make([]types.OrderGiverReturnPayload, 0)
+	orders := make([]types.OrderGiverReturnFromDB, 0)
 
 	for rows.Next() {
 		order, err := scanRowIntoOrderForGiver(rows)
@@ -127,7 +127,7 @@ func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnPayload, erro
 	return orders, nil
 }
 
-func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrierReturnPayload, error) {
+func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrierReturnFromDB, error) {
 	query := `SELECT l.id, l.destination, l.departure_date, 
 					 o.id, 
 					 user.name, user.phone_number, 
@@ -147,7 +147,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 	}
 	defer rows.Close()
 
-	order := new(types.OrderCarrierReturnPayload)
+	order := new(types.OrderCarrierReturnFromDB)
 
 	for rows.Next() {
 		order, err = scanRowIntoOrderForCarrier(rows)
@@ -163,7 +163,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 	return order, nil
 }
 
-func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverReturnPayload, error) {
+func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, o.payment_status, 
 						o.order_status, o.notes, o.created_at, 
 						l.id, 
@@ -183,7 +183,7 @@ func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverRet
 	}
 	defer rows.Close()
 
-	order := new(types.OrderGiverReturnPayload)
+	order := new(types.OrderGiverReturnFromDB)
 
 	for rows.Next() {
 		order, err = scanRowIntoOrderForGiver(rows)
@@ -268,8 +268,8 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 	return order, nil
 }
 
-func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnPayload, error) {
-	order := new(types.OrderCarrierReturnPayload)
+func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB, error) {
+	order := new(types.OrderCarrierReturnFromDB)
 
 	err := rows.Scan(
 		&order.Listing.ID,
@@ -296,8 +296,8 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnPayloa
 	return order, nil
 }
 
-func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnPayload, error) {
-	order := new(types.OrderGiverReturnPayload)
+func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, error) {
+	order := new(types.OrderGiverReturnFromDB)
 
 	err := rows.Scan(
 		&order.ID,

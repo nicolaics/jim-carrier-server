@@ -13,6 +13,13 @@ const ORDER_STATUS_CANCELLED = 2
 const ORDER_STATUS_VERIFYING = 3
 const ORDER_STATUS_EN_ROUTE = 4
 
+const WAITING_STATUS_STR = "waiting"
+const COMPLETED_STATUS_STR = "completed"
+const CANCELLED_STATUS_STR = "cancelled"
+const VERIFYING_STATUS_STR = "verifying"
+const EN_ROUTE_STATUS_STR = "en-route"
+const PENDING_STATUS_STR = "pending"
+
 const VERIFY_CODE_WAITING = 0
 const VERIFY_CODE_COMPLETE = 1
 
