@@ -18,10 +18,10 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) CreateReview(review types.Review) error {
 	query := `INSERT INTO review 
-				(listing_id, reviewer_id, content, rating) 
-				VALUES (?, ?, ?, ?)`
-	_, err := s.db.Exec(query, review.ListingID, review.ReviewerID, 
-						review.Content, review.Rating)
+				(order_id, reviewer_id, reviewee_id, content, rating, review_type) 
+				VALUES (?, ?, ?, ?, ?, ?)`
+	_, err := s.db.Exec(query, review.OrderID, review.ReviewerID, review.RevieweeID,
+						review.Content, review.Rating, review.ReviewType)
 	if err != nil {
 		return err
 	}
@@ -29,9 +29,9 @@ func (s *Store) CreateReview(review types.Review) error {
 	return nil
 }
 
-func (s *Store) IsReviewDuplicate(uid int, listingId int) (bool, error) {
-	query := `SELECT COUNT(*) FROM review WHERE reviewer_id = ? AND listing_id = ?`
-	row := s.db.QueryRow(query, uid, listingId)
+func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, error) {
+	query := `SELECT COUNT(*) FROM review WHERE reviewer_id = ? AND reviewee_id = ? AND order_id = ?`
+	row := s.db.QueryRow(query, reviewerId, revieweeId, orderId)
 	if row.Err() != nil {
 		return true, row.Err()
 	}

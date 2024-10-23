@@ -28,3 +28,6 @@ const FORGET_PASSWORD = 1
 
 const PROVIDER_EMAIL = "email"
 const PROVIDER_GMAIL = "gmail"
+
+const REVIEW_GIVER_TO_CARRIER = 0
+const REVIEW_CARRIER_TO_GIVER = 1
