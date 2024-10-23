@@ -269,7 +269,40 @@ func (s *Store) CreateUser(user types.User) error {
 }
 
 func (s *Store) DeleteUser(user *types.User) error {
-	_, err := s.db.Exec("DELETE FROM review WHERE reviewer_id = ?", user.ID)
+	query := `SELECT COUNT(*) FROM order WHERE giver_id = ? AND (order_status != ? OR payment_status = ?)`
+	row := s.db.QueryRow(query, user.ID, constants.ORDER_STATUS_COMPLETED, constants.PAYMENT_STATUS_PENDING)
+	if row.Err() != nil {
+		return row.Err()
+	}
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("there is still pending giving order")
+	}
+
+	query = `SELECT COUNT(*) 
+			FROM listing 
+			JOIN order ON order.listing_id = listing.id 
+			WHERE listing.carrier_id = ? AND order.order_status != ?`
+	row = s.db.QueryRow(query, user.ID, constants.ORDER_STATUS_COMPLETED)
+	if row.Err() != nil {
+		return row.Err()
+	}
+
+	count = 0
+	err = row.Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("there is still pending carrying order")
+	}
+	
+	_, err = s.db.Exec("DELETE FROM review WHERE reviewer_id = ?", user.ID)
 	if err != nil {
 		return err
 	}
