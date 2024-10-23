@@ -9,6 +9,7 @@ type UserStore interface {
 	GetUserByEmail(string) (*User, error)
 	GetUserByName(string) (*User, error)
 	GetUserByID(int) (*User, error)
+	GetUserPasswordByEmail(string) (string, error)
 
 	GetUserBySearchName(string) ([]User, error)
 	GetUserBySearchPhoneNumber(string) ([]User, error)
@@ -19,6 +20,7 @@ type UserStore interface {
 
 	UpdateLastLoggedIn(int) error
 	ModifyUser(int, User) error
+	UpdatePassword(int, string) error
 
 	SaveToken(int, *TokenDetails) error
 	DeleteToken(int) error
@@ -50,7 +52,6 @@ type RemoveUserPayload struct {
 type ModifyUserPayload struct {
 	ID          int    `json:"id" validate:"required"`
 	Name        string `json:"name" validate:"required"`
-	Password    string `json:"password" validate:"required,min=3,max=130"`
 	PhoneNumber string `json:"phoneNumber" validate:"required"`
 }
 
@@ -69,6 +70,13 @@ type LoginUserPayload struct {
 type UserVerificationCodePayload struct {
 	Email string `json:"email" validate:"required,email"`
 }
+
+type UpdatePasswordPayload struct {
+	OldPassword string `json:"oldPassword" validate:"required,min=3,max=130"`
+	NewPassword string `json:"newPassword" validate:"required,min=3,max=130"`
+}
+
+type ResetPasswordPayload LoginUserPayload
 
 // basic user data info
 type User struct {

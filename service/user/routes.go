@@ -31,6 +31,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/user/modify", h.handleModify).Methods(http.MethodPatch)
 	router.HandleFunc("/user/modify", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
+	router.HandleFunc("/user/update-password", h.handleUpdatePassword).Methods(http.MethodPatch)
+	router.HandleFunc("/user/update-password", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
 	router.HandleFunc("/user/logout", h.handleLogout).Methods(http.MethodGet)
 	router.HandleFunc("/user/logout", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
@@ -44,6 +47,9 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 
 	router.HandleFunc("/user/register", h.handleRegister).Methods(http.MethodPost)
 	router.HandleFunc("/user/register", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/user/reset-password", h.handleResetPassword).Methods(http.MethodPatch)
+	router.HandleFunc("/user/reset-password", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -64,13 +70,19 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("not found, invalid name: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("not found, invalid email: %v", err))
+		return
+	}
+
+	password, err := h.store.GetUserPasswordByEmail(payload.Email)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	// check password match
-	if !(auth.ComparePassword(user.Password, []byte(payload.Password))) {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("not found, invalid password"))
+	if !(auth.ComparePassword(password, []byte(payload.Password))) {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("password incorrect"))
 		return
 	}
 
@@ -118,7 +130,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// verify the code within 5 minutes
 	valid, err := h.store.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("validate error: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("code validation error: %v", err))
 		return
 	}
 
@@ -141,7 +153,6 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if it doesn't, we create new user
 	hashedPassword, err := auth.HashPassword(payload.Password)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -228,7 +239,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	_, err := h.store.ValidateUserToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid admin token or not admin: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
@@ -240,7 +251,6 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 	err = h.store.ModifyUser(user.ID, types.User{
 		Name:        payload.Name,
-		Password:    payload.Password,
 		PhoneNumber: payload.PhoneNumber,
 	})
 	if err != nil {
@@ -349,4 +359,88 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	// }
 
 	utils.WriteJSON(w, http.StatusOK, fmt.Sprintf("Verification email for %s sent successfully!", strings.ToLower(accountStatus)))
+}
+
+func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
+	var payload types.ResetPasswordPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	user, err := h.store.GetUserByEmail(payload.Email)
+	if user == nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	hashedPassword, err := auth.HashPassword(payload.Password)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = h.store.UpdatePassword(user.ID, hashedPassword)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, "Password reset successfully")
+}
+
+func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
+	var payload types.UpdatePasswordPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	user, err := h.store.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	password, err := h.store.GetUserPasswordByEmail(user.Email)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if !(auth.ComparePassword(password, []byte(payload.OldPassword))) {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("incorrect old password"))
+		return
+	}
+
+	hashedPassword, err := auth.HashPassword(payload.NewPassword)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = h.store.UpdatePassword(user.ID, hashedPassword)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, "Password updated successfully")
 }
