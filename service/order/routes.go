@@ -99,8 +99,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	var orderStatus int
 
-	if payload.OrderStatus == "pending" {
-		orderStatus = constants.ORDER_STATUS_PENDING
+	if payload.OrderStatus == "waiting" {
+		orderStatus = constants.ORDER_STATUS_WAITING
 	} else if payload.OrderStatus == "completed" {
 		orderStatus = constants.ORDER_STATUS_COMPLETED
 	} else if payload.OrderStatus == "cancelled" {
@@ -119,6 +119,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		Price: payload.Price,
 		PaymentStatus: paymentStatus,
 		OrderStatus: orderStatus,
+		PackageLocation: payload.PackageLocation,
 		Notes: payload.Notes,
 	})
 	if err != nil {
@@ -344,8 +345,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 	var orderStatus int
 
-	if payload.NewData.OrderStatus == "pending" {
-		orderStatus = constants.ORDER_STATUS_PENDING
+	if payload.NewData.OrderStatus == "waiting" {
+		orderStatus = constants.ORDER_STATUS_WAITING
 	} else if payload.NewData.OrderStatus == "completed" {
 		orderStatus = constants.ORDER_STATUS_COMPLETED
 	} else if payload.NewData.OrderStatus == "cancelled" {
@@ -362,6 +363,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		Price: payload.NewData.Price,
 		PaymentStatus: paymentStatus,
 		OrderStatus: orderStatus,
+		PackageLocation: payload.NewData.PackageLocation,
 		Notes: payload.NewData.Notes,
 	})
 	if err != nil {

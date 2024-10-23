@@ -23,12 +23,13 @@ type OrderStore interface {
 }
 
 type RegisterOrderPayload struct {
-	ListingID     int     `json:"listingId" validate:"required"`
-	Weight        float64 `json:"weight" validate:"required"`
-	Price         float64 `json:"price" validate:"required"`
-	PaymentStatus string  `json:"paymentStatus" validate:"required"`
-	OrderStatus   string  `json:"orderStatus"`
-	Notes         string  `json:"notes"`
+	ListingID       int     `json:"listingId" validate:"required"`
+	Weight          float64 `json:"weight" validate:"required"`
+	Price           float64 `json:"price" validate:"required"`
+	PaymentStatus   string  `json:"paymentStatus" validate:"required"`
+	OrderStatus     string  `json:"orderStatus"`
+	PackageLocation string  `json:"packageLocation"`
+	Notes           string  `json:"notes"`
 }
 
 type ViewOrderDetailPayload struct {
@@ -43,13 +44,14 @@ type ModifyOrderPayload struct {
 }
 
 type OrderGiverReturnPayload struct {
-	ID            int       `json:"id"`
-	Weight        float64   `json:"weight"`
-	Price         float64   `json:"price"`
-	PaymentStatus int       `json:"paymentStatus"`
-	OrderStatus   int       `json:"orderStatus"`
-	Notes         string    `json:"notes"`
-	CreatedAt     time.Time `json:"createdAt"`
+	ID              int       `json:"id"`
+	Weight          float64   `json:"weight"`
+	Price           float64   `json:"price"`
+	PaymentStatus   int       `json:"paymentStatus"`
+	OrderStatus     int       `json:"orderStatus"`
+	PackageLocation string    `json:"packageLocation"`
+	Notes           string    `json:"notes"`
+	CreatedAt       time.Time `json:"createdAt"`
 
 	Listing struct {
 		ID            int       `json:"id"`
@@ -73,19 +75,21 @@ type OrderCarrierReturnPayload struct {
 	Price            float64   `json:"price"`
 	PaymentStatus    int       `json:"paymentStatus"`
 	OrderStatus      int       `json:"orderStatus"`
+	PackageLocation  string    `json:"packageLocation"`
 	Notes            string    `json:"notes"`
 	CreatedAt        time.Time `json:"createdAt"`
 }
 
 type Order struct {
-	ID            int          `json:"id"`
-	ListingID     int          `json:"listingId"`
-	GiverID       int          `json:"giverId"`
-	Weight        float64      `json:"weight"`
-	Price         float64      `json:"price"`
-	PaymentStatus int          `json:"paymentStatus"`
-	OrderStatus   int          `json:"orderStatus"`
-	Notes         string       `json:"notes"`
-	CreatedAt     time.Time    `json:"createdAt"`
-	DeletedAt     sql.NullTime `json:"deletedAt"`
+	ID              int          `json:"id"`
+	ListingID       int          `json:"listingId"`
+	GiverID         int          `json:"giverId"`
+	Weight          float64      `json:"weight"`
+	Price           float64      `json:"price"`
+	PaymentStatus   int          `json:"paymentStatus"`
+	OrderStatus     int          `json:"orderStatus"`
+	PackageLocation string       `json:"packageLocation"`
+	Notes           string       `json:"notes"`
+	CreatedAt       time.Time    `json:"createdAt"`
+	DeletedAt       sql.NullTime `json:"deletedAt"`
 }
