@@ -9,7 +9,6 @@ import (
 	"github.com/nicolaics/jim-carrier/config"
 	"github.com/nicolaics/jim-carrier/db"
 	"github.com/nicolaics/jim-carrier/service/auth"
-	"github.com/nicolaics/jim-carrier/utils"
 )
 
 func main() {
@@ -47,7 +46,7 @@ func main() {
 		log.Fatal("initial admin already exist!")
 	}
 
-	password := utils.GenerateRandomCodeAlphanumeric(12)
+	password := "1234"
 
 	// create new admin
 	hashedPassword, err := auth.HashPassword(password)
@@ -56,13 +55,15 @@ func main() {
 		return
 	}
 
-	args := os.Args
+	name := "test"
+	email := "test@gmail.com"
+	provider := "email"
 
 	query := `INSERT INTO user (
-		name, password, admin, phone_number
-		) VALUES (?, ?, ?, ?)`
+		name, email, password, phone_number, provider
+		) VALUES (?, ?, ?, ?, ?)`
 
-	_, err = db.Exec(query, args[1], hashedPassword, true, "000")
+	_, err = db.Exec(query, name, email, hashedPassword, "000", provider)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +74,7 @@ func main() {
 	}
 	defer fh.Close()
 
-	msg := fmt.Sprintf("Username: %s\nPassword: %s", args[1], password)
+	msg := fmt.Sprintf("Username: %s\nPassword: %s", name, password)
 	_, err = fh.WriteString(msg)
 	if err != nil {
 		log.Fatal(err)

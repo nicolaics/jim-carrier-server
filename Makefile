@@ -28,7 +28,7 @@ migrate-rm:
 	del .\cmd\migrate\migrations\*.sql
 
 init-admin:
-	@go run cmd/init/InitAdmin.go $(username)
+	@go run cmd/init/InitAdmin.go
 
 dummy-data:
 	@python -u cmd/init/create_dummy_data.py
