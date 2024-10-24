@@ -39,7 +39,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	// router.HandleFunc("/review/{reqType}/detail", h.handleGetDetail).Methods(http.MethodPost)
 	// router.HandleFunc("/review/{reqType}/detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	// router.HandleFunc("/review", h.handleDelete).Methods(http.MethodDelete)
+	router.HandleFunc("/review", h.handleDelete).Methods(http.MethodDelete)
 
 	// router.HandleFunc("/review", h.handleModify).Methods(http.MethodPatch)
 }
@@ -174,4 +174,50 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, reviews)
+}
+
+func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
+	var payload types.DeleteReviewPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	user, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	review, err := h.reviewStore.GetReviewByID(payload.ID)
+	if review == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("review not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if user.ID != review.ReviewerID {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("not the author"))
+		return
+	}
+
+	err = h.reviewStore.DeleteReview(payload.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error delete review: %v", err))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, "delete review success")
 }

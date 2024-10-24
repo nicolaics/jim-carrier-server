@@ -2,10 +2,8 @@ package review
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
-
-	// "fmt"
-	// "time"
 
 	"github.com/nicolaics/jim-carrier/types"
 )
@@ -31,6 +29,30 @@ func (s *Store) CreateReview(review types.Review) error {
 	return nil
 }
 
+func (s *Store) GetReviewByID(id int) (*types.Review, error) {
+	query := `SELECT * FROM review WHERE id = ?`
+	rows, err := s.db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	review := new(types.Review)
+
+	for rows.Next() {
+		review, err = scanRowIntoReview(rows)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if review.ID == 0 {
+		return nil, fmt.Errorf("review not found")
+	}
+
+	return review, nil
+}
+
 func (s *Store) GetReceivedReviewsByUserID(uid int) ([]types.ReceivedReviewReturnPayload, error) {
 	query := `SELECT r.id, r.reviewer_id, r.content, r.rating, 
 					l.destination, l.departure_date, 
@@ -49,7 +71,7 @@ func (s *Store) GetReceivedReviewsByUserID(uid int) ([]types.ReceivedReviewRetur
 	reviews := make([]types.ReceivedReviewReturnPayload, 0)
 
 	for rows.Next() {
-		review, err := scanRowIntoReceivedReviews(rows)
+		review, err := scanRowIntoReceivedReview(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +103,7 @@ func (s *Store) GeSentReviewsByUserID(uid int) ([]types.SentReviewReturnPayload,
 	reviews := make([]types.SentReviewReturnPayload, 0)
 
 	for rows.Next() {
-		review, err := scanRowIntoSentReviews(rows)
+		review, err := scanRowIntoSentReview(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -90,6 +112,16 @@ func (s *Store) GeSentReviewsByUserID(uid int) ([]types.SentReviewReturnPayload,
 	}
 
 	return reviews, nil
+}
+
+func (s *Store) DeleteReview(id int) error {
+	query := `DELETE FROM review WHERE id = ?`
+	_, err := s.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	
+	return nil
 }
 
 func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, error) {
@@ -108,7 +140,7 @@ func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, er
 	return count > 0, nil
 }
 
-func scanRowIntoReceivedReviews(rows *sql.Rows) (*types.ReceivedReviewReturnPayload, error) {
+func scanRowIntoReceivedReview(rows *sql.Rows) (*types.ReceivedReviewReturnPayload, error) {
 	temp := new(struct {
 		ID                 int
 		ReviewerID         int
@@ -154,7 +186,7 @@ func scanRowIntoReceivedReviews(rows *sql.Rows) (*types.ReceivedReviewReturnPayl
 	return &receivedReview, nil
 }
 
-func scanRowIntoSentReviews(rows *sql.Rows) (*types.SentReviewReturnPayload, error) {
+func scanRowIntoSentReview(rows *sql.Rows) (*types.SentReviewReturnPayload, error) {
 	temp := new(struct {
 		ID                 int
 		RevieweeName       string
@@ -189,7 +221,7 @@ func scanRowIntoSentReviews(rows *sql.Rows) (*types.SentReviewReturnPayload, err
 
 	sentReview := types.SentReviewReturnPayload{
 		ID:                 temp.ID,
-		RevieweeName:         temp.RevieweeName,
+		RevieweeName:       temp.RevieweeName,
 		Content:            content,
 		Rating:             temp.Rating,
 		PackageDestination: temp.PackageDestination,
@@ -198,4 +230,56 @@ func scanRowIntoSentReviews(rows *sql.Rows) (*types.SentReviewReturnPayload, err
 	}
 
 	return &sentReview, nil
+}
+
+func scanRowIntoReview(rows *sql.Rows) (*types.Review, error) {
+	temp := new(struct {
+		ID             int
+		OrderID        int
+		ReviewerID     int
+		RevieweeID     int
+		Content        sql.NullString
+		Rating         int
+		ReviewType     int
+		CreatedAt      time.Time
+		LastModifiedAt time.Time
+	})
+
+	err := rows.Scan(
+		&temp.ID,
+		&temp.OrderID,
+		&temp.ReviewerID,
+		&temp.RevieweeID,
+		&temp.Content,
+		&temp.Rating,
+		&temp.ReviewType,
+		&temp.CreatedAt,
+		&temp.LastModifiedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	temp.CreatedAt = temp.CreatedAt.Local()
+	temp.LastModifiedAt = temp.LastModifiedAt.Local()
+
+	content := ""
+	if temp.Content.Valid {
+		content = temp.Content.String
+	}
+
+	review := types.Review{
+		ID:             temp.ID,
+		OrderID:        temp.OrderID,
+		ReviewerID:     temp.ReviewerID,
+		RevieweeID:     temp.RevieweeID,
+		Content:        content,
+		Rating:         temp.Rating,
+		ReviewType:     temp.ReviewType,
+		CreatedAt:      temp.CreatedAt,
+		LastModifiedAt: temp.LastModifiedAt,
+	}
+
+	return &review, nil
 }
