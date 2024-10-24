@@ -1,7 +1,6 @@
 # Jim Carrier
 
 ### Directory Structure
-### Directory Structure
 ```
 .
 ├── .gitignore
