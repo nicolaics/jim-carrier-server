@@ -1,3 +1,16 @@
+*.env
+*.sql
+./migrate/migrations
+bin
+# *.mod
+# *.sum
+*.sh
+*.bat
+*.txt
+*.log
+
+# FRONTEND
+frontend/node_modules
 # Miscellaneous
 *.class
 *.log
