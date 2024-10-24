@@ -7,7 +7,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 
-	// "github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
@@ -149,16 +148,30 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	reqType := vars["reqType"]
+	// filterType := vars["filter"]
 
-	var ordersReturn interface{}
-	if reqType == "carrier" {
+	// var filter int
+	// switch filterType {
+	// 	case "carrier"
+	// }
 
-	} else if reqType == "giver" {
-
+	var reviews interface{}
+	if reqType == "receive" {
+		reviews, err = h.reviewStore.GetReceivedReviewsByUserID(user.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	} else if reqType == "send" {
+		reviews, err = h.reviewStore.GeSentReviewsByUserID(user.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
 	} else {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown request parameter"))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, ordersReturn)
+	utils.WriteJSON(w, http.StatusOK, reviews)
 }

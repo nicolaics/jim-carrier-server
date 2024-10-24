@@ -2,6 +2,8 @@ package review
 
 import (
 	"database/sql"
+	"time"
+
 	// "fmt"
 	// "time"
 
@@ -21,12 +23,73 @@ func (s *Store) CreateReview(review types.Review) error {
 				(order_id, reviewer_id, reviewee_id, content, rating, review_type) 
 				VALUES (?, ?, ?, ?, ?, ?)`
 	_, err := s.db.Exec(query, review.OrderID, review.ReviewerID, review.RevieweeID,
-						review.Content, review.Rating, review.ReviewType)
+		review.Content, review.Rating, review.ReviewType)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Store) GetReceivedReviewsByUserID(uid int) ([]types.ReceivedReviewReturnPayload, error) {
+	query := `SELECT r.id, r.reviewer_id, r.content, r.rating, 
+					l.destination, l.departure_date, 
+					r.last_modified_at 
+				FROM review AS r 
+				JOIN order AS o ON r.order_id = o.id 
+				JOIN listing AS l ON l.id = o.listing_id 
+				WHERE r.reviewee_id = ? 
+				ORDER BY o.created_at DESC`
+	rows, err := s.db.Query(query, uid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	reviews := make([]types.ReceivedReviewReturnPayload, 0)
+
+	for rows.Next() {
+		review, err := scanRowIntoReceivedReviews(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		reviews = append(reviews, *review)
+	}
+
+	return reviews, nil
+}
+
+func (s *Store) GeSentReviewsByUserID(uid int) ([]types.SentReviewReturnPayload, error) {
+	query := `SELECT r.id, 
+					user.name, 
+					r.content, r.rating, 
+					l.destination, l.departure_date, 
+					r.last_modified_at 
+				FROM review AS r 
+				JOIN order AS o ON r.order_id = o.id 
+				JOIN listing AS l ON l.id = o.listing_id 
+				JOIN user ON user.id = r.reviewee_id 
+				WHERE r.reviewer_id = ? 
+				ORDER BY o.created_at DESC`
+	rows, err := s.db.Query(query, uid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	reviews := make([]types.SentReviewReturnPayload, 0)
+
+	for rows.Next() {
+		review, err := scanRowIntoSentReviews(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		reviews = append(reviews, *review)
+	}
+
+	return reviews, nil
 }
 
 func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, error) {
@@ -43,4 +106,96 @@ func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, er
 	}
 
 	return count > 0, nil
+}
+
+func scanRowIntoReceivedReviews(rows *sql.Rows) (*types.ReceivedReviewReturnPayload, error) {
+	temp := new(struct {
+		ID                 int
+		ReviewerID         int
+		Content            sql.NullString
+		Rating             int
+		PackageDestination string
+		DepartureDate      time.Time
+		LastModifiedAt     time.Time
+	})
+
+	err := rows.Scan(
+		&temp.ID,
+		&temp.ReviewerID,
+		&temp.Content,
+		&temp.Rating,
+		&temp.PackageDestination,
+		&temp.DepartureDate,
+		&temp.LastModifiedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	temp.LastModifiedAt = temp.LastModifiedAt.Local()
+	temp.DepartureDate = temp.DepartureDate.Local()
+
+	content := ""
+	if temp.Content.Valid {
+		content = temp.Content.String
+	}
+
+	receivedReview := types.ReceivedReviewReturnPayload{
+		ID:                 temp.ID,
+		ReviewerID:         temp.ReviewerID,
+		Content:            content,
+		Rating:             temp.Rating,
+		PackageDestination: temp.PackageDestination,
+		DepartureDate:      temp.DepartureDate,
+		LastModifiedAt:     temp.LastModifiedAt,
+	}
+
+	return &receivedReview, nil
+}
+
+func scanRowIntoSentReviews(rows *sql.Rows) (*types.SentReviewReturnPayload, error) {
+	temp := new(struct {
+		ID                 int
+		RevieweeName       string
+		Content            sql.NullString
+		Rating             int
+		PackageDestination string
+		DepartureDate      time.Time
+		LastModifiedAt     time.Time
+	})
+
+	err := rows.Scan(
+		&temp.ID,
+		&temp.RevieweeName,
+		&temp.Content,
+		&temp.Rating,
+		&temp.PackageDestination,
+		&temp.DepartureDate,
+		&temp.LastModifiedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	temp.LastModifiedAt = temp.LastModifiedAt.Local()
+	temp.DepartureDate = temp.DepartureDate.Local()
+
+	content := ""
+	if temp.Content.Valid {
+		content = temp.Content.String
+	}
+
+	sentReview := types.SentReviewReturnPayload{
+		ID:                 temp.ID,
+		RevieweeName:         temp.RevieweeName,
+		Content:            content,
+		Rating:             temp.Rating,
+		PackageDestination: temp.PackageDestination,
+		DepartureDate:      temp.DepartureDate,
+		LastModifiedAt:     temp.LastModifiedAt,
+	}
+
+	return &sentReview, nil
 }
