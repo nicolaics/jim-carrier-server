@@ -41,7 +41,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/review", h.handleDelete).Methods(http.MethodDelete)
 
-	// router.HandleFunc("/review", h.handleModify).Methods(http.MethodPatch)
+	router.HandleFunc("/review", h.handleModify).Methods(http.MethodPatch)
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -220,4 +220,50 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, "delete review success")
+}
+
+func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
+	var payload types.ModifyReviewPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	user, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	review, err := h.reviewStore.GetReviewByID(payload.ID)
+	if review == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("review not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if review.ReviewerID != user.ID {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not the owner of the review"))
+		return
+	}
+
+	err = h.reviewStore.ModifyReview(review.ID, payload.Content, payload.Rating)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify review: %v", err))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, "modify success")
 }

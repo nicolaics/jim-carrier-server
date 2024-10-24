@@ -13,7 +13,9 @@ type ReviewStore interface {
 	GeSentReviewsByUserID(uid int) ([]SentReviewReturnPayload, error)
 
 	DeleteReview(id int) error
-	
+
+	ModifyReview(id int, content string, rating int) error
+
 	IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, error)
 }
 
@@ -26,6 +28,12 @@ type RegisterReviewPayload struct {
 
 type DeleteReviewPayload struct {
 	ID int `json:"id" validate:"required"`
+}
+
+type ModifyReviewPayload struct {
+	ID      int    `json:"id" validate:"required"`
+	Content string `json:"content"`
+	Rating  int    `json:"rating" validate:"required"`
 }
 
 type ReceivedReviewReturnPayload struct {

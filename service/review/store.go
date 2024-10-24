@@ -120,7 +120,17 @@ func (s *Store) DeleteReview(id int) error {
 	if err != nil {
 		return err
 	}
-	
+
+	return nil
+}
+
+func (s *Store) ModifyReview(id int, content string, rating int) error {
+	query := `UPDATE review SET content = ?, rating = ? WHERE id = ?`
+	_, err := s.db.Exec(query, content, rating, id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
