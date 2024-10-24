@@ -11,6 +11,7 @@ import (
 	"github.com/nicolaics/jim-carrier/service/auth"
 	"github.com/nicolaics/jim-carrier/service/listing"
 	"github.com/nicolaics/jim-carrier/service/order"
+	"github.com/nicolaics/jim-carrier/service/review"
 	"github.com/nicolaics/jim-carrier/service/user"
 )
 
@@ -36,6 +37,7 @@ func (s *APIServer) Run() error {
 	userStore := user.NewStore(s.db)
 	listingStore := listing.NewStore(s.db)
 	orderStore := order.NewStore(s.db)
+	reviewStore := review.NewStore(s.db)
 
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(subrouter)
@@ -46,6 +48,9 @@ func (s *APIServer) Run() error {
 
 	orderHandler := order.NewHandler(orderStore, userStore, listingStore)
 	orderHandler.RegisterRoutes(subrouter)
+
+	reviewHandler := review.NewHandler(reviewStore, orderStore, listingStore, userStore)
+	reviewHandler.RegisterRoutes(subrouter)
 
 	log.Println("Listening on: ", s.addr)
 

@@ -2,8 +2,8 @@
 *.sql
 ./migrate/migrations
 bin
-*.mod
-*.sum
+# *.mod
+# *.sum
 *.sh
 *.bat
 *.txt
