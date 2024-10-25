@@ -29,8 +29,8 @@ func (s *Store) CreateOrder(order types.Order) error {
 					VALUES (` + values + `)`
 
 	_, err := s.db.Exec(query, order.ListingID, order.GiverID, order.Weight,
-							order.Price, order.PaymentStatus,
-							order.OrderStatus, order.PackageLocation, order.Notes)
+		order.Price, order.PaymentStatus,
+		order.OrderStatus, order.PackageLocation, order.Notes)
 	if err != nil {
 		return err
 	}
@@ -221,8 +221,8 @@ func (s *Store) ModifyOrder(id int, order types.Order) error {
 				WHERE id = ? AND deleted_at IS NULL`
 
 	_, err := s.db.Exec(query, order.Weight, order.Price, order.PaymentStatus,
-							order.PackageLocation, order.OrderStatus, order.Notes, 
-							time.Now(), id)
+		order.PackageLocation, order.OrderStatus, order.Notes,
+		time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -230,11 +230,33 @@ func (s *Store) ModifyOrder(id int, order types.Order) error {
 	return nil
 }
 
-func (s *Store) UpdatePackageLocation(id int, packageLocation string) error {
-	query := `UPDATE order SET package_location = ?, last_modified_at = ? 
+func (s *Store) UpdatePackageLocation(id int, orderStatus int, packageLocation string) error {
+	if orderStatus == -1 {
+		query := `UPDATE order SET package_location = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
-	_, err := s.db.Exec(query, packageLocation, time.Now(), id)
+		_, err := s.db.Exec(query, packageLocation, time.Now(), id)
+		if err != nil {
+			return err
+		}
+	} else {
+		query := `UPDATE order SET order_status = ?, package_location = ?, last_modified_at = ? 
+				WHERE id = ? AND deleted_at IS NULL`
+
+		_, err := s.db.Exec(query, orderStatus, packageLocation, time.Now(), id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Store) UpdatePaymentStatus(id int, paymentStatus int) error {
+	query := `UPDATE order SET payment_status = ?, last_modified_at = ? 
+				WHERE id = ? AND deleted_at IS NULL`
+
+	_, err := s.db.Exec(query, paymentStatus, time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -242,6 +264,27 @@ func (s *Store) UpdatePackageLocation(id int, packageLocation string) error {
 	return nil
 }
 
+func (s *Store) UpdateOrderStatus(id int, orderStatus int, packageLocation string) error {
+	if packageLocation != "" {
+		query := `UPDATE order SET order_status = ?, package_location = ?, last_modified_at = ? 
+				WHERE id = ? AND deleted_at IS NULL`
+
+		_, err := s.db.Exec(query, orderStatus, packageLocation, time.Now(), id)
+		if err != nil {
+			return err
+		}
+	} else {
+		query := `UPDATE order SET order_status = ?, last_modified_at = ? 
+				WHERE id = ? AND deleted_at IS NULL`
+
+		_, err := s.db.Exec(query, orderStatus, time.Now(), id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func (s *Store) IsOrderDuplicate(userId int, listingId int) (bool, error) {
 	query := `SELECT COUNT(*) FROM order WHERE listing_id = ? 
@@ -261,7 +304,6 @@ func (s *Store) IsOrderDuplicate(userId int, listingId int) (bool, error) {
 
 	return (count > 0), nil
 }
-
 
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 	order := new(types.Order)

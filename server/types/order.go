@@ -18,7 +18,9 @@ type OrderStore interface {
 	DeleteOrder(orderId int, userId int) error
 
 	ModifyOrder(int, Order) error
-	UpdatePackageLocation(int, string) error
+	UpdatePackageLocation(id int, orderStatus int, packageLocation string) error
+	UpdatePaymentStatus(int, int) error
+	UpdateOrderStatus(id int, orderStatus int, packageLocation string) error
 
 	IsOrderDuplicate(userId int, listingId int) (bool, error)
 }
@@ -47,6 +49,18 @@ type ModifyOrderPayload struct {
 type UpdatePackageLocationPayload struct {
 	ID              int    `json:"id" validate:"required"`
 	PackageLocation string `json:"packageLocation" validate:"required"`
+	OrderStatus     string `json:"orderStatus"`
+}
+
+type UpdatePaymentStatusPayload struct {
+	ID            int    `json:"id" validate:"required"`
+	PaymentStatus string `json:"paymentStatus" validate:"required"`
+}
+
+type UpdateOrderStatusPayload struct {
+	ID              int    `json:"id" validate:"required"`
+	OrderStatus     string `json:"orderStatus" validate:"required"`
+	PackageLocation string `json:"packageLocation"`
 }
 
 type OrderGiverReturnFromDB struct {

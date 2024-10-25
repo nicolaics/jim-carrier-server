@@ -37,10 +37,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/order", h.handleDelete).Methods(http.MethodDelete)
 
-	router.HandleFunc("/order", h.handleModify).Methods(http.MethodPatch)
-
-	router.HandleFunc("/order/update-package-location", h.handleUpdatePacakgeLocation).Methods(http.MethodPatch)
-	router.HandleFunc("/order/update-package-location", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+	router.HandleFunc("/order/{reqType}", h.handleModify).Methods(http.MethodPatch)
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -447,19 +444,8 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
-	var payload types.ModifyOrderPayload
-
-	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
-		return
-	}
+	vars := mux.Vars(r)
+	reqType := vars["reqType"]
 
 	// validate token
 	user, err := h.userStore.ValidateUserToken(w, r)
@@ -478,119 +464,222 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.orderStore.GetOrderByID(payload.ID)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
-		return
+	returnMsg := ""
+
+	if reqType == "all" {
+		var payload types.ModifyOrderPayload
+
+		if err := utils.ParseJSON(r, &payload); err != nil {
+			utils.WriteError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		// validate the payload
+		if err := utils.Validate.Struct(payload); err != nil {
+			errors := err.(validator.ValidationErrors)
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			return
+		}
+
+		order, err := h.orderStore.GetOrderByID(payload.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			return
+		}
+
+		listing, err := h.listingStore.GetListingByID(payload.NewData.ListingID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing id %d not found: %v", payload.NewData.ListingID, err))
+			return
+		}
+
+		var paymentStatus int
+		switch payload.NewData.PaymentStatus {
+		case constants.PENDING_STATUS_STR:
+			paymentStatus = constants.PAYMENT_STATUS_PENDING
+		case constants.COMPLETED_STATUS_STR:
+			paymentStatus = constants.PAYMENT_STATUS_COMPLETED
+		case constants.CANCELLED_STATUS_STR:
+			paymentStatus = constants.PAYMENT_STATUS_CANCELLED
+		default:
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
+			return
+		}
+
+		var orderStatus int
+		switch payload.NewData.OrderStatus {
+		case constants.WAITING_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_WAITING
+		case constants.COMPLETED_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_COMPLETED
+		case constants.CANCELLED_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_CANCELLED
+		case constants.VERIFYING_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_VERIFYING
+		case constants.EN_ROUTE_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_EN_ROUTE
+		default:
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
+			return
+		}
+
+		err = h.orderStore.ModifyOrder(order.ID, types.Order{
+			Weight:          payload.NewData.Weight,
+			Price:           payload.NewData.Price,
+			PaymentStatus:   paymentStatus,
+			OrderStatus:     orderStatus,
+			PackageLocation: payload.NewData.PackageLocation,
+			Notes:           payload.NewData.Notes,
+		})
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify order: %v", err))
+			return
+		}
+
+		err = h.listingStore.AddWeightAvailable(listing.ID, order.Weight)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reset weight available: %v", err))
+			return
+		}
+
+		err = h.listingStore.SubtractWeightAvailable(listing.ID, payload.NewData.Weight)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
+			return
+		}
+
+		returnMsg = "order modified"
+	} else if reqType == "package-location" {
+		var payload types.UpdatePackageLocationPayload
+
+		if err := utils.ParseJSON(r, &payload); err != nil {
+			utils.WriteError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		// validate the payload
+		if err := utils.Validate.Struct(payload); err != nil {
+			errors := err.(validator.ValidationErrors)
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			return
+		}
+
+		order, err := h.orderStore.GetOrderByID(payload.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			return
+		}
+
+		var orderStatus int
+		switch payload.OrderStatus {
+		case constants.WAITING_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_WAITING
+		case constants.COMPLETED_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_COMPLETED
+		case constants.CANCELLED_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_CANCELLED
+		case constants.VERIFYING_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_VERIFYING
+		case constants.EN_ROUTE_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_EN_ROUTE
+		default:
+			orderStatus = -1
+		}
+
+		err = h.orderStore.UpdatePackageLocation(order.ID, orderStatus, payload.PackageLocation)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update package location: %v", err))
+			return
+		}
+
+		returnMsg = "package location updated"
+	} else if reqType == "payment-status" {
+		var payload types.UpdatePaymentStatusPayload
+
+		if err := utils.ParseJSON(r, &payload); err != nil {
+			utils.WriteError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		// validate the payload
+		if err := utils.Validate.Struct(payload); err != nil {
+			errors := err.(validator.ValidationErrors)
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			return
+		}
+
+		order, err := h.orderStore.GetOrderByID(payload.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			return
+		}
+
+		var paymentStatus int
+		switch payload.PaymentStatus {
+		case constants.PENDING_STATUS_STR:
+			paymentStatus = constants.PAYMENT_STATUS_PENDING
+		case constants.COMPLETED_STATUS_STR:
+			paymentStatus = constants.PAYMENT_STATUS_COMPLETED
+		case constants.CANCELLED_STATUS_STR:
+			paymentStatus = constants.PAYMENT_STATUS_CANCELLED
+		default:
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
+			return
+		}
+
+		err = h.orderStore.UpdatePaymentStatus(order.ID, paymentStatus)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update payment status: %v", err))
+			return
+		}
+
+		returnMsg = "payment status updated"
+	} else if reqType == "order-status" {
+		var payload types.UpdateOrderStatusPayload
+
+		if err := utils.ParseJSON(r, &payload); err != nil {
+			utils.WriteError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		// validate the payload
+		if err := utils.Validate.Struct(payload); err != nil {
+			errors := err.(validator.ValidationErrors)
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			return
+		}
+
+		order, err := h.orderStore.GetOrderByID(payload.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			return
+		}
+
+		var orderStatus int
+		switch payload.OrderStatus {
+		case constants.WAITING_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_WAITING
+		case constants.COMPLETED_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_COMPLETED
+		case constants.CANCELLED_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_CANCELLED
+		case constants.VERIFYING_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_VERIFYING
+		case constants.EN_ROUTE_STATUS_STR:
+			orderStatus = constants.ORDER_STATUS_EN_ROUTE
+		default:
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
+			return
+		}
+
+		err = h.orderStore.UpdateOrderStatus(order.ID, orderStatus, payload.PackageLocation)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
+			return
+		}
+
+		returnMsg = "order status updated"
 	}
 
-	listing, err := h.listingStore.GetListingByID(payload.NewData.ListingID)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing id %d not found: %v", payload.NewData.ListingID, err))
-		return
-	}
-
-	var paymentStatus int
-	switch payload.NewData.PaymentStatus {
-	case constants.PENDING_STATUS_STR:
-		paymentStatus = constants.PAYMENT_STATUS_PENDING
-	case constants.COMPLETED_STATUS_STR:
-		paymentStatus = constants.PAYMENT_STATUS_COMPLETED
-	case constants.CANCELLED_STATUS_STR:
-		paymentStatus = constants.PAYMENT_STATUS_CANCELLED
-	default:
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
-		return
-	}
-
-	var orderStatus int
-	switch payload.NewData.OrderStatus {
-	case constants.WAITING_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_WAITING
-	case constants.COMPLETED_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_COMPLETED
-	case constants.CANCELLED_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_CANCELLED
-	case constants.VERIFYING_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_VERIFYING
-	case constants.EN_ROUTE_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_EN_ROUTE
-	default:
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
-		return
-	}
-
-	err = h.orderStore.ModifyOrder(order.ID, types.Order{
-		Weight:          payload.NewData.Weight,
-		Price:           payload.NewData.Price,
-		PaymentStatus:   paymentStatus,
-		OrderStatus:     orderStatus,
-		PackageLocation: payload.NewData.PackageLocation,
-		Notes:           payload.NewData.Notes,
-	})
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify order: %v", err))
-		return
-	}
-
-	err = h.listingStore.AddWeightAvailable(listing.ID, order.Weight)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reset weight available: %v", err))
-		return
-	}
-
-	err = h.listingStore.SubtractWeightAvailable(listing.ID, payload.NewData.Weight)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusCreated, "order modified")
-}
-
-func (h *Handler) handleUpdatePacakgeLocation(w http.ResponseWriter, r *http.Request) {
-	var payload types.UpdatePackageLocationPayload
-
-	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
-		return
-	}
-
-	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
-		return
-	}
-
-	user, err = h.userStore.GetUserByID(user.ID)
-	if user == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
-		return
-	}
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	order, err := h.orderStore.GetOrderByID(payload.ID)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
-		return
-	}
-
-	err = h.orderStore.UpdatePackageLocation(order.ID, payload.PackageLocation)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update package location: %v", err))
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusCreated, "package location updated")
+	utils.WriteJSON(w, http.StatusCreated, returnMsg)
 }
