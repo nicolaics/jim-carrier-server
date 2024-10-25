@@ -77,7 +77,7 @@ type OrderGiverReturnPayload struct {
 	PackageLocation string    `json:"packageLocation"`
 	Notes           string    `json:"notes"`
 	CreatedAt       time.Time `json:"createdAt"`
-	LastModifiedAt   time.Time `json:"lastModifiedAt"`
+	LastModifiedAt  time.Time `json:"lastModifiedAt"`
 
 	Listing struct {
 		ID            int       `json:"id"`
@@ -138,5 +138,6 @@ type Order struct {
 	PackageLocation string       `json:"packageLocation"`
 	Notes           string       `json:"notes"`
 	CreatedAt       time.Time    `json:"createdAt"`
+	LastModifiedAt  time.Time    `json:"lastModifiedAt"`
 	DeletedAt       sql.NullTime `json:"deletedAt"`
 }

@@ -208,6 +208,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				PackageLocation:  order.PackageLocation,
 				Notes:            order.Notes,
 				CreatedAt:        order.CreatedAt,
+				LastModifiedAt:   order.LastModifiedAt,
 			}
 			ordersReturnTemp = append(ordersReturnTemp, temp)
 		}
@@ -256,6 +257,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				PackageLocation: order.PackageLocation,
 				Notes:           order.Notes,
 				CreatedAt:       order.CreatedAt,
+				LastModifiedAt:  order.LastModifiedAt,
 			}
 			ordersReturnTemp = append(ordersReturnTemp, temp)
 		}
@@ -316,28 +318,28 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		var paymentStatus string
 		switch order.PaymentStatus {
-			case constants.PAYMENT_STATUS_CANCELLED:
-				paymentStatus = constants.CANCELLED_STATUS_STR
-			case constants.PAYMENT_STATUS_PENDING:
-				paymentStatus = constants.PENDING_STATUS_STR
-			case constants.PAYMENT_STATUS_COMPLETED:
-				paymentStatus = constants.COMPLETED_STATUS_STR
+		case constants.PAYMENT_STATUS_CANCELLED:
+			paymentStatus = constants.CANCELLED_STATUS_STR
+		case constants.PAYMENT_STATUS_PENDING:
+			paymentStatus = constants.PENDING_STATUS_STR
+		case constants.PAYMENT_STATUS_COMPLETED:
+			paymentStatus = constants.COMPLETED_STATUS_STR
 		}
 
 		var orderStatus string
 		switch order.OrderStatus {
-			case constants.ORDER_STATUS_CANCELLED:
-				orderStatus = constants.CANCELLED_STATUS_STR
-			case constants.ORDER_STATUS_WAITING:
-				orderStatus = constants.WAITING_STATUS_STR
-			case constants.ORDER_STATUS_COMPLETED:
-				orderStatus = constants.COMPLETED_STATUS_STR
-			case constants.ORDER_STATUS_EN_ROUTE:
-				orderStatus = constants.EN_ROUTE_STATUS_STR
-			case constants.ORDER_STATUS_VERIFYING:
-				orderStatus = constants.VERIFYING_STATUS_STR
+		case constants.ORDER_STATUS_CANCELLED:
+			orderStatus = constants.CANCELLED_STATUS_STR
+		case constants.ORDER_STATUS_WAITING:
+			orderStatus = constants.WAITING_STATUS_STR
+		case constants.ORDER_STATUS_COMPLETED:
+			orderStatus = constants.COMPLETED_STATUS_STR
+		case constants.ORDER_STATUS_EN_ROUTE:
+			orderStatus = constants.EN_ROUTE_STATUS_STR
+		case constants.ORDER_STATUS_VERIFYING:
+			orderStatus = constants.VERIFYING_STATUS_STR
 		}
-		
+
 		returnOrder = types.OrderCarrierReturnPayload{
 			Listing:          order.Listing,
 			ID:               order.ID,
@@ -350,6 +352,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			PackageLocation:  order.PackageLocation,
 			Notes:            order.Notes,
 			CreatedAt:        order.CreatedAt,
+			LastModifiedAt:   order.LastModifiedAt,
 		}
 	} else if reqType == "giver" {
 		order, err := h.orderStore.GetGiverOrderByID(payload.ID, user.ID)
@@ -360,28 +363,28 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		var paymentStatus string
 		switch order.PaymentStatus {
-			case constants.PAYMENT_STATUS_CANCELLED:
-				paymentStatus = constants.CANCELLED_STATUS_STR
-			case constants.PAYMENT_STATUS_PENDING:
-				paymentStatus = constants.PENDING_STATUS_STR
-			case constants.PAYMENT_STATUS_COMPLETED:
-				paymentStatus = constants.COMPLETED_STATUS_STR
+		case constants.PAYMENT_STATUS_CANCELLED:
+			paymentStatus = constants.CANCELLED_STATUS_STR
+		case constants.PAYMENT_STATUS_PENDING:
+			paymentStatus = constants.PENDING_STATUS_STR
+		case constants.PAYMENT_STATUS_COMPLETED:
+			paymentStatus = constants.COMPLETED_STATUS_STR
 		}
 
 		var orderStatus string
 		switch order.OrderStatus {
-			case constants.ORDER_STATUS_CANCELLED:
-				orderStatus = constants.CANCELLED_STATUS_STR
-			case constants.ORDER_STATUS_WAITING:
-				orderStatus = constants.WAITING_STATUS_STR
-			case constants.ORDER_STATUS_COMPLETED:
-				orderStatus = constants.COMPLETED_STATUS_STR
-			case constants.ORDER_STATUS_EN_ROUTE:
-				orderStatus = constants.EN_ROUTE_STATUS_STR
-			case constants.ORDER_STATUS_VERIFYING:
-				orderStatus = constants.VERIFYING_STATUS_STR
+		case constants.ORDER_STATUS_CANCELLED:
+			orderStatus = constants.CANCELLED_STATUS_STR
+		case constants.ORDER_STATUS_WAITING:
+			orderStatus = constants.WAITING_STATUS_STR
+		case constants.ORDER_STATUS_COMPLETED:
+			orderStatus = constants.COMPLETED_STATUS_STR
+		case constants.ORDER_STATUS_EN_ROUTE:
+			orderStatus = constants.EN_ROUTE_STATUS_STR
+		case constants.ORDER_STATUS_VERIFYING:
+			orderStatus = constants.VERIFYING_STATUS_STR
 		}
-	
+
 		returnOrder = types.OrderGiverReturnPayload{
 			Listing:         order.Listing,
 			ID:              order.ID,
@@ -392,6 +395,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			PackageLocation: order.PackageLocation,
 			Notes:           order.Notes,
 			CreatedAt:       order.CreatedAt,
+			LastModifiedAt:  order.LastModifiedAt,
 		}
 	} else {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown request parameter"))

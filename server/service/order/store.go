@@ -277,6 +277,7 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 		&order.PackageLocation,
 		&order.Notes,
 		&order.CreatedAt,
+		&order.LastModifiedAt,
 		&order.DeletedAt,
 	)
 
@@ -285,6 +286,7 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 	}
 
 	order.CreatedAt = order.CreatedAt.Local()
+	order.LastModifiedAt = order.LastModifiedAt.Local()
 
 	return order, nil
 }
@@ -306,6 +308,7 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB
 		&order.PackageLocation,
 		&order.Notes,
 		&order.CreatedAt,
+		&order.LastModifiedAt,
 	)
 
 	if err != nil {
@@ -330,6 +333,7 @@ func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, er
 		&order.PackageLocation,
 		&order.Notes,
 		&order.CreatedAt,
+		&order.LastModifiedAt,
 		&order.Listing.ID,
 		&order.Listing.CarrierName,
 		&order.Listing.Destination,
