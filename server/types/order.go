@@ -58,6 +58,7 @@ type OrderGiverReturnFromDB struct {
 	PackageLocation string    `json:"packageLocation"`
 	Notes           string    `json:"notes"`
 	CreatedAt       time.Time `json:"createdAt"`
+	LastModifiedAt  time.Time `json:"lastModifiedAt"`
 
 	Listing struct {
 		ID            int       `json:"id"`
@@ -76,6 +77,7 @@ type OrderGiverReturnPayload struct {
 	PackageLocation string    `json:"packageLocation"`
 	Notes           string    `json:"notes"`
 	CreatedAt       time.Time `json:"createdAt"`
+	LastModifiedAt   time.Time `json:"lastModifiedAt"`
 
 	Listing struct {
 		ID            int       `json:"id"`
@@ -102,6 +104,7 @@ type OrderCarrierReturnFromDB struct {
 	PackageLocation  string    `json:"packageLocation"`
 	Notes            string    `json:"notes"`
 	CreatedAt        time.Time `json:"createdAt"`
+	LastModifiedAt   time.Time `json:"lastModifiedAt"`
 }
 
 type OrderCarrierReturnPayload struct {
@@ -121,6 +124,7 @@ type OrderCarrierReturnPayload struct {
 	PackageLocation  string    `json:"packageLocation"`
 	Notes            string    `json:"notes"`
 	CreatedAt        time.Time `json:"createdAt"`
+	LastModifiedAt   time.Time `json:"lastModifiedAt"`
 }
 
 type Order struct {

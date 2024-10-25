@@ -18,18 +18,19 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) CreateOrder(order types.Order) error {
 	values := "?"
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 7; i++ {
 		values += ", ?"
 	}
 
 	query := `INSERT INTO order (
 					listing_id, giver_id, weight, price,
-					payment_status, order_status, notes) 
+					payment_status, order_status, 
+					package_location, notes) 
 					VALUES (` + values + `)`
 
 	_, err := s.db.Exec(query, order.ListingID, order.GiverID, order.Weight,
 							order.Price, order.PaymentStatus,
-							order.OrderStatus, order.Notes)
+							order.OrderStatus, order.PackageLocation, order.Notes)
 	if err != nil {
 		return err
 	}
@@ -66,7 +67,8 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 					 o.id, 
 					 user.name, user.phone_number, 
 					 o.weight, o.price, o.payment_status, 
-					 o.order_status, o.notes, o.created_at 
+					 o.order_status, o.package_location, 
+					 o.notes, o.created_at, o.last_modified_at  
 					FROM order AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = o.giver_id 
@@ -96,7 +98,8 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 
 func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, o.payment_status, 
-						o.order_status, o.notes, o.created_at, 
+						o.order_status, o.package_location, 
+						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
 						user.name, 
 						l.destination, l.departure_date 
@@ -132,7 +135,8 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 					 o.id, 
 					 user.name, user.phone_number, 
 					 o.weight, o.price, o.payment_status, 
-					 o.order_status, o.notes, o.created_at 
+					 o.order_status, o.package_location, 
+					 o.notes, o.created_at, o.last_modified_at 
 					FROM order AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = o.giver_id 
@@ -165,7 +169,8 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 
 func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, o.payment_status, 
-						o.order_status, o.notes, o.created_at, 
+						o.order_status, o.package_location, 
+						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
 						user.name, 
 						l.destination, l.departure_date 
@@ -211,11 +216,13 @@ func (s *Store) DeleteOrder(orderId int, userId int) error {
 
 func (s *Store) ModifyOrder(id int, order types.Order) error {
 	query := `UPDATE order SET weight = ?, price = ?,
-					payment_status = ?, order_status = ?, notes = ? 
+					payment_status = ?, package_location = ?, 
+					order_status = ?, notes = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
 	_, err := s.db.Exec(query, order.Weight, order.Price, order.PaymentStatus,
-							order.OrderStatus, order.Notes, id)
+							order.PackageLocation, order.OrderStatus, order.Notes, 
+							time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -224,10 +231,10 @@ func (s *Store) ModifyOrder(id int, order types.Order) error {
 }
 
 func (s *Store) UpdatePackageLocation(id int, packageLocation string) error {
-	query := `UPDATE order SET package_location = ? 
+	query := `UPDATE order SET package_location = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
-	_, err := s.db.Exec(query, packageLocation, id)
+	_, err := s.db.Exec(query, packageLocation, time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -267,6 +274,7 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 		&order.Price,
 		&order.PaymentStatus,
 		&order.OrderStatus,
+		&order.PackageLocation,
 		&order.Notes,
 		&order.CreatedAt,
 		&order.DeletedAt,
@@ -295,6 +303,7 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB
 		&order.Price,
 		&order.PaymentStatus,
 		&order.OrderStatus,
+		&order.PackageLocation,
 		&order.Notes,
 		&order.CreatedAt,
 	)
@@ -318,6 +327,7 @@ func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, er
 		&order.Price,
 		&order.PaymentStatus,
 		&order.OrderStatus,
+		&order.PackageLocation,
 		&order.Notes,
 		&order.CreatedAt,
 		&order.Listing.ID,
