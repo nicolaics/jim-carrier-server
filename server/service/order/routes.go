@@ -38,6 +38,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/order", h.handleDelete).Methods(http.MethodDelete)
 
 	router.HandleFunc("/order", h.handleModify).Methods(http.MethodPatch)
+
+	router.HandleFunc("/order/update-package-location", h.handleUpdatePacakgeLocation).Methods(http.MethodPatch)
+	router.HandleFunc("/order/update-package-location", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -538,5 +541,52 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, "order created")
+	utils.WriteJSON(w, http.StatusCreated, "order modified")
+}
+
+func (h *Handler) handleUpdatePacakgeLocation(w http.ResponseWriter, r *http.Request) {
+	var payload types.UpdatePackageLocationPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	user, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	user, err = h.userStore.GetUserByID(user.ID)
+	if user == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	order, err := h.orderStore.GetOrderByID(payload.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+		return
+	}
+
+	err = h.orderStore.UpdatePackageLocation(order.ID, payload.PackageLocation)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update package location: %v", err))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, "package location updated")
 }

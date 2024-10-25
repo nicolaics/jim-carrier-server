@@ -223,6 +223,19 @@ func (s *Store) ModifyOrder(id int, order types.Order) error {
 	return nil
 }
 
+func (s *Store) UpdatePackageLocation(id int, packageLocation string) error {
+	query := `UPDATE order SET package_location = ? 
+				WHERE id = ? AND deleted_at IS NULL`
+
+	_, err := s.db.Exec(query, packageLocation, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
 func (s *Store) IsOrderDuplicate(userId int, listingId int) (bool, error) {
 	query := `SELECT COUNT(*) FROM order WHERE listing_id = ? 
 											AND giver_id = ?

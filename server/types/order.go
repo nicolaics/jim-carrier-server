@@ -18,6 +18,7 @@ type OrderStore interface {
 	DeleteOrder(orderId int, userId int) error
 
 	ModifyOrder(int, Order) error
+	UpdatePackageLocation(int, string) error
 
 	IsOrderDuplicate(userId int, listingId int) (bool, error)
 }
@@ -43,6 +44,11 @@ type ModifyOrderPayload struct {
 	NewData RegisterOrderPayload `json:"newData" validate:"required"`
 }
 
+type UpdatePackageLocationPayload struct {
+	ID              int    `json:"id" validate:"required"`
+	PackageLocation string `json:"packageLocation" validate:"required"`
+}
+
 type OrderGiverReturnFromDB struct {
 	ID              int       `json:"id"`
 	Weight          float64   `json:"weight"`
@@ -65,8 +71,8 @@ type OrderGiverReturnPayload struct {
 	ID              int       `json:"id"`
 	Weight          float64   `json:"weight"`
 	Price           float64   `json:"price"`
-	PaymentStatus   string       `json:"paymentStatus"`
-	OrderStatus     string       `json:"orderStatus"`
+	PaymentStatus   string    `json:"paymentStatus"`
+	OrderStatus     string    `json:"orderStatus"`
 	PackageLocation string    `json:"packageLocation"`
 	Notes           string    `json:"notes"`
 	CreatedAt       time.Time `json:"createdAt"`
@@ -110,8 +116,8 @@ type OrderCarrierReturnPayload struct {
 	GiverPhoneNumber string    `json:"giverPhoneNumber"`
 	Weight           float64   `json:"weight"`
 	Price            float64   `json:"price"`
-	PaymentStatus    string       `json:"paymentStatus"`
-	OrderStatus      string       `json:"orderStatus"`
+	PaymentStatus    string    `json:"paymentStatus"`
+	OrderStatus      string    `json:"orderStatus"`
 	PackageLocation  string    `json:"packageLocation"`
 	Notes            string    `json:"notes"`
 	CreatedAt        time.Time `json:"createdAt"`
