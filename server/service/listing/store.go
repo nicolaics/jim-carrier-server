@@ -46,13 +46,17 @@ func (s *Store) GetAllListings() ([]types.ListingReturnPayload, error) {
 
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, 
 					l.weight_available, l.price_per_kg, 
-					l.departure_date, l.description, l.last_modified_at  
+					l.departure_date, l.description, 
+					AVG(r.rating), 
+					l.last_modified_at  
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
+				JOIN review AS r ON r.reviewee_id = user.id 
 				WHERE l.exp_status = ? 
 				AND l.deleted_at IS NULL 
+				AND r.review_type = ? 
 				ORDER BY l.departure_date DESC`
-	rows, err := s.db.Query(query, constants.EXP_STATUS_AVAILABLE)
+	rows, err := s.db.Query(query, constants.EXP_STATUS_AVAILABLE, constants.REVIEW_GIVER_TO_CARRIER)
 	if err != nil {
 		return nil, err
 	}
@@ -106,15 +110,19 @@ func (s *Store) IsListingDuplicate(carrierId int, destination string, weightAvai
 
 func (s *Store) GetListingByPayload(carrierName string, destination string, weightAvailable float64, pricePerKg float64, departureDate time.Time) (*types.ListingReturnPayload, error) {
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
-					l.price_per_kg, l.departure_date, l.description, l.last_modified_at 
+					l.price_per_kg, l.departure_date, l.description, 
+					AVG(r.rating), 
+					l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
+				JOIN review AS r ON r.reviewee_id = user.id 
 				WHERE user.name = ? AND l.destination = ? 
 				AND l.weight_available = ? AND l.price_per_kg = ? 
 				AND l.departure_date = ? AND l.exp_stauts = ? 
-				AND l.deleted_at IS NULL`
+				AND l.deleted_at IS NULL 
+				AND r.review_type = ?`
 	rows, err := s.db.Query(query, carrierName, destination, weightAvailable,
-		pricePerKg, departureDate, constants.EXP_STATUS_AVAILABLE)
+		pricePerKg, departureDate, constants.EXP_STATUS_AVAILABLE, constants.REVIEW_GIVER_TO_CARRIER)
 	if err != nil {
 		return nil, err
 	}
@@ -137,12 +145,16 @@ func (s *Store) GetListingByPayload(carrierName string, destination string, weig
 
 func (s *Store) GetListingByID(id int) (*types.ListingReturnPayload, error) {
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
-					l.price_per_kg, l.departure_date, l.description, l.last_modified_at 
+					l.price_per_kg, l.departure_date, l.description, 
+					AVG(r.rating), 
+					l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
+				JOIN review AS r ON r.reviewee_id = user.id 
 				WHERE id = ? AND exp_stauts = ? 
-				AND deleted_at IS NULL`
-	rows, err := s.db.Query(query, id, constants.EXP_STATUS_AVAILABLE)
+				AND deleted_at IS NULL 
+				AND r.review_type = ?`
+	rows, err := s.db.Query(query, id, constants.EXP_STATUS_AVAILABLE, constants.REVIEW_GIVER_TO_CARRIER)
 	if err != nil {
 		return nil, err
 	}
@@ -279,6 +291,7 @@ func scanRowIntoListingReturn(rows *sql.Rows) (*types.ListingReturnPayload, erro
 		&listing.PricePerKg,
 		&listing.DepartureDate,
 		&listing.Description,
+		&listing.CarrierRating,
 		&listing.LastModifiedAt,
 	)
 
