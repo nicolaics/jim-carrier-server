@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
 )
@@ -84,32 +83,14 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var paymentStatus int
-	switch payload.PaymentStatus {
-	case constants.PENDING_STATUS_STR:
-		paymentStatus = constants.PAYMENT_STATUS_PENDING
-	case constants.COMPLETED_STATUS_STR:
-		paymentStatus = constants.PAYMENT_STATUS_COMPLETED
-	case constants.CANCELLED_STATUS_STR:
-		paymentStatus = constants.PAYMENT_STATUS_CANCELLED
-	default:
+	paymentStatus := utils.SetPaymentStatusType(payload.PaymentStatus)
+	if paymentStatus == -1 {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 		return
 	}
 
-	var orderStatus int
-	switch payload.OrderStatus {
-	case constants.WAITING_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_WAITING
-	case constants.COMPLETED_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_COMPLETED
-	case constants.CANCELLED_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_CANCELLED
-	case constants.VERIFYING_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_VERIFYING
-	case constants.EN_ROUTE_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_EN_ROUTE
-	default:
+	orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
+	if orderStatus == -1 {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 		return
 	}
@@ -169,29 +150,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 		ordersReturnTemp := make([]types.OrderCarrierReturnPayload, 0)
 		for _, order := range orders {
-			var paymentStatus string
-			switch order.PaymentStatus {
-			case constants.PAYMENT_STATUS_CANCELLED:
-				paymentStatus = constants.CANCELLED_STATUS_STR
-			case constants.PAYMENT_STATUS_PENDING:
-				paymentStatus = constants.PENDING_STATUS_STR
-			case constants.PAYMENT_STATUS_COMPLETED:
-				paymentStatus = constants.COMPLETED_STATUS_STR
-			}
-
-			var orderStatus string
-			switch order.OrderStatus {
-			case constants.ORDER_STATUS_CANCELLED:
-				orderStatus = constants.CANCELLED_STATUS_STR
-			case constants.ORDER_STATUS_WAITING:
-				orderStatus = constants.WAITING_STATUS_STR
-			case constants.ORDER_STATUS_COMPLETED:
-				orderStatus = constants.COMPLETED_STATUS_STR
-			case constants.ORDER_STATUS_EN_ROUTE:
-				orderStatus = constants.EN_ROUTE_STATUS_STR
-			case constants.ORDER_STATUS_VERIFYING:
-				orderStatus = constants.VERIFYING_STATUS_STR
-			}
+			paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
+			
+			orderStatus := utils.GetOrderStatusType(order.OrderStatus)
 
 			temp := types.OrderCarrierReturnPayload{
 				Listing:          order.Listing,
@@ -220,29 +181,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 		ordersReturnTemp := make([]types.OrderGiverReturnPayload, 0)
 		for _, order := range orders {
-			var paymentStatus string
-			switch order.PaymentStatus {
-			case constants.PAYMENT_STATUS_CANCELLED:
-				paymentStatus = constants.CANCELLED_STATUS_STR
-			case constants.PAYMENT_STATUS_PENDING:
-				paymentStatus = constants.PENDING_STATUS_STR
-			case constants.PAYMENT_STATUS_COMPLETED:
-				paymentStatus = constants.COMPLETED_STATUS_STR
-			}
+			paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
 
-			var orderStatus string
-			switch order.OrderStatus {
-			case constants.ORDER_STATUS_CANCELLED:
-				orderStatus = constants.CANCELLED_STATUS_STR
-			case constants.ORDER_STATUS_WAITING:
-				orderStatus = constants.WAITING_STATUS_STR
-			case constants.ORDER_STATUS_COMPLETED:
-				orderStatus = constants.COMPLETED_STATUS_STR
-			case constants.ORDER_STATUS_EN_ROUTE:
-				orderStatus = constants.EN_ROUTE_STATUS_STR
-			case constants.ORDER_STATUS_VERIFYING:
-				orderStatus = constants.VERIFYING_STATUS_STR
-			}
+			orderStatus := utils.GetOrderStatusType(order.OrderStatus)
 
 			temp := types.OrderGiverReturnPayload{
 				Listing:         order.Listing,
@@ -313,29 +254,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var paymentStatus string
-		switch order.PaymentStatus {
-		case constants.PAYMENT_STATUS_CANCELLED:
-			paymentStatus = constants.CANCELLED_STATUS_STR
-		case constants.PAYMENT_STATUS_PENDING:
-			paymentStatus = constants.PENDING_STATUS_STR
-		case constants.PAYMENT_STATUS_COMPLETED:
-			paymentStatus = constants.COMPLETED_STATUS_STR
-		}
+		paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
 
-		var orderStatus string
-		switch order.OrderStatus {
-		case constants.ORDER_STATUS_CANCELLED:
-			orderStatus = constants.CANCELLED_STATUS_STR
-		case constants.ORDER_STATUS_WAITING:
-			orderStatus = constants.WAITING_STATUS_STR
-		case constants.ORDER_STATUS_COMPLETED:
-			orderStatus = constants.COMPLETED_STATUS_STR
-		case constants.ORDER_STATUS_EN_ROUTE:
-			orderStatus = constants.EN_ROUTE_STATUS_STR
-		case constants.ORDER_STATUS_VERIFYING:
-			orderStatus = constants.VERIFYING_STATUS_STR
-		}
+		orderStatus := utils.GetOrderStatusType(order.OrderStatus)
 
 		returnOrder = types.OrderCarrierReturnPayload{
 			Listing:          order.Listing,
@@ -358,29 +279,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var paymentStatus string
-		switch order.PaymentStatus {
-		case constants.PAYMENT_STATUS_CANCELLED:
-			paymentStatus = constants.CANCELLED_STATUS_STR
-		case constants.PAYMENT_STATUS_PENDING:
-			paymentStatus = constants.PENDING_STATUS_STR
-		case constants.PAYMENT_STATUS_COMPLETED:
-			paymentStatus = constants.COMPLETED_STATUS_STR
-		}
+		paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
 
-		var orderStatus string
-		switch order.OrderStatus {
-		case constants.ORDER_STATUS_CANCELLED:
-			orderStatus = constants.CANCELLED_STATUS_STR
-		case constants.ORDER_STATUS_WAITING:
-			orderStatus = constants.WAITING_STATUS_STR
-		case constants.ORDER_STATUS_COMPLETED:
-			orderStatus = constants.COMPLETED_STATUS_STR
-		case constants.ORDER_STATUS_EN_ROUTE:
-			orderStatus = constants.EN_ROUTE_STATUS_STR
-		case constants.ORDER_STATUS_VERIFYING:
-			orderStatus = constants.VERIFYING_STATUS_STR
-		}
+		orderStatus := utils.GetOrderStatusType(order.OrderStatus)
 
 		returnOrder = types.OrderGiverReturnPayload{
 			Listing:         order.Listing,
@@ -493,32 +394,14 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var paymentStatus int
-		switch payload.NewData.PaymentStatus {
-		case constants.PENDING_STATUS_STR:
-			paymentStatus = constants.PAYMENT_STATUS_PENDING
-		case constants.COMPLETED_STATUS_STR:
-			paymentStatus = constants.PAYMENT_STATUS_COMPLETED
-		case constants.CANCELLED_STATUS_STR:
-			paymentStatus = constants.PAYMENT_STATUS_CANCELLED
-		default:
+		paymentStatus := utils.SetPaymentStatusType(payload.NewData.PaymentStatus)
+		if paymentStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 			return
 		}
 
-		var orderStatus int
-		switch payload.NewData.OrderStatus {
-		case constants.WAITING_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_WAITING
-		case constants.COMPLETED_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_COMPLETED
-		case constants.CANCELLED_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_CANCELLED
-		case constants.VERIFYING_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_VERIFYING
-		case constants.EN_ROUTE_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_EN_ROUTE
-		default:
+		orderStatus := utils.SetOrderStatusType(payload.NewData.OrderStatus)
+		if orderStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 			return
 		}
@@ -570,21 +453,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var orderStatus int
-		switch payload.OrderStatus {
-		case constants.WAITING_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_WAITING
-		case constants.COMPLETED_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_COMPLETED
-		case constants.CANCELLED_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_CANCELLED
-		case constants.VERIFYING_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_VERIFYING
-		case constants.EN_ROUTE_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_EN_ROUTE
-		default:
-			orderStatus = -1
-		}
+		orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
 
 		err = h.orderStore.UpdatePackageLocation(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
@@ -614,15 +483,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var paymentStatus int
-		switch payload.PaymentStatus {
-		case constants.PENDING_STATUS_STR:
-			paymentStatus = constants.PAYMENT_STATUS_PENDING
-		case constants.COMPLETED_STATUS_STR:
-			paymentStatus = constants.PAYMENT_STATUS_COMPLETED
-		case constants.CANCELLED_STATUS_STR:
-			paymentStatus = constants.PAYMENT_STATUS_CANCELLED
-		default:
+		paymentStatus := utils.SetPaymentStatusType(payload.PaymentStatus)
+		if paymentStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 			return
 		}
@@ -655,19 +517,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var orderStatus int
-		switch payload.OrderStatus {
-		case constants.WAITING_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_WAITING
-		case constants.COMPLETED_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_COMPLETED
-		case constants.CANCELLED_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_CANCELLED
-		case constants.VERIFYING_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_VERIFYING
-		case constants.EN_ROUTE_STATUS_STR:
-			orderStatus = constants.ORDER_STATUS_EN_ROUTE
-		default:
+		orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
+		if orderStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 			return
 		}
