@@ -51,6 +51,7 @@ type ListingReturnPayload struct {
 	PricePerKg      float64   `json:"pricePerKg"`
 	DepartureDate   time.Time `json:"departureDate"`
 	Description     string    `json:"description"`
+	LastModifiedAt  time.Time `json:"lastModifiedAt"`
 }
 
 type Listing struct {
@@ -63,5 +64,6 @@ type Listing struct {
 	ExpStatus       int          `json:"expStatus"`
 	Description     string       `json:"description"`
 	CreatedAt       time.Time    `json:"createdAt"`
+	LastModifiedAt  time.Time    `json:"lastModifiedAt"`
 	DeletedAt       sql.NullTime `json:"deletedAt"`
 }

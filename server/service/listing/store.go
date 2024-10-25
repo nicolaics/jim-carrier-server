@@ -46,7 +46,7 @@ func (s *Store) GetAllListings() ([]types.ListingReturnPayload, error) {
 
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, 
 					l.weight_available, l.price_per_kg, 
-					l.departure_date, l.description 
+					l.departure_date, l.description, l.last_modified_at  
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
 				WHERE l.exp_status = ? 
@@ -106,7 +106,7 @@ func (s *Store) IsListingDuplicate(carrierId int, destination string, weightAvai
 
 func (s *Store) GetListingByPayload(carrierName string, destination string, weightAvailable float64, pricePerKg float64, departureDate time.Time) (*types.ListingReturnPayload, error) {
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
-					l.price_per_kg, l.departure_date, l.description 
+					l.price_per_kg, l.departure_date, l.description, l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
 				WHERE user.name = ? AND l.destination = ? 
@@ -137,7 +137,7 @@ func (s *Store) GetListingByPayload(carrierName string, destination string, weig
 
 func (s *Store) GetListingByID(id int) (*types.ListingReturnPayload, error) {
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
-					l.price_per_kg, l.departure_date, l.description 
+					l.price_per_kg, l.departure_date, l.description, l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
 				WHERE id = ? AND exp_stauts = ? 
@@ -178,12 +178,12 @@ func (s *Store) ModifyListing(id int, listing types.Listing) error {
 	query := `UPDATE listing 
 				SET destination = ?, weight_available = ?, 
 					price_per_kg = ?, departure_date = ?, exp_status = ?, 
-					description = ? 
+					description = ?, last_modified_at = ? 
 				WHERE id = ? AND delete_at IS NULL`
 
 	_, err := s.db.Exec(query, listing.Destination, listing.WeightAvailable,
 		listing.PricePerKg, listing.DepartureDate, listing.ExpStatus,
-		listing.Description, id)
+		listing.Description, time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -208,9 +208,9 @@ func (s *Store) SubtractWeightAvailable(listingId int, minusValue float64) error
 		return fmt.Errorf("weight available is not enough")
 	}
 
-	query = `UPDATE listing SET weight_available = ? 
+	query = `UPDATE listing SET weight_available = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
-	_, err = s.db.Exec(query, (oldWeightAvail - minusValue), listingId)
+	_, err = s.db.Exec(query, (oldWeightAvail - minusValue), time.Now(), listingId)
 	if err != nil {
 		return err
 	}
@@ -231,9 +231,9 @@ func (s *Store) AddWeightAvailable(listingId int, addValue float64) error {
 		return err
 	}
 
-	query = `UPDATE listing SET weight_available = ? 
+	query = `UPDATE listing SET weight_available = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
-	_, err = s.db.Exec(query, (oldWeightAvail + addValue), listingId)
+	_, err = s.db.Exec(query, (oldWeightAvail + addValue), time.Now(), listingId)
 	if err != nil {
 		return err
 	}
@@ -279,11 +279,14 @@ func scanRowIntoListingReturn(rows *sql.Rows) (*types.ListingReturnPayload, erro
 		&listing.PricePerKg,
 		&listing.DepartureDate,
 		&listing.Description,
+		&listing.LastModifiedAt,
 	)
 
 	if err != nil {
 		return nil, err
 	}
+
+	listing.LastModifiedAt = listing.LastModifiedAt.Local()
 
 	return listing, nil
 }
