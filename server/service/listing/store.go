@@ -90,7 +90,7 @@ func (s *Store) IsListingDuplicate(carrierId int, destination string, weightAvai
 	query := `SELECT COUNT(*) FROM listing 
 				WHERE carrier_id = ? AND destination = ? 
 				AND weight_available = ?  
-				AND departure_date = ? AND exp_stauts = ? 
+				AND departure_date = ? AND exp_status = ? 
 				AND deleted_at IS NULL`
 	row := s.db.QueryRow(query, carrierId, destination, weightAvailable,
 		departureDate, constants.EXP_STATUS_AVAILABLE)
