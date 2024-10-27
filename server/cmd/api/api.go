@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier/logger"
 	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/service/currency"
 	"github.com/nicolaics/jim-carrier/service/listing"
 	"github.com/nicolaics/jim-carrier/service/order"
 	"github.com/nicolaics/jim-carrier/service/review"
@@ -38,15 +39,16 @@ func (s *APIServer) Run() error {
 	listingStore := listing.NewStore(s.db)
 	orderStore := order.NewStore(s.db)
 	reviewStore := review.NewStore(s.db)
+	currencyStore := currency.NewStore(s.db)
 
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(subrouter)
 	userHandler.RegisterUnprotectedRoutes(subrouterUnprotected)
 
-	listingHandler := listing.NewHandler(listingStore, userStore)
+	listingHandler := listing.NewHandler(listingStore, userStore, currencyStore)
 	listingHandler.RegisterRoutes(subrouter)
 
-	orderHandler := order.NewHandler(orderStore, userStore, listingStore)
+	orderHandler := order.NewHandler(orderStore, userStore, listingStore, currencyStore)
 	orderHandler.RegisterRoutes(subrouter)
 
 	reviewHandler := review.NewHandler(reviewStore, orderStore, listingStore, userStore)
