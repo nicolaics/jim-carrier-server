@@ -20,7 +20,7 @@ migrate-force:
 	@migrate -path PATH_TO_YOUR_MIGRATIONS -database YOUR_DATABASE_URL force VERSION
 
 migrate-cmd:
-	@cmd.exe /c '..\BACKEND\cmd\migrate\db_migrate.bat'
+	@cmd.exe /c '..\server\cmd\migrate\db_migrate.bat'
 
 migrate-rm:
 	del .\cmd\migrate\migrations\*.sql
@@ -33,3 +33,4 @@ dummy-data:
 
 get-dummy-data:
 	@python -u cmd/init/get_dummy_data.py
+
