@@ -29,6 +29,7 @@ type RegisterOrderPayload struct {
 	ListingID       int     `json:"listingId" validate:"required"`
 	Weight          float64 `json:"weight" validate:"required"`
 	Price           float64 `json:"price" validate:"required"`
+	Currency        string  `json:"currency" validate:"required"`
 	PaymentStatus   string  `json:"paymentStatus" validate:"required"`
 	OrderStatus     string  `json:"orderStatus"`
 	PackageLocation string  `json:"packageLocation"`
@@ -67,6 +68,7 @@ type OrderGiverReturnFromDB struct {
 	ID              int       `json:"id"`
 	Weight          float64   `json:"weight"`
 	Price           float64   `json:"price"`
+	Currency        string    `json:"currency"`
 	PaymentStatus   int       `json:"paymentStatus"`
 	OrderStatus     int       `json:"orderStatus"`
 	PackageLocation string    `json:"packageLocation"`
@@ -86,6 +88,7 @@ type OrderGiverReturnPayload struct {
 	ID              int       `json:"id"`
 	Weight          float64   `json:"weight"`
 	Price           float64   `json:"price"`
+	Currency        string    `json:"currency"`
 	PaymentStatus   string    `json:"paymentStatus"`
 	OrderStatus     string    `json:"orderStatus"`
 	PackageLocation string    `json:"packageLocation"`
@@ -113,6 +116,7 @@ type OrderCarrierReturnFromDB struct {
 	GiverPhoneNumber string    `json:"giverPhoneNumber"`
 	Weight           float64   `json:"weight"`
 	Price            float64   `json:"price"`
+	Currency         string    `json:"currency"`
 	PaymentStatus    int       `json:"paymentStatus"`
 	OrderStatus      int       `json:"orderStatus"`
 	PackageLocation  string    `json:"packageLocation"`
@@ -133,6 +137,7 @@ type OrderCarrierReturnPayload struct {
 	GiverPhoneNumber string    `json:"giverPhoneNumber"`
 	Weight           float64   `json:"weight"`
 	Price            float64   `json:"price"`
+	Currency         string    `json:"currency"`
 	PaymentStatus    string    `json:"paymentStatus"`
 	OrderStatus      string    `json:"orderStatus"`
 	PackageLocation  string    `json:"packageLocation"`
@@ -147,6 +152,7 @@ type Order struct {
 	GiverID         int          `json:"giverId"`
 	Weight          float64      `json:"weight"`
 	Price           float64      `json:"price"`
+	CurrencyID      int          `json:"currencyId"`
 	PaymentStatus   int          `json:"paymentStatus"`
 	OrderStatus     int          `json:"orderStatus"`
 	PackageLocation string       `json:"packageLocation"`

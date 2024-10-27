@@ -18,18 +18,18 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) CreateOrder(order types.Order) error {
 	values := "?"
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 8; i++ {
 		values += ", ?"
 	}
 
 	query := `INSERT INTO order (
 					listing_id, giver_id, weight, price,
-					payment_status, order_status, 
+					currency_id, payment_status, order_status, 
 					package_location, notes) 
 					VALUES (` + values + `)`
 
 	_, err := s.db.Exec(query, order.ListingID, order.GiverID, order.Weight,
-		order.Price, order.PaymentStatus,
+		order.Price, order.CurrencyID, order.PaymentStatus,
 		order.OrderStatus, order.PackageLocation, order.Notes)
 	if err != nil {
 		return err
@@ -66,12 +66,15 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 	query := `SELECT l.id, l.destination, l.departure_date, 
 					 o.id, 
 					 user.name, user.phone_number, 
-					 o.weight, o.price, o.payment_status, 
+					 o.weight, o.price, 
+					 c.name, 
+					 o.payment_status, 
 					 o.order_status, o.package_location, 
 					 o.notes, o.created_at, o.last_modified_at  
 					FROM order AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = o.giver_id 
+					JOIN currency AS c ON c.id = o.currency_id 
 					WHERE l.carrier_id = ? 
 					AND o.deleted_at IS NULL 
 					AND l.deleted_at IS NULL 
@@ -97,7 +100,9 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 }
 
 func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error) {
-	query := `SELECT o.id, o.weight, o.price, o.payment_status, 
+	query := `SELECT o.id, o.weight, o.price, 
+						c.name, 
+						o.payment_status, 
 						o.order_status, o.package_location, 
 						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
@@ -106,6 +111,7 @@ func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error
 					FROM order AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = l.carrier_id  
+					JOIN currency AS c ON c.id = o.currency_id 
 					WHERE o.giver_id = ? 
 					AND o.deleted_at IS NULL 
 					AND l.deleted_at IS NULL 
@@ -134,12 +140,15 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 	query := `SELECT l.id, l.destination, l.departure_date, 
 					 o.id, 
 					 user.name, user.phone_number, 
-					 o.weight, o.price, o.payment_status, 
+					 o.weight, o.price, 
+					 c.name, 
+					 o.payment_status, 
 					 o.order_status, o.package_location, 
 					 o.notes, o.created_at, o.last_modified_at 
 					FROM order AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = o.giver_id 
+					JOIN currency AS c ON c.id = o.currency_id 
 					WHERE o.id = ? 
 					AND l.carried_id = ? 
 					AND o.deleted_at IS NULL 
@@ -168,7 +177,9 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 }
 
 func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverReturnFromDB, error) {
-	query := `SELECT o.id, o.weight, o.price, o.payment_status, 
+	query := `SELECT o.id, o.weight, o.price, 
+						c.name, 
+						o.payment_status, 
 						o.order_status, o.package_location, 
 						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
@@ -177,6 +188,7 @@ func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverRet
 					FROM order AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = l.carrier_id  
+					JOIN currency AS c ON c.id = o.currency_id 
 					WHERE o.id = ? 
 					AND o.giver_id = ? 
 					AND o.deleted_at IS NULL 
@@ -215,12 +227,13 @@ func (s *Store) DeleteOrder(orderId int, userId int) error {
 }
 
 func (s *Store) ModifyOrder(id int, order types.Order) error {
-	query := `UPDATE order SET weight = ?, price = ?,
+	query := `UPDATE order SET weight = ?, price = ?, 
+					currency_id = ?, 
 					payment_status = ?, package_location = ?, 
 					order_status = ?, notes = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
-	_, err := s.db.Exec(query, order.Weight, order.Price, order.PaymentStatus,
+	_, err := s.db.Exec(query, order.Weight, order.Price, order.CurrencyID, order.PaymentStatus,
 		order.PackageLocation, order.OrderStatus, order.Notes,
 		time.Now(), id)
 	if err != nil {
@@ -314,6 +327,7 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 		&order.GiverID,
 		&order.Weight,
 		&order.Price,
+		&order.CurrencyID,
 		&order.PaymentStatus,
 		&order.OrderStatus,
 		&order.PackageLocation,
@@ -345,6 +359,7 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB
 		&order.GiverPhoneNumber,
 		&order.Weight,
 		&order.Price,
+		&order.Currency,
 		&order.PaymentStatus,
 		&order.OrderStatus,
 		&order.PackageLocation,
@@ -370,6 +385,7 @@ func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, er
 		&order.ID,
 		&order.Weight,
 		&order.Price,
+		&order.Currency,
 		&order.PaymentStatus,
 		&order.OrderStatus,
 		&order.PackageLocation,

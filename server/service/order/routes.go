@@ -11,16 +11,19 @@ import (
 )
 
 type Handler struct {
-	orderStore   types.OrderStore
-	userStore    types.UserStore
-	listingStore types.ListingStore
+	orderStore    types.OrderStore
+	userStore     types.UserStore
+	listingStore  types.ListingStore
+	currencyStore types.CurrencyStore
 }
 
-func NewHandler(orderStore types.OrderStore, userStore types.UserStore, listingStore types.ListingStore) *Handler {
+func NewHandler(orderStore types.OrderStore, userStore types.UserStore,
+	listingStore types.ListingStore, currencyStore types.CurrencyStore) *Handler {
 	return &Handler{
-		orderStore:   orderStore,
-		userStore:    userStore,
-		listingStore: listingStore,
+		orderStore:    orderStore,
+		userStore:     userStore,
+		listingStore:  listingStore,
+		currencyStore: currencyStore,
 	}
 }
 
@@ -95,11 +98,32 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if currency == nil {
+		err = h.currencyStore.CreateCurrency(payload.Currency)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
+			return
+		}
+
+		currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
 	err = h.orderStore.CreateOrder(types.Order{
 		ListingID:       listing.ID,
 		GiverID:         user.ID,
 		Weight:          payload.Weight,
 		Price:           payload.Price,
+		CurrencyID:      currency.ID,
 		PaymentStatus:   paymentStatus,
 		OrderStatus:     orderStatus,
 		PackageLocation: payload.PackageLocation,
@@ -151,7 +175,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		ordersReturnTemp := make([]types.OrderCarrierReturnPayload, 0)
 		for _, order := range orders {
 			paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
-			
+
 			orderStatus := utils.GetOrderStatusType(order.OrderStatus)
 
 			temp := types.OrderCarrierReturnPayload{
@@ -161,6 +185,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				GiverPhoneNumber: order.GiverPhoneNumber,
 				Weight:           order.Weight,
 				Price:            order.Price,
+				Currency:         order.Currency,
 				PaymentStatus:    paymentStatus,
 				OrderStatus:      orderStatus,
 				PackageLocation:  order.PackageLocation,
@@ -190,6 +215,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				ID:              order.ID,
 				Weight:          order.Weight,
 				Price:           order.Price,
+				Currency:        order.Currency,
 				PaymentStatus:   paymentStatus,
 				OrderStatus:     orderStatus,
 				PackageLocation: order.PackageLocation,
@@ -265,6 +291,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			GiverPhoneNumber: order.GiverPhoneNumber,
 			Weight:           order.Weight,
 			Price:            order.Price,
+			Currency:         order.Currency,
 			PaymentStatus:    paymentStatus,
 			OrderStatus:      orderStatus,
 			PackageLocation:  order.PackageLocation,
@@ -288,6 +315,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			ID:              order.ID,
 			Weight:          order.Weight,
 			Price:           order.Price,
+			Currency:        order.Currency,
 			PaymentStatus:   paymentStatus,
 			OrderStatus:     orderStatus,
 			PackageLocation: order.PackageLocation,
@@ -406,9 +434,30 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		currency, err := h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if currency == nil {
+			err = h.currencyStore.CreateCurrency(payload.NewData.Currency)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
+				return
+			}
+
+			currency, err = h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
 		err = h.orderStore.ModifyOrder(order.ID, types.Order{
 			Weight:          payload.NewData.Weight,
 			Price:           payload.NewData.Price,
+			CurrencyID:      currency.ID,
 			PaymentStatus:   paymentStatus,
 			OrderStatus:     orderStatus,
 			PackageLocation: payload.NewData.PackageLocation,
