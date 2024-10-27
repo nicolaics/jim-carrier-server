@@ -12,14 +12,16 @@ import (
 )
 
 type Handler struct {
-	listingStore types.ListingStore
-	userStore    types.UserStore
+	listingStore  types.ListingStore
+	userStore     types.UserStore
+	currencyStore types.CurrencyStore
 }
 
-func NewHandler(listingStore types.ListingStore, userStore types.UserStore) *Handler {
+func NewHandler(listingStore types.ListingStore, userStore types.UserStore, currencyStore types.CurrencyStore) *Handler {
 	return &Handler{
-		listingStore: listingStore,
-		userStore:    userStore,
+		listingStore:  listingStore,
+		userStore:     userStore,
+		currencyStore: currencyStore,
 	}
 }
 
@@ -75,20 +77,48 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isDuplicate, err := h.listingStore.IsListingDuplicate(carrier.ID, payload.Destination, payload.WeightAvailable, *departureDate)
-	if err != nil || isDuplicate {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("duplicate listing"))
+	lastReceivedDate, err := utils.ParseDate(payload.LastReceivedDate)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error parsing date"))
 		return
 	}
 
+	isDuplicate, err := h.listingStore.IsListingDuplicate(carrier.ID, payload.Destination, payload.WeightAvailable, *departureDate)
+	if err != nil || isDuplicate {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("duplicate listing: %v", err))
+		return
+	}
+
+	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if currency == nil {
+		err = h.currencyStore.CreateCurrency(payload.Currency)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
+			return
+		}
+
+		currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
 	err = h.listingStore.CreateListing(types.Listing{
-		CarrierID:       carrier.ID,
-		Destination:     payload.Destination,
-		WeightAvailable: payload.WeightAvailable,
-		PricePerKg:      payload.PricePerKg,
-		DepartureDate:   *departureDate,
-		ExpStatus:       constants.EXP_STATUS_AVAILABLE,
-		Description:     payload.Description,
+		CarrierID:        carrier.ID,
+		Destination:      payload.Destination,
+		WeightAvailable:  payload.WeightAvailable,
+		PricePerKg:       payload.PricePerKg,
+		CurrencyID:       currency.ID,
+		DepartureDate:    *departureDate,
+		LastReceivedDate: *lastReceivedDate,
+		ExpStatus:        constants.EXP_STATUS_AVAILABLE,
+		Description:      payload.Description,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create listing: %v", err))
@@ -239,13 +269,41 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	newLastReceivedDate, err := utils.ParseDate(payload.NewData.LastReceivedDate)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error parsing date"))
+		return
+	}
+
+	currency, err := h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if currency == nil {
+		err = h.currencyStore.CreateCurrency(payload.NewData.Currency)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
+			return
+		}
+
+		currency, err = h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
 	err = h.listingStore.ModifyListing(listing.ID, types.Listing{
-		Destination:     payload.NewData.Destination,
-		WeightAvailable: payload.NewData.WeightAvailable,
-		PricePerKg:      payload.NewData.PricePerKg,
-		DepartureDate:   *newDepartureDate,
-		ExpStatus:       constants.EXP_STATUS_AVAILABLE,
-		Description:     payload.NewData.Description,
+		Destination:      payload.NewData.Destination,
+		WeightAvailable:  payload.NewData.WeightAvailable,
+		PricePerKg:       payload.NewData.PricePerKg,
+		CurrencyID:       currency.ID,
+		DepartureDate:    *newDepartureDate,
+		LastReceivedDate: *newLastReceivedDate,
+		ExpStatus:        constants.EXP_STATUS_AVAILABLE,
+		Description:      payload.NewData.Description,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify listing: %v", err))

@@ -24,11 +24,13 @@ type ListingStore interface {
 }
 
 type PostListingPayload struct {
-	Destination     string  `json:"destination" validate:"required"`
-	WeightAvailable float64 `json:"weightAvailable" validate:"required"`
-	PricePerKg      float64 `json:"pricePerKg" validate:"required"`
-	DepartureDate   string  `json:"departureDate" validate:"required"`
-	Description     string  `json:"description"`
+	Destination      string  `json:"destination" validate:"required"`
+	WeightAvailable  float64 `json:"weightAvailable" validate:"required"`
+	PricePerKg       float64 `json:"pricePerKg" validate:"required"`
+	Currency         string  `json:"currency" validate:"required"`
+	DepartureDate    string  `json:"departureDate" validate:"required"`
+	LastReceivedDate string  `json:"lastReceivedDate" validate:"required"`
+	Description      string  `json:"description"`
 }
 
 type GetListingDetailPayload struct {
@@ -43,28 +45,32 @@ type ModifyListingPayload struct {
 }
 
 type ListingReturnPayload struct {
-	ID              int       `json:"id"`
-	CarrierID       int       `json:"carrierId"`
-	CarrierName     string    `json:"carrierName"`
-	Destination     string    `json:"destination"`
-	WeightAvailable float64   `json:"weightAvailable"`
-	PricePerKg      float64   `json:"pricePerKg"`
-	DepartureDate   time.Time `json:"departureDate"`
-	Description     string    `json:"description"`
-	CarrierRating   int       `json:"carrierRating"`
-	LastModifiedAt  time.Time `json:"lastModifiedAt"`
+	ID               int       `json:"id"`
+	CarrierID        int       `json:"carrierId"`
+	CarrierName      string    `json:"carrierName"`
+	Destination      string    `json:"destination"`
+	WeightAvailable  float64   `json:"weightAvailable"`
+	PricePerKg       float64   `json:"pricePerKg"`
+	Currency         string    `json:"currency"`
+	DepartureDate    time.Time `json:"departureDate"`
+	LastReceivedDate time.Time `json:"lastReceivedDate"`
+	Description      string    `json:"description"`
+	CarrierRating    int       `json:"carrierRating"`
+	LastModifiedAt   time.Time `json:"lastModifiedAt"`
 }
 
 type Listing struct {
-	ID              int          `json:"id"`
-	CarrierID       int          `json:"carrierId"`
-	Destination     string       `json:"destination"`
-	WeightAvailable float64      `json:"weightAvailable"`
-	PricePerKg      float64      `json:"pricePerKg"`
-	DepartureDate   time.Time    `json:"departureDate"`
-	ExpStatus       int          `json:"expStatus"`
-	Description     string       `json:"description"`
-	CreatedAt       time.Time    `json:"createdAt"`
-	LastModifiedAt  time.Time    `json:"lastModifiedAt"`
-	DeletedAt       sql.NullTime `json:"deletedAt"`
+	ID               int          `json:"id"`
+	CarrierID        int          `json:"carrierId"`
+	Destination      string       `json:"destination"`
+	WeightAvailable  float64      `json:"weightAvailable"`
+	PricePerKg       float64      `json:"pricePerKg"`
+	CurrencyID       int          `json:"currencyId"`
+	DepartureDate    time.Time    `json:"departureDate"`
+	LastReceivedDate time.Time    `json:"lastReceivedDate"`
+	ExpStatus        int          `json:"expStatus"`
+	Description      string       `json:"description"`
+	CreatedAt        time.Time    `json:"createdAt"`
+	LastModifiedAt   time.Time    `json:"lastModifiedAt"`
+	DeletedAt        sql.NullTime `json:"deletedAt"`
 }
