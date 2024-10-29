@@ -1,6 +1,6 @@
 # Jim Carrier
 
-### Directory Structure
+## Directory Structure
 ```
 .
 ├── .gitignore
@@ -39,3 +39,9 @@
     └── Makefile
 ```
 
+## Server
+
+To run the server, make sure you have go and makefile installed
+
+1. Run `go mod install`
+2. Run `make run` - to start running the server
