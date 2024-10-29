@@ -22,7 +22,7 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-					last_logged_in, created_at 
+					profile_picture_url, last_logged_in, created_at 
 				FROM user WHERE email = ?`
 	rows, err := s.db.Query(query, email)
 	if err != nil {
@@ -49,7 +49,7 @@ func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 
 func (s *Store) GetUserByName(name string) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-					last_logged_in, created_at 
+					profile_picture_url, last_logged_in, created_at 
 				FROM user WHERE name = ?`
 	rows, err := s.db.Query(query, name)
 	if err != nil {
@@ -108,7 +108,7 @@ func (s *Store) GetUserBySearchName(name string) ([]types.User, error) {
 
 	if count == 0 {
 		query = `SELECT id, name, email, phone_number, provider, 
-						last_logged_in, created_at 
+						profile_picture_url, last_logged_in, created_at 
 					FROM user WHERE name LIKE ?`
 		searchVal := "%"
 
@@ -139,7 +139,7 @@ func (s *Store) GetUserBySearchName(name string) ([]types.User, error) {
 		return users, nil
 	}
 	query = `SELECT id, name, email, phone_number, provider, 
-						last_logged_in, created_at 
+						profile_picture_url, last_logged_in, created_at 
 					FROM user WHERE name = ?`
 	rows, err := s.db.Query(query, name)
 	if err != nil {
@@ -178,7 +178,7 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 
 	if count == 0 {
 		query = `SELECT id, name, email, phone_number, provider, 
-						last_logged_in, created_at 
+						profile_picture_url, last_logged_in, created_at 
 					FROM user WHERE phone_number LIKE ?`
 		searchVal := "%"
 
@@ -210,7 +210,7 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 	}
 
 	query = `SELECT id, name, email, phone_number, provider, 
-						last_logged_in, created_at 
+						profile_picture_url, last_logged_in, created_at 
 					FROM user WHERE phone_number = ?`
 	rows, err := s.db.Query(query, phoneNumber)
 	if err != nil {
@@ -233,7 +233,7 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 
 func (s *Store) GetUserByID(id int) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-					last_logged_in, created_at 
+					profile_picture_url, last_logged_in, created_at 
 				FROM user WHERE id = ?`
 	rows, err := s.db.Query(query, id)
 	if err != nil {
@@ -259,8 +259,11 @@ func (s *Store) GetUserByID(id int) (*types.User, error) {
 }
 
 func (s *Store) CreateUser(user types.User) error {
-	query := `INSERT INTO user (name, email, password, phone_number, provider) VALUES (?, ?, ?, ?, ?)`
-	_, err := s.db.Exec(query, user.Name, user.Email, user.Password, user.PhoneNumber, user.Provider)
+	query := `INSERT INTO user (name, email, password, 
+								phone_number, provider) 
+				VALUES (?, ?, ?, ?, ?)`
+	_, err := s.db.Exec(query, user.Name, user.Email, user.Password, 
+					user.PhoneNumber, user.Provider)
 	if err != nil {
 		return err
 	}
@@ -349,6 +352,16 @@ func (s *Store) ModifyUser(id int, user types.User) error {
 func (s *Store) UpdatePassword(id int, password string) error {
 	query := `UPDATE user SET password = ? WHERE id = ?`
 	_, err := s.db.Exec(query, password, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) UpdateProfilePicture(id int, profPicUrl string) error {
+	query := `UPDATE user SET profile_picture_url = ? WHERE id = ?`
+	_, err := s.db.Exec(query, profPicUrl, id)
 	if err != nil {
 		return err
 	}
@@ -513,6 +526,7 @@ func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 		&user.Email,
 		&user.PhoneNumber,
 		&user.Provider,
+		&user.ProfilePictureURL,
 		&user.LastLoggedIn,
 		&user.CreatedAt,
 	)

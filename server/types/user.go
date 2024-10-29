@@ -21,6 +21,7 @@ type UserStore interface {
 	UpdateLastLoggedIn(int) error
 	ModifyUser(int, User) error
 	UpdatePassword(int, string) error
+	UpdateProfilePicture(id int, profPicUrl string) error
 
 	SaveToken(int, *TokenDetails) error
 	DeleteToken(int) error
@@ -36,11 +37,12 @@ type UserStore interface {
 
 // register new user
 type RegisterUserPayload struct {
-	Name             string `json:"name" validate:"required"`
-	Email            string `json:"email" validate:"required,email"`
-	Password         string `json:"password" validate:"required,min=3,max=130"`
-	PhoneNumber      string `json:"phoneNumber" validate:"required"`
-	VerificationCode string `json:"verificationCode" validate:"required"`
+	Name                   string `json:"name" validate:"required"`
+	Email                  string `json:"email" validate:"required,email"`
+	Password               string `json:"password" validate:"required,min=3,max=130"`
+	PhoneNumber            string `json:"phoneNumber" validate:"required"`
+	ProfilePicture         []byte `json:"profilePicture"`
+	VerificationCode       string `json:"verificationCode" validate:"required"`
 }
 
 // delete user account
@@ -66,6 +68,11 @@ type LoginUserPayload struct {
 	Password string `json:"password" validate:"required"`
 }
 
+type LoginUsingGooglePayload struct {
+	IDToken        string `json:"idToken" validate:"required"`
+	ServerAuthCode string `json:"serverAuthCode" validate:"required"`
+}
+
 // request verification code payload
 type UserVerificationCodePayload struct {
 	Email string `json:"email" validate:"required,email"`
@@ -76,16 +83,22 @@ type UpdatePasswordPayload struct {
 	NewPassword string `json:"newPassword" validate:"required,min=3,max=130"`
 }
 
+type UpdateProfilePicturePayload struct {
+	ProfilePictureFileName string `json:"profilePictureFileName" validate:"required"`
+	ProfilePicture         []byte `json:"profilePicture" validate:"required"`
+}
+
 type ResetPasswordPayload LoginUserPayload
 
 // basic user data info
 type User struct {
-	ID           int       `json:"id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Password     string    `json:"password"`
-	PhoneNumber  string    `json:"phoneNumber"`
-	Provider     string    `json:"provider"`
-	LastLoggedIn time.Time `json:"lastLoggedIn"`
-	CreatedAt    time.Time `json:"createdAt"`
+	ID                int       `json:"id"`
+	Name              string    `json:"name"`
+	Email             string    `json:"email"`
+	Password          string    `json:"password"`
+	PhoneNumber       string    `json:"phoneNumber"`
+	Provider          string    `json:"provider"`
+	ProfilePictureURL string    `json:"profilePictureURL"`
+	LastLoggedIn      time.Time `json:"lastLoggedIn"`
+	CreatedAt         time.Time `json:"createdAt"`
 }
