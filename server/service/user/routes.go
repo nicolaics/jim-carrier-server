@@ -179,10 +179,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := h.store.GetUserByEmail(payload.Email)
 
-	var imageExtension string
-	imageURL := constants.DEFAULT_PROFILE_PICTURE_URL
-
 	if len(payload.ProfilePicture) > 0 {
+		var imageExtension string
+
 		// check image type
 		mimeType := http.DetectContentType(payload.ProfilePicture)
 		switch mimeType {
@@ -196,17 +195,17 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// save the image
-		imageURL, err = utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
+		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to save image"))
 			return
 		}
-	}
 
-	err = h.store.UpdateProfilePicture(user.ID, imageURL)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("user created but error update profile picture: %v", err))
-		return
+		err = h.store.UpdateProfilePicture(user.ID, imageURL)
+		if err != nil {
+			utils.WriteError(w, http.StatusCreated, fmt.Errorf("user created but error update profile picture: %v", err))
+			return
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("user %s successfully created", payload.Name))
@@ -501,7 +500,6 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 	}
 
 	var imageExtension string
-	imageURL := constants.DEFAULT_PROFILE_PICTURE_URL
 
 	if len(payload.ProfilePicture) > 0 {
 		// check image type
@@ -517,14 +515,16 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		}
 
 		// save the image
-		imageURL, err = utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
+		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to save image"))
 			return
 		}
-	}
 
-	err = h.store.UpdateProfilePicture(user.ID, imageURL)
+		err = h.store.UpdateProfilePicture(user.ID, imageURL)
+	} else {
+		err = h.store.UpdateProfilePicture(user.ID, "")
+	}
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
 		return

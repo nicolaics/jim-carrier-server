@@ -1,6 +1,7 @@
 package types
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 )
@@ -93,14 +94,14 @@ type ResetPasswordPayload LoginUserPayload
 
 // basic user data info
 type User struct {
-	ID                int       `json:"id"`
-	Name              string    `json:"name"`
-	Email             string    `json:"email"`
-	Password          string    `json:"password"`
-	PhoneNumber       string    `json:"phoneNumber"`
-	Provider          string    `json:"provider"`
-	ProfilePictureURL string    `json:"profilePictureURL"`
-	FCMToken          string    `json:"fcmToken"` // Firebase Cloud Messaging for notification
-	LastLoggedIn      time.Time `json:"lastLoggedIn"`
-	CreatedAt         time.Time `json:"createdAt"`
+	ID                int            `json:"id"`
+	Name              string         `json:"name"`
+	Email             string         `json:"email"`
+	Password          string         `json:"password"`
+	PhoneNumber       string         `json:"phoneNumber"`
+	Provider          string         `json:"provider"`
+	ProfilePictureURL sql.NullString `json:"profilePictureURL"`
+	FCMToken          string         `json:"fcmToken"` // Firebase Cloud Messaging for notification
+	LastLoggedIn      time.Time      `json:"lastLoggedIn"`
+	CreatedAt         time.Time      `json:"createdAt"`
 }
