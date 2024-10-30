@@ -2,6 +2,7 @@ package listing
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -76,6 +77,9 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error parsing date"))
 		return
 	}
+
+	log.Println("original departure date: ", payload.DepartureDate)
+	log.Println("parsed departure date: ", departureDate)
 
 	lastReceivedDate, err := utils.ParseDate(payload.LastReceivedDate)
 	if err != nil {
