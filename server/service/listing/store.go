@@ -50,17 +50,14 @@ func (s *Store) GetAllListings() ([]types.ListingReturnPayload, error) {
 					c.name, 
 					l.departure_date, 
 					l.last_received_date, l.description, 
-					AVG(r.rating), 
 					l.last_modified_at  
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
-				JOIN review AS r ON r.reviewee_id = user.id 
 				JOIN currency AS c ON c.id = l.currency_id 
 				WHERE l.exp_status = ? 
 				AND l.deleted_at IS NULL 
-				AND r.review_type = ? 
 				ORDER BY l.departure_date DESC`
-	rows, err := s.db.Query(query, constants.EXP_STATUS_AVAILABLE, constants.REVIEW_GIVER_TO_CARRIER)
+	rows, err := s.db.Query(query, constants.EXP_STATUS_AVAILABLE)
 	if err != nil {
 		return nil, err
 	}
@@ -118,19 +115,16 @@ func (s *Store) GetListingByPayload(carrierName string, destination string, weig
 					c.name, 
 					l.departure_date, 
 					l.last_received_date, l.description, 
-					AVG(r.rating), 
 					l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
-				JOIN review AS r ON r.reviewee_id = user.id 
 				JOIN currency AS c ON c.id = l.currency_id 
 				WHERE user.name = ? AND l.destination = ? 
 				AND l.weight_available = ? AND l.price_per_kg = ? 
-				AND l.departure_date = ? AND l.exp_stauts = ? 
-				AND l.deleted_at IS NULL 
-				AND r.review_type = ?`
+				AND l.departure_date = ? AND l.exp_status = ? 
+				AND l.deleted_at IS NULL`
 	rows, err := s.db.Query(query, carrierName, destination, weightAvailable,
-		pricePerKg, departureDate, constants.EXP_STATUS_AVAILABLE, constants.REVIEW_GIVER_TO_CARRIER)
+		pricePerKg, departureDate, constants.EXP_STATUS_AVAILABLE)
 	if err != nil {
 		return nil, err
 	}
@@ -157,16 +151,13 @@ func (s *Store) GetListingByID(id int) (*types.ListingReturnPayload, error) {
 					c.name, 
 					l.departure_date, 
 					l.last_received_date, l.description, 
-					AVG(r.rating), 
 					l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
-				JOIN review AS r ON r.reviewee_id = user.id 
 				JOIN currency AS c ON c.id = l.currency_id 
-				WHERE id = ? AND exp_stauts = ? 
-				AND deleted_at IS NULL 
-				AND r.review_type = ?`
-	rows, err := s.db.Query(query, id, constants.EXP_STATUS_AVAILABLE, constants.REVIEW_GIVER_TO_CARRIER)
+				WHERE l.id = ? AND l.exp_status = ? 
+				AND l.deleted_at IS NULL`
+	rows, err := s.db.Query(query, id, constants.EXP_STATUS_AVAILABLE)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +298,6 @@ func scanRowIntoListingReturn(rows *sql.Rows) (*types.ListingReturnPayload, erro
 		&listing.DepartureDate,
 		&listing.LastReceivedDate,
 		&listing.Description,
-		&listing.CarrierRating,
 		&listing.LastModifiedAt,
 	)
 

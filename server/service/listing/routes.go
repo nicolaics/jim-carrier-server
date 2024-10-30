@@ -16,13 +16,16 @@ type Handler struct {
 	listingStore  types.ListingStore
 	userStore     types.UserStore
 	currencyStore types.CurrencyStore
+	reviewStore   types.ReviewStore
 }
 
-func NewHandler(listingStore types.ListingStore, userStore types.UserStore, currencyStore types.CurrencyStore) *Handler {
+func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
+	currencyStore types.CurrencyStore, reviewStore types.ReviewStore) *Handler {
 	return &Handler{
 		listingStore:  listingStore,
 		userStore:     userStore,
 		currencyStore: currencyStore,
+		reviewStore:   reviewStore,
 	}
 }
 
@@ -146,6 +149,16 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := 0; i < len(listings); i++ {
+		avgRating, err := h.reviewStore.GetAverageRating(listings[i].CarrierID, constants.REVIEW_GIVER_TO_CARRIER)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		listings[i].CarrierRating = avgRating
+	}
+
 	utils.WriteJSON(w, http.StatusOK, listings)
 }
 
@@ -180,6 +193,14 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	avgRating, err := h.reviewStore.GetAverageRating(listing.CarrierID, constants.REVIEW_GIVER_TO_CARRIER)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	listing.CarrierRating = avgRating
 
 	utils.WriteJSON(w, http.StatusOK, listing)
 }
