@@ -32,9 +32,6 @@ type RegisterOrderPayload struct {
 	Weight          float64 `json:"weight" validate:"required"`
 	Price           float64 `json:"price" validate:"required"`
 	Currency        string  `json:"currency" validate:"required"`
-	PaymentStatus   string  `json:"paymentStatus" validate:"required"`
-	OrderStatus     string  `json:"orderStatus"`
-	PackageLocation string  `json:"packageLocation"`
 	Notes           string  `json:"notes"`
 }
 
@@ -45,8 +42,15 @@ type ViewOrderDetailPayload struct {
 type DeleteOrderPayload ViewOrderDetailPayload
 
 type ModifyOrderPayload struct {
-	ID      int                  `json:"id" validate:"required"`
-	NewData RegisterOrderPayload `json:"newData" validate:"required"`
+	ID              int     `json:"id" validate:"required"`
+	ListingID       int     `json:"listingId" validate:"required"`
+	Weight          float64 `json:"weight" validate:"required"`
+	Price           float64 `json:"price" validate:"required"`
+	Currency        string  `json:"currency" validate:"required"`
+	PaymentStatus   string  `json:"paymentStatus" validate:"required"`
+	OrderStatus     string  `json:"orderStatus" validate:"required"`
+	PackageLocation string  `json:"packageLocation" validate:"required"`
+	Notes           string  `json:"notes"`
 }
 
 type UpdatePackageLocationPayload struct {
