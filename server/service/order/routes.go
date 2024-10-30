@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
 )
@@ -187,6 +188,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				Price:            order.Price,
 				Currency:         order.Currency,
 				PaymentStatus:    paymentStatus,
+				PaidAt:           order.PaidAt.Time,
+				PaymentProofURL:  order.PaymentProofURL.String,
 				OrderStatus:      orderStatus,
 				PackageLocation:  order.PackageLocation,
 				Notes:            order.Notes,
@@ -217,6 +220,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				Price:           order.Price,
 				Currency:        order.Currency,
 				PaymentStatus:   paymentStatus,
+				PaidAt:          order.PaidAt.Time,
+				PaymentProofURL: order.PaymentProofURL.String,
 				OrderStatus:     orderStatus,
 				PackageLocation: order.PackageLocation,
 				Notes:           order.Notes,
@@ -293,6 +298,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			Price:            order.Price,
 			Currency:         order.Currency,
 			PaymentStatus:    paymentStatus,
+			PaidAt:           order.PaidAt.Time,
+			PaymentProofURL:  order.PaymentProofURL.String,
 			OrderStatus:      orderStatus,
 			PackageLocation:  order.PackageLocation,
 			Notes:            order.Notes,
@@ -317,6 +324,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			Price:           order.Price,
 			Currency:        order.Currency,
 			PaymentStatus:   paymentStatus,
+			PaidAt:          order.PaidAt.Time,
+			PaymentProofURL: order.PaymentProofURL.String,
 			OrderStatus:     orderStatus,
 			PackageLocation: order.PackageLocation,
 			Notes:           order.Notes,
@@ -538,7 +547,43 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = h.orderStore.UpdatePaymentStatus(order.ID, paymentStatus)
+		var paymentProofUrl string
+		if paymentStatus == constants.PAYMENT_STATUS_COMPLETED {
+			if len(payload.PaymentProof) < 1 {
+				utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("no payment proof"))
+				return
+			}
+
+			var imageExtension string
+
+			mimeType := http.DetectContentType(payload.PaymentProof)
+			switch mimeType {
+			case "image/jpeg":
+				imageExtension = ".jpg"
+			case "image/png":
+				imageExtension = ".png"
+			default:
+				utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unsupported image type"))
+				return
+			}
+
+			fileName := utils.GeneratePaymentProofFilename(imageExtension)
+
+			isPaymentProofUrlExist := h.orderStore.IsPaymentProofURLExist(fileName)
+
+			for isPaymentProofUrlExist {
+				fileName = utils.GeneratePaymentProofFilename(imageExtension)
+				isPaymentProofUrlExist = h.orderStore.IsPaymentProofURLExist(fileName)
+			}
+
+			paymentProofUrl, err = utils.SavePaymentProof(payload.PaymentProof, fileName)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving payment proof: %v", err))
+				return
+			}
+		}
+
+		err = h.orderStore.UpdatePaymentStatus(order.ID, paymentStatus, paymentProofUrl)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update payment status: %v", err))
 			return

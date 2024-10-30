@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/types"
 )
 
@@ -68,7 +69,8 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 					 user.name, user.phone_number, 
 					 o.weight, o.price, 
 					 c.name, 
-					 o.payment_status, 
+					 o.payment_status, o.paid_at, 
+					 o.payment_proof_url, 
 					 o.order_status, o.package_location, 
 					 o.notes, o.created_at, o.last_modified_at  
 					FROM order AS o 
@@ -102,7 +104,8 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, 
 						c.name, 
-						o.payment_status, 
+						o.payment_status, o.paid_at,
+						o.payment_proof_url, 
 						o.order_status, o.package_location, 
 						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
@@ -142,7 +145,8 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 					 user.name, user.phone_number, 
 					 o.weight, o.price, 
 					 c.name, 
-					 o.payment_status, 
+					 o.payment_status, o.paid_at, 
+					 o.payment_proof_url, 
 					 o.order_status, o.package_location, 
 					 o.notes, o.created_at, o.last_modified_at 
 					FROM order AS o 
@@ -179,7 +183,8 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, 
 						c.name, 
-						o.payment_status, 
+						o.payment_status, o.paid_at, 
+						o.payment_proof_url, 
 						o.order_status, o.package_location, 
 						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
@@ -265,11 +270,19 @@ func (s *Store) UpdatePackageLocation(id int, orderStatus int, packageLocation s
 	return nil
 }
 
-func (s *Store) UpdatePaymentStatus(id int, paymentStatus int) error {
-	query := `UPDATE order SET payment_status = ?, last_modified_at = ? 
-				WHERE id = ? AND deleted_at IS NULL`
+func (s *Store) UpdatePaymentStatus(id int, paymentStatus int, paymentProofUrl string) error {
+	var err error
 
-	_, err := s.db.Exec(query, paymentStatus, time.Now(), id)
+	if paymentStatus == constants.PAYMENT_STATUS_COMPLETED {
+		query := `UPDATE order SET payment_status = ?, paid_at = ?, payment_proof_url = ?, 
+				last_modified_at = ? WHERE id = ? AND deleted_at IS NULL`
+		_, err = s.db.Exec(query, paymentStatus, time.Now(), paymentProofUrl, time.Now(), id)
+	} else {
+		query := `UPDATE order SET payment_status = ?, last_modified_at = ? 
+					WHERE id = ? AND deleted_at IS NULL`
+		_, err = s.db.Exec(query, paymentStatus, time.Now(), id)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -318,6 +331,21 @@ func (s *Store) IsOrderDuplicate(userId int, listingId int) (bool, error) {
 	return (count > 0), nil
 }
 
+func (s *Store) IsPaymentProofURLExist(paymentProofUrl string) bool {
+	query := `SELECT COUNT(*) FROM order WHERE payment_proof_url = ? 
+											AND deleted_at IS NULL`
+
+	row := s.db.QueryRow(query, paymentProofUrl)
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return true
+	}
+
+	return (count > 0)
+}
+
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 	order := new(types.Order)
 
@@ -329,6 +357,8 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 		&order.Price,
 		&order.CurrencyID,
 		&order.PaymentStatus,
+		&order.PaidAt,
+		&order.PaymentProofURL,
 		&order.OrderStatus,
 		&order.PackageLocation,
 		&order.Notes,
@@ -361,6 +391,8 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB
 		&order.Price,
 		&order.Currency,
 		&order.PaymentStatus,
+		&order.PaidAt,
+		&order.PaymentProofURL,
 		&order.OrderStatus,
 		&order.PackageLocation,
 		&order.Notes,
@@ -372,6 +404,10 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB
 		return nil, err
 	}
 
+	if order.PaidAt.Valid {
+		order.PaidAt.Time = order.PaidAt.Time.Local()
+	}
+	
 	order.Listing.DepartureDate = order.Listing.DepartureDate.Local()
 	order.CreatedAt = order.CreatedAt.Local()
 
@@ -387,6 +423,8 @@ func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, er
 		&order.Price,
 		&order.Currency,
 		&order.PaymentStatus,
+		&order.PaidAt,
+		&order.PaymentProofURL,
 		&order.OrderStatus,
 		&order.PackageLocation,
 		&order.Notes,
@@ -400,6 +438,10 @@ func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, er
 
 	if err != nil {
 		return nil, err
+	}
+
+	if order.PaidAt.Valid {
+		order.PaidAt.Time = order.PaidAt.Time.Local()
 	}
 
 	order.Listing.DepartureDate = order.Listing.DepartureDate.Local()

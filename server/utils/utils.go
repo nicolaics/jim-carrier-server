@@ -159,3 +159,42 @@ func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string,
 
 	return imagePath, nil
 }
+
+func GeneratePaymentProofFilename(fileExtension string) string {
+	// set the image file name
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomNumberOne := GenerateRandomCodeNumbers(6)
+	randomNumberTwo := GenerateRandomCodeNumbers(6)
+
+	fileName := fmt.Sprintf("%s-%s%s", randomNumberOne, randomNumberTwo, fileExtension)
+	
+	return fileName
+}
+
+func SavePaymentProof(imageData []byte, fileName string) (string, error) {
+	// 20MB
+	maxBytes := 20 << 20 // 20MB in bytes
+
+	// check for image size
+	if len(imageData) > maxBytes {
+		return "", fmt.Errorf("the image size exceeds the limit of 20MB")
+	}
+
+	// set the image file name
+	imagePath := "static/profile_img/" + fileName
+
+	// create the empty file for the image
+	file, err := os.Create(imagePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	// save the image data
+	_, err = file.Write(imageData)
+	if err != nil {
+		return "", err
+	}
+	
+	return imagePath, nil
+}
