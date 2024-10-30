@@ -37,12 +37,13 @@ type UserStore interface {
 
 // register new user
 type RegisterUserPayload struct {
-	Name                   string `json:"name" validate:"required"`
-	Email                  string `json:"email" validate:"required,email"`
-	Password               string `json:"password" validate:"required,min=3,max=130"`
-	PhoneNumber            string `json:"phoneNumber" validate:"required"`
-	ProfilePicture         []byte `json:"profilePicture"`
-	VerificationCode       string `json:"verificationCode" validate:"required"`
+	Name             string `json:"name" validate:"required"`
+	Email            string `json:"email" validate:"required,email"`
+	Password         string `json:"password" validate:"required,min=3,max=130"`
+	PhoneNumber      string `json:"phoneNumber" validate:"required"`
+	ProfilePicture   []byte `json:"profilePicture"`
+	FCMToken         string `json:"fcmToken"`
+	VerificationCode string `json:"verificationCode" validate:"required"`
 }
 
 // delete user account
@@ -99,6 +100,7 @@ type User struct {
 	PhoneNumber       string    `json:"phoneNumber"`
 	Provider          string    `json:"provider"`
 	ProfilePictureURL string    `json:"profilePictureURL"`
+	FCMToken          string    `json:"fcmToken"` // Firebase Cloud Messaging for notification
 	LastLoggedIn      time.Time `json:"lastLoggedIn"`
 	CreatedAt         time.Time `json:"createdAt"`
 }

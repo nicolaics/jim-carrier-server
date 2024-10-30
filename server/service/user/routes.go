@@ -171,6 +171,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		Password:    hashedPassword,
 		PhoneNumber: payload.PhoneNumber,
 		Provider:    constants.PROVIDER_EMAIL,
+		FCMToken: payload.FCMToken,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
