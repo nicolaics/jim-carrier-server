@@ -522,13 +522,18 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		}
 
 		err = h.store.UpdateProfilePicture(user.ID, imageURL)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
+			return
+		}
 	} else {
 		err = h.store.UpdateProfilePicture(user.ID, "")
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
+			return
+		}
 	}
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
-		return
-	}
+	
 
 	utils.WriteJSON(w, http.StatusOK, "profile picture updated successfully")
 }
