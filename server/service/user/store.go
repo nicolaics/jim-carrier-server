@@ -273,7 +273,7 @@ func (s *Store) CreateUser(user types.User) error {
 }
 
 func (s *Store) DeleteUser(user *types.User) error {
-	query := `SELECT COUNT(*) FROM order WHERE giver_id = ? AND (order_status != ? OR payment_status = ?)`
+	query := `SELECT COUNT(*) FROM order_list WHERE giver_id = ? AND (order_status != ? OR payment_status = ?)`
 	row := s.db.QueryRow(query, user.ID, constants.ORDER_STATUS_COMPLETED, constants.PAYMENT_STATUS_PENDING)
 	if row.Err() != nil {
 		return row.Err()
@@ -311,7 +311,7 @@ func (s *Store) DeleteUser(user *types.User) error {
 		return err
 	}
 
-	_, err = s.db.Exec("DELETE FROM order WHERE giver_id = ?", user.ID)
+	_, err = s.db.Exec("DELETE FROM order_list WHERE giver_id = ?", user.ID)
 	if err != nil {
 		return err
 	}
