@@ -19,19 +19,17 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) CreateOrder(order types.Order) error {
 	values := "?"
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 5; i++ {
 		values += ", ?"
 	}
 
 	query := `INSERT INTO order (
 					listing_id, giver_id, weight, price,
-					currency_id, payment_status, order_status, 
-					package_location, notes) 
+					currency_id, notes) 
 					VALUES (` + values + `)`
 
 	_, err := s.db.Exec(query, order.ListingID, order.GiverID, order.Weight,
-		order.Price, order.CurrencyID, order.PaymentStatus,
-		order.OrderStatus, order.PackageLocation, order.Notes)
+		order.Price, order.CurrencyID, order.Notes)
 	if err != nil {
 		return err
 	}
