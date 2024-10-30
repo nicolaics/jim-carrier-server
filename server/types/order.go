@@ -8,6 +8,7 @@ import (
 type OrderStore interface {
 	CreateOrder(Order) error
 	GetOrderByID(int) (*Order, error)
+	// GetOrderByPaymentProofURL(paymentProofUrl string) (*Order, error)
 
 	GetOrderByCarrierID(int) ([]OrderCarrierReturnFromDB, error)
 	GetOrderByGiverID(int) ([]OrderGiverReturnFromDB, error)
@@ -65,6 +66,10 @@ type UpdateOrderStatusPayload struct {
 	OrderStatus     string `json:"orderStatus" validate:"required"`
 	PackageLocation string `json:"packageLocation"`
 }
+
+// type GetPaymentProofImagePayload struct {
+// 	PaymentProofURL string `json:"paymentProofUrl" validate:"required"`
+// }
 
 type OrderGiverReturnFromDB struct {
 	ID              int            `json:"id"`
@@ -147,8 +152,8 @@ type OrderCarrierReturnPayload struct {
 	Price            float64   `json:"price"`
 	Currency         string    `json:"currency"`
 	PaymentStatus    string    `json:"paymentStatus"`
-	PaidAt          time.Time `json:"paidAt"`
-	PaymentProofURL string    `json:"paymentProofUrl"`
+	PaidAt           time.Time `json:"paidAt"`
+	PaymentProofURL  string    `json:"paymentProofUrl"`
 	OrderStatus      string    `json:"orderStatus"`
 	PackageLocation  string    `json:"packageLocation"`
 	Notes            string    `json:"notes"`

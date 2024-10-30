@@ -63,6 +63,30 @@ func (s *Store) GetOrderByID(id int) (*types.Order, error) {
 	return order, nil
 }
 
+// func (s *Store) GetOrderByPaymentProofURL(paymentProofUrl string) (*types.Order, error) {
+// 	query := `SELECT * FROM order WHERE payment_proof_url = ? AND deleted_at IS NULL`
+// 	rows, err := s.db.Query(query, paymentProofUrl)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	order := new(types.Order)
+
+// 	for rows.Next() {
+// 		order, err = scanRowIntoOrder(rows)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	if order.ID == 0 {
+// 		return nil, fmt.Errorf("order not found")
+// 	}
+
+// 	return order, nil
+// }
+
 func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, error) {
 	query := `SELECT l.id, l.destination, l.departure_date, 
 					 o.id, 
@@ -407,7 +431,7 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB
 	if order.PaidAt.Valid {
 		order.PaidAt.Time = order.PaidAt.Time.Local()
 	}
-	
+
 	order.Listing.DepartureDate = order.Listing.DepartureDate.Local()
 	order.CreatedAt = order.CreatedAt.Local()
 

@@ -41,6 +41,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/order", h.handleDelete).Methods(http.MethodDelete)
 
 	router.HandleFunc("/order/{reqType}", h.handleModify).Methods(http.MethodPatch)
+
+	// router.HandleFunc("/order/get-payment-proof", h.handleGetPaymentProofImage).Methods(http.MethodPost)
+	// router.HandleFunc("/order/get-payment-proof", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -628,3 +631,57 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSON(w, http.StatusCreated, returnMsg)
 }
+
+/*
+func (h *Handler) handleGetPaymentProofImage(w http.ResponseWriter, r *http.Request) {
+	var payload types.GetPaymentProofImagePayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	user, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	user, err = h.userStore.GetUserByID(user.ID)
+	if user == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	order, err := h.orderStore.GetOrderByPaymentProofURL(payload.PaymentProofURL)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error getting order: %v", err))
+		return
+	}
+
+	listing, err := h.listingStore.GetListingByID(order.ListingID)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error getting listing: %v", err))
+		return
+	}
+
+	if user.ID != order.GiverID && user.ID != listing.CarrierID {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not related to this order"))
+		return
+	}
+	
+	utils.WriteJSON(w, http.StatusOK, )
+}
+*/
