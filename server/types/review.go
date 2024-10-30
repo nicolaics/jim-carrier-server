@@ -10,13 +10,15 @@ type ReviewStore interface {
 	GetReviewByID(id int) (*Review, error)
 
 	GetReceivedReviewsByUserID(uid int) ([]ReceivedReviewReturnPayload, error)
-	GeSentReviewsByUserID(uid int) ([]SentReviewReturnPayload, error)
+	GetSentReviewsByUserID(uid int) ([]SentReviewReturnPayload, error)
 
 	DeleteReview(id int) error
 
 	ModifyReview(id int, content string, rating int) error
 
 	IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, error)
+
+	GetAverageRating(userId int, reviewType int) (float32, error)
 }
 
 type RegisterReviewPayload struct {

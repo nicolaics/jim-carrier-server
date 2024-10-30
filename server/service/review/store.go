@@ -82,7 +82,7 @@ func (s *Store) GetReceivedReviewsByUserID(uid int) ([]types.ReceivedReviewRetur
 	return reviews, nil
 }
 
-func (s *Store) GeSentReviewsByUserID(uid int) ([]types.SentReviewReturnPayload, error) {
+func (s *Store) GetSentReviewsByUserID(uid int) ([]types.SentReviewReturnPayload, error) {
 	query := `SELECT r.id, 
 					user.name, 
 					r.content, r.rating, 
@@ -148,6 +148,25 @@ func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, er
 	}
 
 	return count > 0, nil
+}
+
+func (s *Store) GetAverageRating(userId int, reviewType int) (float32, error) {
+	query := `SELECT AVG(rating) 
+				FROM review 
+				WHERE reviewee_id = ? 
+				AND r.review_type = ?`
+	row := s.db.QueryRow(query, userId, reviewType)
+	if row.Err() != nil {
+		return 0, row.Err()
+	}
+
+	var avgRating float32
+	err := row.Scan(&avgRating)
+	if err != nil {
+		return 0, err
+	}
+
+	return avgRating, nil
 }
 
 func scanRowIntoReceivedReview(rows *sql.Rows) (*types.ReceivedReviewReturnPayload, error) {

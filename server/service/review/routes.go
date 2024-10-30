@@ -163,7 +163,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if reqType == "send" {
-		reviews, err = h.reviewStore.GeSentReviewsByUserID(user.ID)
+		reviews, err = h.reviewStore.GetSentReviewsByUserID(user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
