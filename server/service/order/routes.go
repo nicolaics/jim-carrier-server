@@ -90,18 +90,6 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paymentStatus := utils.SetPaymentStatusType(payload.PaymentStatus)
-	if paymentStatus == -1 {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
-		return
-	}
-
-	orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
-	if orderStatus == -1 {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
-		return
-	}
-
 	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -128,9 +116,6 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		Weight:          payload.Weight,
 		Price:           payload.Price,
 		CurrencyID:      currency.ID,
-		PaymentStatus:   paymentStatus,
-		OrderStatus:     orderStatus,
-		PackageLocation: payload.PackageLocation,
 		Notes:           payload.Notes,
 	})
 	if err != nil {
@@ -428,38 +413,38 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		listing, err := h.listingStore.GetListingByID(payload.NewData.ListingID)
+		listing, err := h.listingStore.GetListingByID(payload.ListingID)
 		if err != nil {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing id %d not found: %v", payload.NewData.ListingID, err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing id %d not found: %v", payload.ListingID, err))
 			return
 		}
 
-		paymentStatus := utils.SetPaymentStatusType(payload.NewData.PaymentStatus)
+		paymentStatus := utils.SetPaymentStatusType(payload.PaymentStatus)
 		if paymentStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 			return
 		}
 
-		orderStatus := utils.SetOrderStatusType(payload.NewData.OrderStatus)
+		orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
 		if orderStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 			return
 		}
 
-		currency, err := h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+		currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		if currency == nil {
-			err = h.currencyStore.CreateCurrency(payload.NewData.Currency)
+			err = h.currencyStore.CreateCurrency(payload.Currency)
 			if err != nil {
 				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
 				return
 			}
 
-			currency, err = h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+			currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 			if err != nil {
 				utils.WriteError(w, http.StatusInternalServerError, err)
 				return
@@ -467,13 +452,13 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		}
 
 		err = h.orderStore.ModifyOrder(order.ID, types.Order{
-			Weight:          payload.NewData.Weight,
-			Price:           payload.NewData.Price,
+			Weight:          payload.Weight,
+			Price:           payload.Price,
 			CurrencyID:      currency.ID,
 			PaymentStatus:   paymentStatus,
 			OrderStatus:     orderStatus,
-			PackageLocation: payload.NewData.PackageLocation,
-			Notes:           payload.NewData.Notes,
+			PackageLocation: payload.PackageLocation,
+			Notes:           payload.Notes,
 		})
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify order: %v", err))
@@ -486,7 +471,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = h.listingStore.SubtractWeightAvailable(listing.ID, payload.NewData.Weight)
+		err = h.listingStore.SubtractWeightAvailable(listing.ID, payload.Weight)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
 			return
