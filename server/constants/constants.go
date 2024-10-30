@@ -31,5 +31,3 @@ const PROVIDER_GMAIL = "gmail"
 
 const REVIEW_GIVER_TO_CARRIER = 0
 const REVIEW_CARRIER_TO_GIVER = 1
-
-const DEFAULT_PROFILE_PICTURE_URL = "static/profile_img/default.jpg"
