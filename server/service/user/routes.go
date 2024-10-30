@@ -54,6 +54,10 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 	router.HandleFunc("/user/reset-password", h.handleResetPassword).Methods(http.MethodPatch)
 	router.HandleFunc("/user/reset-password", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
+	// TODO: DELETE BEFORE DEPLOYMENT
+	// router.HandleFunc("/user/register/test", h.handleRegisterTest).Methods(http.MethodPost)
+	// router.HandleFunc("/user/register/test", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
 	// router.HandleFunc("/user/login/google", h.handleLogin).Methods(http.MethodPost)
 	// router.HandleFunc("/user/login/google", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
@@ -171,7 +175,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		Password:    hashedPassword,
 		PhoneNumber: payload.PhoneNumber,
 		Provider:    constants.PROVIDER_EMAIL,
-		FCMToken: payload.FCMToken,
+		FCMToken:    payload.FCMToken,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -533,9 +537,60 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 			return
 		}
 	}
-	
 
 	utils.WriteJSON(w, http.StatusOK, "profile picture updated successfully")
+}
+
+// TODO: DELETE BEFORE DEPLOYMENT
+func (h *Handler) handleRegisterTest(w http.ResponseWriter, r *http.Request) {
+	// get JSON Payload
+	var payload struct {
+		Name        string `json:"name" validate:"required"`
+		Email       string `json:"email" validate:"required,email"`
+		Password    string `json:"password" validate:"required,min=3,max=130"`
+		PhoneNumber string `json:"phoneNumber" validate:"required"`
+		FCMToken    string `json:"fcmToken"`
+	}
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// check if the newly created user exists
+	_, err := h.store.GetUserByEmail(payload.Email)
+	if err == nil {
+		utils.WriteError(w, http.StatusBadRequest,
+			fmt.Errorf("user with email %s already exists", payload.Email))
+		return
+	}
+
+	hashedPassword, err := auth.HashPassword(payload.Password)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = h.store.CreateUser(types.User{
+		Name:        payload.Name,
+		Email:       payload.Email,
+		Password:    hashedPassword,
+		PhoneNumber: payload.PhoneNumber,
+		Provider:    constants.PROVIDER_EMAIL,
+		FCMToken:    payload.FCMToken,
+	})
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+	}
+	
+	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("user %s successfully created", payload.Name))
 }
 
 /*
