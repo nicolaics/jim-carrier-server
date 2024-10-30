@@ -151,10 +151,14 @@ func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, er
 }
 
 func (s *Store) GetAverageRating(userId int, reviewType int) (float32, error) {
-	query := `SELECT AVG(rating) 
-				FROM review 
-				WHERE reviewee_id = ? 
-				AND r.review_type = ?`
+	query := `SELECT AVG(r.rating) 
+				FROM review AS r 
+				JOIN order AS o ON r.order_id = o.id 
+				JOIN listing AS l ON l.id = o.listing_id 
+				WHERE r.reviewee_id = ? 
+				AND r.review_type = ?
+				AND o.deleted_at IS NULL 
+				AND l.deleted_at IS NULL`
 	row := s.db.QueryRow(query, userId, reviewType)
 	if row.Err() != nil {
 		return 0, row.Err()
