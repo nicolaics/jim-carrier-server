@@ -28,11 +28,11 @@ type OrderStore interface {
 }
 
 type RegisterOrderPayload struct {
-	ListingID       int     `json:"listingId" validate:"required"`
-	Weight          float64 `json:"weight" validate:"required"`
-	Price           float64 `json:"price" validate:"required"`
-	Currency        string  `json:"currency" validate:"required"`
-	Notes           string  `json:"notes"`
+	ListingID int     `json:"listingId" validate:"required"`
+	Weight    float64 `json:"weight" validate:"required"`
+	Price     float64 `json:"price" validate:"required"`
+	Currency  string  `json:"currency" validate:"required"`
+	Notes     string  `json:"notes"`
 }
 
 type ViewOrderDetailPayload struct {
@@ -85,7 +85,7 @@ type OrderGiverReturnFromDB struct {
 	PaymentProofURL sql.NullString `json:"paymentProofUrl"`
 	OrderStatus     int            `json:"orderStatus"`
 	PackageLocation string         `json:"packageLocation"`
-	Notes           string         `json:"notes"`
+	Notes           sql.NullString `json:"notes"`
 	CreatedAt       time.Time      `json:"createdAt"`
 	LastModifiedAt  time.Time      `json:"lastModifiedAt"`
 
@@ -137,7 +137,7 @@ type OrderCarrierReturnFromDB struct {
 	PaymentProofURL  sql.NullString `json:"paymentProofUrl"`
 	OrderStatus      int            `json:"orderStatus"`
 	PackageLocation  string         `json:"packageLocation"`
-	Notes            string         `json:"notes"`
+	Notes            sql.NullString `json:"notes"`
 	CreatedAt        time.Time      `json:"createdAt"`
 	LastModifiedAt   time.Time      `json:"lastModifiedAt"`
 }
