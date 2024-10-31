@@ -76,33 +76,7 @@ func (m *Message) AttachFile(src string, attachedFileName string) error {
 	return nil
 }
 
-func SendEmail(to, subject, body string) error {
-	from := config.Envs.CompanyEmail
-	password := config.Envs.CompanyEmailPassword
-
-	// set gmail smtp server
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
-
-	// email message
-	message := &Message{
-		To: []string{to},
-		Subject: subject,
-		Body: body,
-	}
-	// message := []byte(fmt.Sprintf("To: %s\r\n"+
-	// 	"Subject: %s\r\n"+
-	// 	"\r\n"+
-	// 	"%s\r\n", to, subject, body))
-
-	// set the gmail authentification
-	auth := smtp.PlainAuth("", from, password, smtpHost)
-
-	// send the email
-	return smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, message.ToBytes())
-}
-
-func SendEmailWithAttachment(to, subject, body string, attachmentUrl string, attachedFileName string) error {
+func SendEmail(to, subject, body, attachmentUrl, attachedFileName string) error {
 	from := config.Envs.CompanyEmail
 	password := config.Envs.CompanyEmailPassword
 
@@ -117,12 +91,18 @@ func SendEmailWithAttachment(to, subject, body string, attachmentUrl string, att
 		Body: body,
 		Attachments: make(map[string][]byte),
 	}
+	// message := []byte(fmt.Sprintf("To: %s\r\n"+
+	// 	"Subject: %s\r\n"+
+	// 	"\r\n"+
+	// 	"%s\r\n", to, subject, body))
 
-	message.AttachFile(attachmentUrl, attachedFileName)
+	if attachmentUrl != "" {
+		message.AttachFile(attachmentUrl, attachedFileName)
+	}
 
 	// set the gmail authentification
 	auth := smtp.PlainAuth("", from, password, smtpHost)
 
 	// send the email
-	return smtp.SendMail(smtpHost+":"+smtpPort, auth, from, message.To, message.ToBytes())
+	return smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, message.ToBytes())
 }
