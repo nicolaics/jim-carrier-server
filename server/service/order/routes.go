@@ -587,7 +587,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				isPaymentProofUrlExist = h.orderStore.IsPaymentProofURLExist(fileName)
 			}
 
-			paymentProofUrl, err = utils.SavePaymentProof(payload.PaymentProof, fileName)
+			paymentProofUrl = fileName
+
+			err = utils.SavePaymentProof(payload.PaymentProof, fileName)
 			if err != nil {
 				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving payment proof: %v", err))
 				return
@@ -609,7 +611,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			body := fmt.Sprintf("Payment has been completed by %s for package to %s at %s!\nBelow is the payment proof!",
 				user.Name, listing.Destination, listing.DepartureDate.Format("2006-01-02"))
 
-			err = utils.SendEmail(carrier.Email, subject, body, paymentProofUrl, "PaymentProof")
+			completePaymentProofUrl := "./static/payment_proof/" + paymentProofUrl
+
+			err = utils.SendEmail(carrier.Email, subject, body, completePaymentProofUrl, "Payment Proof")
 			if err != nil {
 				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error sending payment completion email to carrier: %v", err))
 				return
