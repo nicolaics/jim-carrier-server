@@ -23,7 +23,7 @@ func (s *Store) CreateOrder(order types.Order) error {
 		values += ", ?"
 	}
 
-	query := `INSERT INTO order (
+	query := `INSERT INTO order_list (
 					listing_id, giver_id, weight, price,
 					currency_id, notes) 
 					VALUES (` + values + `)`
@@ -38,7 +38,7 @@ func (s *Store) CreateOrder(order types.Order) error {
 }
 
 func (s *Store) GetOrderByID(id int) (*types.Order, error) {
-	query := `SELECT * FROM order WHERE id = ? AND deleted_at IS NULL`
+	query := `SELECT * FROM order_list WHERE id = ? AND deleted_at IS NULL`
 	rows, err := s.db.Query(query, id)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (s *Store) GetOrderByID(id int) (*types.Order, error) {
 }
 
 // func (s *Store) GetOrderByPaymentProofURL(paymentProofUrl string) (*types.Order, error) {
-// 	query := `SELECT * FROM order WHERE payment_proof_url = ? AND deleted_at IS NULL`
+// 	query := `SELECT * FROM order_list WHERE payment_proof_url = ? AND deleted_at IS NULL`
 // 	rows, err := s.db.Query(query, paymentProofUrl)
 // 	if err != nil {
 // 		return nil, err
@@ -95,7 +95,7 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 					 o.payment_proof_url, 
 					 o.order_status, o.package_location, 
 					 o.notes, o.created_at, o.last_modified_at  
-					FROM order AS o 
+					FROM order_list AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = o.giver_id 
 					JOIN currency AS c ON c.id = o.currency_id 
@@ -133,7 +133,7 @@ func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error
 						l.id, 
 						user.name, 
 						l.destination, l.departure_date 
-					FROM order AS o 
+					FROM order_list AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = l.carrier_id  
 					JOIN currency AS c ON c.id = o.currency_id 
@@ -171,7 +171,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 					 o.payment_proof_url, 
 					 o.order_status, o.package_location, 
 					 o.notes, o.created_at, o.last_modified_at 
-					FROM order AS o 
+					FROM order_list AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = o.giver_id 
 					JOIN currency AS c ON c.id = o.currency_id 
@@ -212,7 +212,7 @@ func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverRet
 						l.id, 
 						user.name, 
 						l.destination, l.departure_date 
-					FROM order AS o 
+					FROM order_list AS o 
 					JOIN listing AS l ON l.id = o.listing_id 
 					JOIN user ON user.id = l.carrier_id  
 					JOIN currency AS c ON c.id = o.currency_id 
@@ -244,7 +244,7 @@ func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverRet
 }
 
 func (s *Store) DeleteOrder(orderId int, userId int) error {
-	query := `UPDATE order SET deleted_at = ? WHERE id = ? AND giver_id = ?`
+	query := `UPDATE order_list SET deleted_at = ? WHERE id = ? AND giver_id = ?`
 	_, err := s.db.Exec(query, time.Now(), orderId, userId)
 	if err != nil {
 		return err
@@ -254,7 +254,7 @@ func (s *Store) DeleteOrder(orderId int, userId int) error {
 }
 
 func (s *Store) ModifyOrder(id int, order types.Order) error {
-	query := `UPDATE order SET weight = ?, price = ?, 
+	query := `UPDATE order_list SET weight = ?, price = ?, 
 					currency_id = ?, 
 					payment_status = ?, package_location = ?, 
 					order_status = ?, notes = ?, last_modified_at = ? 
@@ -272,7 +272,7 @@ func (s *Store) ModifyOrder(id int, order types.Order) error {
 
 func (s *Store) UpdatePackageLocation(id int, orderStatus int, packageLocation string) error {
 	if orderStatus == -1 {
-		query := `UPDATE order SET package_location = ?, last_modified_at = ? 
+		query := `UPDATE order_list SET package_location = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
 		_, err := s.db.Exec(query, packageLocation, time.Now(), id)
@@ -280,7 +280,7 @@ func (s *Store) UpdatePackageLocation(id int, orderStatus int, packageLocation s
 			return err
 		}
 	} else {
-		query := `UPDATE order SET order_status = ?, package_location = ?, last_modified_at = ? 
+		query := `UPDATE order_list SET order_status = ?, package_location = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
 		_, err := s.db.Exec(query, orderStatus, packageLocation, time.Now(), id)
@@ -296,11 +296,11 @@ func (s *Store) UpdatePaymentStatus(id int, paymentStatus int, paymentProofUrl s
 	var err error
 
 	if paymentStatus == constants.PAYMENT_STATUS_COMPLETED {
-		query := `UPDATE order SET payment_status = ?, paid_at = ?, payment_proof_url = ?, 
+		query := `UPDATE order_list SET payment_status = ?, paid_at = ?, payment_proof_url = ?, 
 				last_modified_at = ? WHERE id = ? AND deleted_at IS NULL`
 		_, err = s.db.Exec(query, paymentStatus, time.Now(), paymentProofUrl, time.Now(), id)
 	} else {
-		query := `UPDATE order SET payment_status = ?, last_modified_at = ? 
+		query := `UPDATE order_list SET payment_status = ?, last_modified_at = ? 
 					WHERE id = ? AND deleted_at IS NULL`
 		_, err = s.db.Exec(query, paymentStatus, time.Now(), id)
 	}
@@ -314,7 +314,7 @@ func (s *Store) UpdatePaymentStatus(id int, paymentStatus int, paymentProofUrl s
 
 func (s *Store) UpdateOrderStatus(id int, orderStatus int, packageLocation string) error {
 	if packageLocation != "" {
-		query := `UPDATE order SET order_status = ?, package_location = ?, last_modified_at = ? 
+		query := `UPDATE order_list SET order_status = ?, package_location = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
 		_, err := s.db.Exec(query, orderStatus, packageLocation, time.Now(), id)
@@ -322,7 +322,7 @@ func (s *Store) UpdateOrderStatus(id int, orderStatus int, packageLocation strin
 			return err
 		}
 	} else {
-		query := `UPDATE order SET order_status = ?, last_modified_at = ? 
+		query := `UPDATE order_list SET order_status = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
 		_, err := s.db.Exec(query, orderStatus, time.Now(), id)
@@ -335,9 +335,7 @@ func (s *Store) UpdateOrderStatus(id int, orderStatus int, packageLocation strin
 }
 
 func (s *Store) IsOrderDuplicate(userId int, listingId int) (bool, error) {
-	query := `SELECT COUNT(*) FROM order WHERE listing_id = ? 
-											AND giver_id = ?
-											AND deleted_at IS NULL`
+	query := `SELECT COUNT(*) FROM order_list WHERE listing_id = ? AND giver_id = ? AND deleted_at IS NULL`
 
 	row := s.db.QueryRow(query, listingId, userId)
 	if row.Err() != nil {
@@ -354,7 +352,7 @@ func (s *Store) IsOrderDuplicate(userId int, listingId int) (bool, error) {
 }
 
 func (s *Store) IsPaymentProofURLExist(paymentProofUrl string) bool {
-	query := `SELECT COUNT(*) FROM order WHERE payment_proof_url = ? 
+	query := `SELECT COUNT(*) FROM order_list WHERE payment_proof_url = ? 
 											AND deleted_at IS NULL`
 
 	row := s.db.QueryRow(query, paymentProofUrl)
