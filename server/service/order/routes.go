@@ -591,6 +591,27 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving payment proof: %v", err))
 				return
 			}
+
+			listing, err := h.listingStore.GetListingByID(order.ListingID)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get listing: %v", err))
+				return
+			}
+
+			carrier, err := h.userStore.GetUserByID(listing.CarrierID)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get carrier: %v", err))
+				return
+			}
+			
+			subject := fmt.Sprintf("Payment Completed for Order No. %d", order.ID)
+			body := fmt.Sprintf("")
+
+			err = utils.SendEmail(carrier.Email, subject, body, paymentProofUrl, "PaymentProof")
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error sending payment completion email to carrier: %v", err))
+				return
+			}
 		}
 
 		err = h.orderStore.UpdatePaymentStatus(order.ID, paymentStatus, paymentProofUrl)
