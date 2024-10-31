@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier/cmd/api"
 	"github.com/nicolaics/jim-carrier/config"
 	"github.com/nicolaics/jim-carrier/db"
@@ -23,10 +24,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	
 	initStorage(db)
+	router := mux.NewRouter()
 
-	server := api.NewAPIServer((":" + config.Envs.Port), db)
+	server := api.NewAPIServer((":" + config.Envs.Port), db, router)
 
 	// check the error, if error is not nill
 	if err := server.Run(); err != nil {
