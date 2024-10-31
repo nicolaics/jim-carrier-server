@@ -3,6 +3,7 @@ package order
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -603,9 +604,10 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get carrier: %v", err))
 				return
 			}
-			
+
 			subject := fmt.Sprintf("Payment Completed for Order No. %d", order.ID)
-			body := fmt.Sprintf("")
+			body := fmt.Sprintf("Payment has been completed by %s for package to %s at %s!\nBelow is the payment proof!",
+				user.Name, listing.Destination, listing.DepartureDate.Format("2006-01-02"))
 
 			err = utils.SendEmail(carrier.Email, subject, body, paymentProofUrl, "PaymentProof")
 			if err != nil {
@@ -652,6 +654,29 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
 			return
+		}
+
+		if orderStatus == constants.ORDER_STATUS_COMPLETED {
+			listing, err := h.listingStore.GetListingByID(order.ListingID)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get listing: %v", err))
+				return
+			}
+
+			giver, err := h.userStore.GetUserByID(order.GiverID)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get giver: %v", err))
+				return
+			}
+
+			subject := fmt.Sprintf("Order Completed for Order No. %d", order.ID)
+			body := fmt.Sprintf("Package has been delivered to %s at %s!", listing.Destination, time.Now().Format("2006-01-02 15:04"))
+
+			err = utils.SendEmail(giver.Email, subject, body, "", "")
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error sending payment completion email to carrier: %v", err))
+				return
+			}
 		}
 
 		returnMsg = "order status updated"
