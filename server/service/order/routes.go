@@ -464,6 +464,18 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		err = h.listingStore.AddWeightAvailable(listing.ID, order.Weight)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reset weight available: %v", err))
+			return
+		}
+
+		err = h.listingStore.SubtractWeightAvailable(listing.ID, payload.Weight)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
+			return
+		}
+
 		err = h.orderStore.ModifyOrder(order.ID, types.Order{
 			Weight:          payload.Weight,
 			Price:           payload.Price,
@@ -474,19 +486,16 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			Notes:           payload.Notes,
 		})
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify order: %v", err))
-			return
-		}
+			errTemp := h.listingStore.AddWeightAvailable(listing.ID, payload.Weight)
+			var errorMsg error
 
-		err = h.listingStore.AddWeightAvailable(listing.ID, order.Weight)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reset weight available: %v", err))
-			return
-		}
+			if errTemp != nil {
+				errorMsg = fmt.Errorf("error reset weight: %v\nerror modify order: %v", errTemp, err)
+			} else {
+				errorMsg = fmt.Errorf("error modify order: %v", err)
+			}
 
-		err = h.listingStore.SubtractWeightAvailable(listing.ID, payload.Weight)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, errorMsg)
 			return
 		}
 
@@ -620,7 +629,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		err = h.orderStore.UpdateOrderStatus(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error UPDATE order status: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
 			return
 		}
 
