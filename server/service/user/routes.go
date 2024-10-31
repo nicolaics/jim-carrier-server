@@ -377,7 +377,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 
 	subject := fmt.Sprintf("Your Verification Code for %s", accountStatus)
 	body := fmt.Sprintf("Your verification code for %s is: %s", strings.ToLower(accountStatus), code)
-	err = utils.SendEmail(payload.Email, subject, body)
+	err = utils.SendEmail(payload.Email, subject, body, "", "")
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to send email: %v", err))
 		return
