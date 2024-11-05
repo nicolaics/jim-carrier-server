@@ -19,6 +19,8 @@ type Config struct {
 	JWTSecret              string
 	CompanyEmail           string
 	CompanyEmailPassword   string
+	GoogleClientID         string
+	GoogleClientSecret     string
 }
 
 var Envs = initConfig()
@@ -38,6 +40,8 @@ func initConfig() Config {
 		JWTSecret:              getEnv("JWT_SECRET", "access-secret"),
 		CompanyEmail:           getEnv("COMPANY_EMAIL", "abc@gmail.com"),
 		CompanyEmailPassword:   getEnv("COMPANY_EMAIL_PASSWORD", "1234"),
+		GoogleClientID:         getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:     getEnv("GOOGLE_CLIENT_SECRET", ""),
 	}
 }
 
