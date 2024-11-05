@@ -51,6 +51,14 @@ type RegisterUserPayload struct {
 	VerificationCode string `json:"verificationCode" validate:"required"`
 }
 
+type RegisterGooglePayload struct {
+	IDToken        string `json:"idToken" validate:"required"`
+	ServerAuthCode string `json:"serverAuthCode" validate:"required"`
+	FCMToken       string `json:"fcmToken" validate:"required"`
+	Name           string `json:"name" validate:"required"`
+	PhoneNumber    string `json:"phoneNumber" validate:"required"`
+}
+
 // delete user account
 type RemoveUserPayload struct {
 	ID int `json:"id" validate:"required"`

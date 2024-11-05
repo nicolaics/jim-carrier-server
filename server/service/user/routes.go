@@ -59,6 +59,9 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 
 	router.HandleFunc("/user/login/google", h.handleLoginGoogle).Methods(http.MethodPost)
 	router.HandleFunc("/user/login/google", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/user/register/google", h.handleRegisterGoogle).Methods(http.MethodPost)
+	router.HandleFunc("/user/register/google", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -624,4 +627,79 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response)
+}
+
+func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
+	var payload types.RegisterGooglePayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// Verify the token received
+	tokenInfo, err := oauth.VerifyIDToken(payload.IDToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error verifying id token: %v", err))
+		return
+	}
+
+	email, ok := tokenInfo.Claims["email"].(string)
+	if !ok {
+		// there's no email key or something happened
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid email claim: %v", err))
+		return
+	}
+	
+	// check whether the provider is google or not
+	user, err := h.store.GetUserByEmail(email)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if user != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account exist already"))
+		return
+	}
+
+	log.Print("Regist google FCM token: ", payload.FCMToken)
+
+	err = h.store.CreateUser(types.User{
+		Name: payload.Name,
+		Email: email,
+		PhoneNumber: payload.PhoneNumber,
+		Provider: "google",
+		FCMToken: payload.FCMToken,
+	})
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create user: %v", err))
+		return
+	}
+
+	user, err = h.store.GetUserByEmail(email)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	token, err := auth.CreateJWT(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
+		return
+	}
+
+	err = h.store.SaveToken(user.ID, token)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, "Register successfully using Google")
 }
