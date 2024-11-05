@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/nicolaics/jim-carrier/constants"
-	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/service/auth/jwt"
 	"github.com/nicolaics/jim-carrier/types"
 )
 
@@ -399,7 +399,7 @@ func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request) (*type
 		return nil, fmt.Errorf("error deleting expired token: %v", err)
 	}
 
-	accessDetails, err := auth.ExtractTokenFromClient(r)
+	accessDetails, err := jwt.ExtractTokenFromClient(r)
 	if err != nil {
 		return nil, err
 	}

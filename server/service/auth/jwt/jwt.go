@@ -1,4 +1,4 @@
-package auth
+package jwt
 
 import (
 	"fmt"
@@ -49,7 +49,7 @@ func CreateJWT(userId int) (*types.TokenDetails, error) {
 }
 
 func ExtractTokenFromClient(r *http.Request) (*types.AccessDetails, error) {
-	token, err := verifyToken(r)
+	token, err := VerifyToken(r)
 	if err != nil {
 		log.Println("verify token error")
 		return nil, err
@@ -79,7 +79,7 @@ func ExtractTokenFromClient(r *http.Request) (*types.AccessDetails, error) {
 	return nil, err
 }
 
-func verifyToken(r *http.Request) (*jwt.Token, error) {
+func VerifyToken(r *http.Request) (*jwt.Token, error) {
 	tokenStr, err := extractToken(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to verify token: %v", err)

@@ -11,6 +11,7 @@ import (
 	"github.com/nicolaics/jim-carrier/constants"
 	"github.com/nicolaics/jim-carrier/logger"
 	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/service/auth/jwt"
 	"github.com/nicolaics/jim-carrier/service/auth/oauth"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
@@ -98,7 +99,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenDetails, err := auth.CreateJWT(user.ID)
+	tokenDetails, err := jwt.CreateJWT(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -305,7 +306,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
-	accessDetails, err := auth.ExtractTokenFromClient(r)
+	accessDetails, err := jwt.ExtractTokenFromClient(r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
 		return
@@ -600,7 +601,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.CreateJWT(user.ID)
+	token, err := jwt.CreateJWT(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
 		return
@@ -688,7 +689,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.CreateJWT(user.ID)
+	token, err := jwt.CreateJWT(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
 		return

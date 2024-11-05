@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier/logger"
 	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/service/auth/jwt"
 	"github.com/nicolaics/jim-carrier/service/currency"
 	"github.com/nicolaics/jim-carrier/service/listing"
 	"github.com/nicolaics/jim-carrier/service/order"
@@ -61,7 +62,7 @@ func (s *APIServer) Run() error {
 	s.router.Use(logMiddleware.Func())
 
 	s.router.Use(auth.CorsMiddleware())
-	subrouter.Use(auth.AuthMiddleware())
+	subrouter.Use(jwt.JWTMiddleware())
 
 	return http.ListenAndServe(s.addr, s.router)
 }
