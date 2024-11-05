@@ -290,7 +290,7 @@ func (s *Store) DeleteUser(user *types.User) error {
 
 	query = `SELECT COUNT(*) 
 			FROM listing 
-			JOIN order ON order.listing_id = listing.id 
+			JOIN order_list ON order.listing_id = listing.id 
 			WHERE listing.carrier_id = ? AND order.order_status != ?`
 	row = s.db.QueryRow(query, user.ID, constants.ORDER_STATUS_COMPLETED)
 	if row.Err() != nil {
