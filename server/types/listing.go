@@ -55,7 +55,7 @@ type ListingReturnPayload struct {
 	DepartureDate    time.Time `json:"departureDate"`
 	LastReceivedDate time.Time `json:"lastReceivedDate"`
 	Description      string    `json:"description"`
-	CarrierRating    float32   `json:"carrierRating"`
+	CarrierRating    float64   `json:"carrierRating"`
 	LastModifiedAt   time.Time `json:"lastModifiedAt"`
 }
 
