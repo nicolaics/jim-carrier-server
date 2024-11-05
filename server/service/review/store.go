@@ -58,7 +58,7 @@ func (s *Store) GetReceivedReviewsByUserID(uid int) ([]types.ReceivedReviewRetur
 					l.destination, l.departure_date, 
 					r.last_modified_at 
 				FROM review AS r 
-				JOIN order AS o ON r.order_id = o.id 
+				JOIN order_list AS o ON r.order_id = o.id 
 				JOIN listing AS l ON l.id = o.listing_id 
 				WHERE r.reviewee_id = ? 
 				ORDER BY o.created_at DESC`
@@ -89,7 +89,7 @@ func (s *Store) GetSentReviewsByUserID(uid int) ([]types.SentReviewReturnPayload
 					l.destination, l.departure_date, 
 					r.last_modified_at 
 				FROM review AS r 
-				JOIN order AS o ON r.order_id = o.id 
+				JOIN order_list AS o ON r.order_id = o.id 
 				JOIN listing AS l ON l.id = o.listing_id 
 				JOIN user ON user.id = r.reviewee_id 
 				WHERE r.reviewer_id = ? 
@@ -150,10 +150,10 @@ func (s *Store) IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, er
 	return count > 0, nil
 }
 
-func (s *Store) GetAverageRating(userId int, reviewType int) (float32, error) {
+func (s *Store) GetAverageRating(userId int, reviewType int) (float64, error) {
 	query := `SELECT AVG(r.rating) 
 				FROM review AS r 
-				JOIN order AS o ON r.order_id = o.id 
+				JOIN order_list AS o ON r.order_id = o.id 
 				JOIN listing AS l ON l.id = o.listing_id 
 				WHERE r.reviewee_id = ? 
 				AND r.review_type = ?
@@ -164,13 +164,17 @@ func (s *Store) GetAverageRating(userId int, reviewType int) (float32, error) {
 		return 0, row.Err()
 	}
 
-	var avgRating float32
+	var avgRating sql.NullFloat64
 	err := row.Scan(&avgRating)
 	if err != nil {
 		return 0, err
 	}
 
-	return avgRating, nil
+	if !avgRating.Valid {
+		return 0.0, nil
+	}
+
+	return avgRating.Float64, nil
 }
 
 func scanRowIntoReceivedReview(rows *sql.Rows) (*types.ReceivedReviewReturnPayload, error) {
