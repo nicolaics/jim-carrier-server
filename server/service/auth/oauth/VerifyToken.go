@@ -1,6 +1,9 @@
 package oauth
 
 import (
+	"context"
+	"log"
+
 	"github.com/nicolaics/jim-carrier/config"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -16,10 +19,12 @@ var GoogleOauthConfig = &oauth2.Config{
 }
 
 func VerifyIDToken(idToken string) (*idtoken.Payload, error) {
-	payload, err := idtoken.Validate(oauth2.NoContext, idToken, GoogleOauthConfig.ClientID)
+	payload, err := idtoken.Validate(context.Background(), idToken, GoogleOauthConfig.ClientID)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("verify Id Token payload: ", payload)
 	
 	return payload, nil
 }
