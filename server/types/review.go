@@ -18,7 +18,7 @@ type ReviewStore interface {
 
 	IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, error)
 
-	GetAverageRating(userId int, reviewType int) (float32, error)
+	GetAverageRating(userId int, reviewType int) (float64, error)
 }
 
 type RegisterReviewPayload struct {
