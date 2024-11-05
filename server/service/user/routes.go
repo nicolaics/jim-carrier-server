@@ -209,8 +209,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 		err = h.store.UpdateProfilePicture(user.ID, imageURL)
 		if err != nil {
-			utils.WriteError(w, http.StatusCreated, fmt.Errorf("user created but error update profile picture: %v", err))
-			return
+			logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", payload.Email, err))
 		}
 	}
 
