@@ -2,13 +2,16 @@ package user
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier/constants"
+	"github.com/nicolaics/jim-carrier/logger"
 	"github.com/nicolaics/jim-carrier/service/auth"
+	"github.com/nicolaics/jim-carrier/service/auth/oauth"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
 )
@@ -54,8 +57,8 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 	router.HandleFunc("/user/reset-password", h.handleResetPassword).Methods(http.MethodPatch)
 	router.HandleFunc("/user/reset-password", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	// router.HandleFunc("/user/login/google", h.handleLogin).Methods(http.MethodPost)
-	// router.HandleFunc("/user/login/google", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+	router.HandleFunc("/user/login/google", h.handleLoginGoogle).Methods(http.MethodPost)
+	router.HandleFunc("/user/login/google", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -537,117 +540,88 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 	utils.WriteJSON(w, http.StatusOK, "profile picture updated successfully")
 }
 
-/*
-func LoginGoogle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
+	var payload types.LoginGooglePayload
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	var authData GoogleAuthDataLogin
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
 
-	// 요청 바디에서 JSON 데이터 읽기
-	body, err := io.ReadAll(r.Body)
+	// Verify the token received
+	tokenInfo, err := oauth.VerifyIDToken(payload.IDToken)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusInternalServerError)
-		return
-	}
-
-	// JSON 데이터를 구조체로 언마샬
-	if err := json.Unmarshal(body, &authData); err != nil {
-		http.Error(w, "Error unmarshaling request body", http.StatusBadRequest)
-		return
-	}
-
-	// 여기서 idToken과 serverAuthCode 처리 로직 구현
-	tokenInfo, err := oauth.VerifyIdToken(authData.IDToken)
-	if err != nil {
-		http.Error(w, "Error verifying ID Token: "+err.Error(), http.StatusBadRequest)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error verifying id token: %v", err))
 		return
 	}
 
 	email, ok := tokenInfo.Claims["email"].(string)
 	if !ok {
-		// email 키가 없거나 값이 문자열이 아닌 경우 에러 처리
-		http.Error(w, "Invalid email claim", http.StatusBadRequest)
+		// there's no email key or something happened
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid email claim: %v", err))
 		return
 	}
-
-	// users 테이블에서 이메일과 provider 확인
-	exists, provider, err := mysql.CheckEmailAndProvider(email)
+	
+	// check whether the provider is google or not
+	exists, provider, err := h.store.CheckProvider(email)
 	if err != nil {
-		// 데이터베이스 에러 처리
-		util.SendErrorResponse(w, "Internal Server Error", http.StatusInternalServerError)
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if exists && provider != "google" {
-		// provider가 "google"이 아닌 경우 에러 메시지를 반환
-		util.SendErrorResponse(w, "This email is associated with a different login method.", http.StatusNotFound)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("this email is associated with a different login method"))
 		return
 	} else if !exists {
-		// 이메일이 존재하지 않는 경우 로그인 페이지로 이동하도록 메시지를 반환
-		util.SendErrorResponse(w, "toRegist", http.StatusNotFound)
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("account not found, go to registration"))
 		return
 	}
 
-	/////////////
-
-	// 해당 사용자의 id 값을 조회합니다.
-	id, err := mysql.GetUserIDByEmail(email)
-	if err != nil {
-		util.SendErrorResponse(w, "Internal Server Error", http.StatusInternalServerError)
+	// get the user
+	user, err := h.store.GetUserByEmail(email)
+	if err != nil || user == nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	// 해당 사용자의 모든 토큰 삭제
-	err = mysql.RemoveAllTokensForUser(email)
+	// delete tokens issued to the user
+	err = h.store.DeleteToken(user.ID)
 	if err != nil {
-		util.SendErrorResponse(w, "Internal Server Error", http.StatusInternalServerError)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error delete tokens: %v", err))
 		return
 	}
 
-	// 새로운 JWT 토큰 생성
-	token, err := jwt.GenerateToken(id, email)
+	token, err := auth.CreateJWT(user.ID)
 	if err != nil {
-		util.SendErrorResponse(w, "Failed to generate token", http.StatusInternalServerError)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
 		return
 	}
 
-	// 사용자의 fcm 기기 id 변경
-	err = mysql.UpdateFCMid(authData.FCMid, id)
-	log.Print("FCMid test : ", authData.FCMid)
+	log.Print("FCM token: ", payload.FCMToken)
+
+	err = h.store.UpdateFCMToken(user.ID, payload.FCMToken)
 	if err != nil {
-		util.SERVERtxtLogging("'" + email + "' failed to update FCMid : " + authData.FCMid)
+		logMsg := fmt.Sprintf("%s failed to update FCM Token: %s", user.Email, payload.FCMToken)
+		logger.WriteServerLog(logMsg)
 	}
 
-	// 토큰을 데이터베이스에 저장
-	err = mysql.StoreToken(email, token)
+	err = h.store.SaveToken(user.ID, token)
 	if err != nil {
-		util.SendErrorResponse(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	// 사용자 정보 조회
-	userdata, err := mysql.GetUserByID(id)
-	if err != nil {
-		util.SendErrorResponse(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	if userdata == nil {
-		util.SendErrorResponse(w, "Email not found", http.StatusNotFound)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
 	}
 
 	response := map[string]interface{}{
-		"userdata": userdata,
-		"email":    email,
-		"token":    token,
+		"user":  user,
+		"token": token,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	util.SendSuccessResponse(w, "Login Successful", http.StatusOK, response)
+	utils.WriteJSON(w, http.StatusOK, response)
 }
-*/

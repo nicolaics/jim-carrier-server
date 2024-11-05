@@ -34,6 +34,10 @@ type UserStore interface {
 	UpdateVerificationCodeStatus(email string, status int) error
 
 	IsUserExist(email string) (bool, error)
+
+	CheckProvider(email string) (bool, string, error)
+
+	UpdateFCMToken(id int, fcmToken string) error
 }
 
 // register new user
@@ -70,9 +74,10 @@ type LoginUserPayload struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type LoginUsingGooglePayload struct {
+type LoginGooglePayload struct {
 	IDToken        string `json:"idToken" validate:"required"`
 	ServerAuthCode string `json:"serverAuthCode" validate:"required"`
+	FCMToken       string `json:"fcmToken" validate:"required"`
 }
 
 // request verification code payload

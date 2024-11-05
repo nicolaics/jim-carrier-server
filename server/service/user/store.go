@@ -518,6 +518,32 @@ func (s *Store) IsUserExist(email string) (bool, error) {
 	return (count > 0), nil
 }
 
+func (s *Store) CheckProvider(email string) (bool, string, error) {
+	query := `SELECT provider FROM user WHERE email = ?`
+	row := s.db.QueryRow(query, email)
+	if row.Err() != nil {
+		return false, "", row.Err()
+	}
+
+	var provider string
+	err := row.Scan(&provider)
+	if err != nil {
+		return false, "", err
+	}
+
+	return true, provider, nil
+}
+
+func (s *Store) UpdateFCMToken(id int, fcmToken string) error {
+	query := `UPDATE user SET fcm_token = ? WHERE id = ?`
+	_, err := s.db.Exec(query, fcmToken, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 	user := new(types.User)
 
