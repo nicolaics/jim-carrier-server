@@ -541,7 +541,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		// save the image
 		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to save image"))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to save image: %v", err))
 			return
 		}
 

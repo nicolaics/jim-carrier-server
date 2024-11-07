@@ -98,7 +98,6 @@ type UpdatePasswordPayload struct {
 }
 
 type UpdateProfilePicturePayload struct {
-	ProfilePictureFileName string `json:"profilePictureFileName" validate:"required"`
 	ProfilePicture         []byte `json:"profilePicture" validate:"required"`
 }
 
