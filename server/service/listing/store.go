@@ -39,7 +39,7 @@ func (s *Store) CreateListing(listing types.Listing) error {
 	return nil
 }
 
-func (s *Store) GetAllListings() ([]types.ListingReturnPayload, error) {
+func (s *Store) GetAllListings() ([]types.ListingReturnFromDB, error) {
 	err := s.UpdateListingExpStatus()
 	if err != nil {
 		return nil, fmt.Errorf("error updating listing status: %v", err)
@@ -62,7 +62,7 @@ func (s *Store) GetAllListings() ([]types.ListingReturnPayload, error) {
 		return nil, err
 	}
 
-	listings := make([]types.ListingReturnPayload, 0)
+	listings := make([]types.ListingReturnFromDB, 0)
 
 	for rows.Next() {
 		listing, err := scanRowIntoListingReturn(rows)
@@ -109,7 +109,7 @@ func (s *Store) IsListingDuplicate(carrierId int, destination string, weightAvai
 	return (count > 0), nil
 }
 
-func (s *Store) GetListingByPayload(carrierName string, destination string, weightAvailable float64, pricePerKg float64, departureDate time.Time) (*types.ListingReturnPayload, error) {
+func (s *Store) GetListingByPayload(carrierName string, destination string, weightAvailable float64, pricePerKg float64, departureDate time.Time) (*types.ListingReturnFromDB, error) {
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
 					l.price_per_kg, 
 					c.name, 
@@ -129,7 +129,7 @@ func (s *Store) GetListingByPayload(carrierName string, destination string, weig
 		return nil, err
 	}
 
-	listing := new(types.ListingReturnPayload)
+	listing := new(types.ListingReturnFromDB)
 
 	for rows.Next() {
 		listing, err = scanRowIntoListingReturn(rows)
@@ -145,7 +145,7 @@ func (s *Store) GetListingByPayload(carrierName string, destination string, weig
 	return listing, nil
 }
 
-func (s *Store) GetListingByID(id int) (*types.ListingReturnPayload, error) {
+func (s *Store) GetListingByID(id int) (*types.ListingReturnFromDB, error) {
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
 					l.price_per_kg, 
 					c.name, 
@@ -162,7 +162,7 @@ func (s *Store) GetListingByID(id int) (*types.ListingReturnPayload, error) {
 		return nil, err
 	}
 
-	listing := new(types.ListingReturnPayload)
+	listing := new(types.ListingReturnFromDB)
 
 	for rows.Next() {
 		listing, err = scanRowIntoListingReturn(rows)
@@ -284,8 +284,8 @@ func (s *Store) AddWeightAvailable(listingId int, addValue float64) error {
 // 	return listing, nil
 // }
 
-func scanRowIntoListingReturn(rows *sql.Rows) (*types.ListingReturnPayload, error) {
-	listing := new(types.ListingReturnPayload)
+func scanRowIntoListingReturn(rows *sql.Rows) (*types.ListingReturnFromDB, error) {
+	listing := new(types.ListingReturnFromDB)
 
 	err := rows.Scan(
 		&listing.ID,

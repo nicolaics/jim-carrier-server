@@ -149,17 +149,50 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i := 0; i < len(listings); i++ {
-		avgRating, err := h.reviewStore.GetAverageRating(listings[i].CarrierID, constants.REVIEW_GIVER_TO_CARRIER)
+	response := make([]types.ListingReturnPayload, 0)
+
+	for _, listing := range listings {
+		avgRating, err := h.reviewStore.GetAverageRating(listing.CarrierID, constants.REVIEW_GIVER_TO_CARRIER)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		listings[i].CarrierRating = avgRating
+		carrier, err := h.userStore.GetUserByID(listing.CarrierID)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("carrier %d not found", listing.CarrierID))
+			return
+		}
+
+		var imageBytes []byte
+		if carrier.ProfilePictureURL.Valid {
+			imageBytes, err = utils.GetImage(carrier.ProfilePictureURL.String)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching profile picture for %d: %v", listing.CarrierID, err))
+				return
+			}
+		} else {
+			imageBytes = nil
+		}
+
+		response = append(response, types.ListingReturnPayload{
+			ID:                    listing.ID,
+			CarrierID:             listing.CarrierID,
+			CarrierName:           listing.CarrierName,
+			CarrierProfilePicture: imageBytes,
+			Destination:           listing.Destination,
+			WeightAvailable:       listing.WeightAvailable,
+			PricePerKg:            listing.PricePerKg,
+			Currency:              listing.Currency,
+			DepartureDate:         listing.DepartureDate,
+			LastReceivedDate:      listing.LastReceivedDate,
+			Description:           listing.Description,
+			CarrierRating:         avgRating,
+			LastModifiedAt:        listing.LastModifiedAt,
+		})
 	}
 
-	utils.WriteJSON(w, http.StatusOK, listings)
+	utils.WriteJSON(w, http.StatusOK, response)
 }
 
 func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
