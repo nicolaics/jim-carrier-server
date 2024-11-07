@@ -565,6 +565,11 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			if len(payload.PaymentProof) > constants.PAYMENT_PROOF_MAX_BYTES {
+				utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("the image size exceeds the limit of 10MB"))
+				return
+			}
+
 			var imageExtension string
 
 			mimeType := http.DetectContentType(payload.PaymentProof)
