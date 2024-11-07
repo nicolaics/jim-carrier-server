@@ -105,6 +105,18 @@ type UpdateProfilePicturePayload struct {
 
 type ResetPasswordPayload LoginUserPayload
 
+type ReturnUserPayload struct {
+	ID             int       `json:"id"`
+	Name           string    `json:"name"`
+	Email          string    `json:"email"`
+	PhoneNumber    string    `json:"phoneNumber"`
+	Provider       string    `json:"provider"`
+	ProfilePicture []byte    `json:"profilePicture"`
+	FCMToken       string    `json:"fcmToken"`
+	LastLoggedIn   time.Time `json:"lastLoggedIn"`
+	CreatedAt      time.Time `json:"createdAt"`
+}
+
 // basic user data info
 type User struct {
 	ID                int            `json:"id"`
