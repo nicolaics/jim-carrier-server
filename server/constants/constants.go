@@ -34,3 +34,6 @@ const REVIEW_CARRIER_TO_GIVER = 1
 
 const PAYMENT_PROOF_DIR_PATH = "./static/payment_proof/"
 const PROFILE_IMG_DIR_PATH = "./static/profile_img/"
+
+const PAYMENT_PROOF_MAX_BYTES = 10 << 20 // 10MB in bytes
+const PROFILE_IMG_MAX_BYTES = 5 << 20 // 5MB in bytes
