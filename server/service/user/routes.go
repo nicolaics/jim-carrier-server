@@ -225,16 +225,10 @@ func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var imageBytes []byte
-
-	if user.ProfilePictureURL.Valid {
-		imageBytes, err = utils.GetImage(user.ProfilePictureURL.String)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
-			return
-		}
-	} else {
-		imageBytes = nil
+	imageBytes, err := utils.GetImage(user.ProfilePictureURL)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+		return
 	}
 
 	response := types.ReturnUserPayload{

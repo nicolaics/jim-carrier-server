@@ -164,15 +164,10 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var imageBytes []byte
-		if carrier.ProfilePictureURL.Valid {
-			imageBytes, err = utils.GetImage(carrier.ProfilePictureURL.String)
-			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching profile picture for %d: %v", listing.CarrierID, err))
-				return
-			}
-		} else {
-			imageBytes = nil
+		imageBytes, err := utils.GetImage(carrier.ProfilePictureURL)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching profile picture for %d: %v", listing.CarrierID, err))
+			return
 		}
 
 		response = append(response, types.ListingReturnPayload{

@@ -261,10 +261,14 @@ func (s *Store) GetUserByID(id int) (*types.User, error) {
 func (s *Store) CreateUser(user types.User) error {
 	query := `INSERT INTO user (name, email, password, 
 								phone_number, provider, 
-								fcm_token) 
-				VALUES (?, ?, ?, ?, ?, ?)`
+								fcm_token, profile_picture_url) 
+				VALUES (?, ?, ?, ?, ?, ?, ?)`
+
+	defaultProfilePicture := constants.PROFILE_IMG_DIR_PATH  + "default.png"
+
 	_, err := s.db.Exec(query, user.Name, user.Email, user.Password, 
-					user.PhoneNumber, user.Provider, user.FCMToken)
+					user.PhoneNumber, user.Provider, user.FCMToken, 
+					defaultProfilePicture)
 	if err != nil {
 		return err
 	}
