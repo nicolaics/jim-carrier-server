@@ -75,6 +75,10 @@ type GetPaymentProofImagePayload struct {
 	PaymentProofURL string `json:"paymentProofUrl" validate:"required"`
 }
 
+type ReturnPaymentProofImagePayload struct {
+	PaymentProof []byte `json:"paymentProof" validate:"required"`
+}
+
 type OrderGiverReturnFromDB struct {
 	ID              int            `json:"id"`
 	Weight          float64        `json:"weight"`
