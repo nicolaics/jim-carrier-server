@@ -551,7 +551,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 			return
 		}
 	} else {
-		err = h.store.UpdateProfilePicture(user.ID, "")
+		err = h.store.UpdateProfilePicture(user.ID, (constants.PROFILE_IMG_DIR_PATH + "default.png"))
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
 			return
