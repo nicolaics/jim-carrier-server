@@ -204,7 +204,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		// save the image
 		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to save image"))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to save image: %v", err))
 			return
 		}
 
@@ -225,7 +225,31 @@ func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, user)
+	var imageBytes []byte
+
+	if user.ProfilePictureURL.Valid {
+		imageBytes, err = utils.GetImage(user.ProfilePictureURL.String)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+			return
+		}
+	} else {
+		imageBytes = nil
+	}
+
+	response := types.ReturnUserPayload{
+		ID:             user.ID,
+		Name:           user.Name,
+		Email:          user.Email,
+		PhoneNumber:    user.PhoneNumber,
+		Provider:       user.Provider,
+		ProfilePicture: imageBytes,
+		FCMToken:       user.FCMToken,
+		LastLoggedIn:   user.LastLoggedIn,
+		CreatedAt:      user.CreatedAt,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, response)
 }
 
 func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
@@ -571,7 +595,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid email claim: %v", err))
 		return
 	}
-	
+
 	// check whether the provider is google or not
 	exists, provider, err := h.store.CheckProvider(email)
 	if err != nil {
@@ -657,7 +681,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid email claim: %v", err))
 		return
 	}
-	
+
 	// check whether the provider is google or not
 	user, err := h.store.GetUserByEmail(email)
 	if err != nil {
@@ -672,11 +696,11 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	log.Print("Regist google FCM token: ", payload.FCMToken)
 
 	err = h.store.CreateUser(types.User{
-		Name: payload.Name,
-		Email: email,
+		Name:        payload.Name,
+		Email:       email,
 		PhoneNumber: payload.PhoneNumber,
-		Provider: "google",
-		FCMToken: payload.FCMToken,
+		Provider:    "google",
+		FCMToken:    payload.FCMToken,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create user: %v", err))
