@@ -78,8 +78,8 @@ func (s *Store) GetAllListings() ([]types.ListingReturnPayload, error) {
 
 func (s *Store) UpdateListingExpStatus() error {
 	query := `UPDATE listing SET exp_status = ? 
-				WHERE (departure_date > ? OR weight_available <= 0) AND deleted_at IS NULL`
-	_, err := s.db.Exec(query, constants.EXP_STATUS_EXPIRED, time.Now())
+				WHERE (departure_date < ? OR weight_available <= 0) AND deleted_at IS NULL`
+	_, err := s.db.Exec(query, constants.EXP_STATUS_EXPIRED, time.Now().UTC().Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return err
 	}
