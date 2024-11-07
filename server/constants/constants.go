@@ -31,3 +31,6 @@ const PROVIDER_GMAIL = "gmail"
 
 const REVIEW_GIVER_TO_CARRIER = 0
 const REVIEW_CARRIER_TO_GIVER = 1
+
+const PAYMENT_PROOF_DIR_PATH = "./static/payment_proof/"
+const PROFILE_IMG_DIR_PATH = "./static/profile_img/"
