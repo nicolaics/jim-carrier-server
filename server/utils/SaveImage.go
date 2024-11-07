@@ -8,14 +8,9 @@ import (
 )
 
 func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string, error) {
-	// directory, err := filepath.Abs("static/profile_img/")
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// if err := os.MkdirAll(directory, 0744); err != nil {
-	// 	return "", err
-	// }
+	if err := os.MkdirAll("./static/profile_img/", 0744); err != nil {
+		return "", err
+	}
 
 	// 20MB
 	maxBytes := 20 << 20 // 20MB in bytes
@@ -38,7 +33,7 @@ func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string,
 	// Read all files in the specified folder
 	files, err := os.ReadDir(folderPath)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	for _, file := range files {
@@ -71,16 +66,14 @@ func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string,
 		return "", err
 	}
 
-	// err = ioutil.WriteFile(fileName, data.Image, 0644)
-	// if err != nil {
-	//     http.Error(w, "Could not save image", http.StatusInternalServerError)
-	//     return
-	// }
-
-	return fileName, nil
+	return imagePath, nil
 }
 
 func SavePaymentProof(imageData []byte, fileName string) error {
+	if err := os.MkdirAll("./static/payment_proof/", 0744); err != nil {
+		return err
+	}
+
 	// 20MB
 	maxBytes := 20 << 20 // 20MB in bytes
 
