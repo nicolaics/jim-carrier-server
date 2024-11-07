@@ -186,7 +186,10 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := h.store.GetUserByEmail(payload.Email)
 
-	if len(payload.ProfilePicture) > 0 {
+	if len(payload.ProfilePicture) > constants.PROFILE_IMG_MAX_BYTES {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("the image size exceeds the limit of 5MB"))
+		return
+	} else if len(payload.ProfilePicture) > 0 {
 		var imageExtension string
 
 		// check image type
@@ -525,7 +528,10 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 
 	var imageExtension string
 
-	if len(payload.ProfilePicture) > 0 {
+	if len(payload.ProfilePicture) > constants.PROFILE_IMG_MAX_BYTES {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("the image size exceeds the limit of 5MB"))
+		return
+	} else if len(payload.ProfilePicture) > 0 {
 		// check image type
 		mimeType := http.DetectContentType(payload.ProfilePicture)
 		switch mimeType {
