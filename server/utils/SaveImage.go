@@ -12,8 +12,8 @@ func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string,
 		return "", err
 	}
 
-	// 20MB
-	maxBytes := 20 << 20 // 20MB in bytes
+	// 5MB
+	maxBytes := 5 << 20 // 5MB in bytes
 
 	// check for image size
 	if len(imageData) > maxBytes {
@@ -74,8 +74,8 @@ func SavePaymentProof(imageData []byte, fileName string) error {
 		return err
 	}
 
-	// 20MB
-	maxBytes := 20 << 20 // 20MB in bytes
+	// 5MB
+	maxBytes := 5 << 20 // 5MB in bytes
 
 	// check for image size
 	if len(imageData) > maxBytes {
