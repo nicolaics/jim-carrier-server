@@ -71,9 +71,9 @@ type UpdateOrderStatusPayload struct {
 	PackageLocation string `json:"packageLocation"`
 }
 
-// type GetPaymentProofImagePayload struct {
-// 	PaymentProofURL string `json:"paymentProofUrl" validate:"required"`
-// }
+type GetPaymentProofImagePayload struct {
+	PaymentProofURL string `json:"paymentProofUrl" validate:"required"`
+}
 
 type OrderGiverReturnFromDB struct {
 	ID              int            `json:"id"`
