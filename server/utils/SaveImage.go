@@ -14,12 +14,12 @@ func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string,
 		return "", err
 	}
 
-	// 10MB
-	maxBytes := 10 << 20 // 10MB in bytes
+	// 5MB
+	maxBytes := 5 << 20 // 5MB in bytes
 
 	// check for image size
 	if len(imageData) > maxBytes {
-		return "", fmt.Errorf("the image size exceeds the limit of 10MB")
+		return "", fmt.Errorf("the image size exceeds the limit of 5MB")
 	}
 
 	// set the image file name
