@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -83,4 +85,41 @@ func SavePaymentProof(imageData []byte, fileName string) error {
 	}
 
 	return nil
+}
+
+func DownloadImage(srcURL string) ([]byte, string, error) {
+	resp, err := http.Head(srcURL)
+	if err != nil {
+		return nil, "", err
+	}
+	defer resp.Body.Close()
+
+	var fileExt string
+	contentType := resp.Header.Get("Content-Type")
+	switch contentType {
+	case "image/jpeg":
+		fileExt = ".jpg"
+	case "image/png":
+		fileExt = ".png"
+	default:
+		return nil, "", fmt.Errorf("failed to identify picture extension: %s", contentType)
+	}
+
+	// Step 3: Download the image with a GET request
+	resp, err = http.Get(srcURL)
+	if err != nil {
+		return nil, "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", err
+	}
+
+	imageData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return imageData, fileExt, nil
 }
