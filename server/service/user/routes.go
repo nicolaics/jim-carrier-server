@@ -211,13 +211,14 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		// save the image
 		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to save image: %v", err))
-			return
+			logger.WriteServerLog(fmt.Sprintf("user %s created but error saving profile picture: %v", payload.Email, err))
 		}
 
-		err = h.store.UpdateProfilePicture(user.ID, imageURL)
-		if err != nil {
-			logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", payload.Email, err))
+		if imageURL != "" {
+			err = h.store.UpdateProfilePicture(user.ID, imageURL)
+			if err != nil {
+				logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", payload.Email, err))
+			}
 		}
 	}
 
@@ -661,7 +662,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	var payload types.RegisterGooglePayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error parsing JSON: %v", err))
 		return
 	}
 
@@ -704,7 +705,6 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		PhoneNumber: payload.PhoneNumber,
 		Provider:    "google",
 		FCMToken:    payload.FCMToken,
-		ProfilePictureURL: payload.ProfilePictureURL,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create user: %v", err))
@@ -715,6 +715,26 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	if payload.ProfilePictureURL != "" {
+		imageData, imageExtension, err := utils.DownloadImage(payload.ProfilePictureURL)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("user %s created but error download profile picture: %v", email, err))
+		} else {
+			// save the image
+			imageURL, err := utils.SaveProfilePicture(user.ID, imageData, imageExtension)
+			if err != nil {
+				logger.WriteServerLog(fmt.Sprintf("user %s created but error saving profile picture: %v", email, err))
+			}
+
+			if imageURL != "" {
+				err = h.store.UpdateProfilePicture(user.ID, imageURL)
+				if err != nil {
+					logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", email, err))
+				}
+			}
+		}
 	}
 
 	tokenDetails, err := jwt.CreateJWT(user.ID)
