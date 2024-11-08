@@ -177,9 +177,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 		ordersReturnTemp := make([]types.OrderCarrierReturnPayload, 0)
 		for _, order := range orders {
-			paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
+			paymentStatus := utils.PaymentStatusIntToString(order.PaymentStatus)
 
-			orderStatus := utils.GetOrderStatusType(order.OrderStatus)
+			orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
 			temp := types.OrderCarrierReturnPayload{
 				Listing:          order.Listing,
@@ -211,9 +211,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 		ordersReturnTemp := make([]types.OrderGiverReturnPayload, 0)
 		for _, order := range orders {
-			paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
+			paymentStatus := utils.PaymentStatusIntToString(order.PaymentStatus)
 
-			orderStatus := utils.GetOrderStatusType(order.OrderStatus)
+			orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
 			temp := types.OrderGiverReturnPayload{
 				Listing:         order.Listing,
@@ -287,9 +287,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
+		paymentStatus := utils.PaymentStatusIntToString(order.PaymentStatus)
 
-		orderStatus := utils.GetOrderStatusType(order.OrderStatus)
+		orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
 		returnOrder = types.OrderCarrierReturnPayload{
 			Listing:          order.Listing,
@@ -315,9 +315,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		paymentStatus := utils.GetPaymentStatusType(order.PaymentStatus)
+		paymentStatus := utils.PaymentStatusIntToString(order.PaymentStatus)
 
-		orderStatus := utils.GetOrderStatusType(order.OrderStatus)
+		orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
 		returnOrder = types.OrderGiverReturnPayload{
 			Listing:         order.Listing,
@@ -433,13 +433,13 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		paymentStatus := utils.SetPaymentStatusType(payload.PaymentStatus)
+		paymentStatus := utils.PaymentStatusStringToInt(payload.PaymentStatus)
 		if paymentStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 			return
 		}
 
-		orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
+		orderStatus := utils.OrderStatusStringToInt(payload.OrderStatus)
 		if orderStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 			return
@@ -522,7 +522,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
+		orderStatus := utils.OrderStatusStringToInt(payload.OrderStatus)
 
 		err = h.orderStore.UpdatePackageLocation(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
@@ -552,7 +552,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		paymentStatus := utils.SetPaymentStatusType(payload.PaymentStatus)
+		paymentStatus := utils.PaymentStatusStringToInt(payload.PaymentStatus)
 		if paymentStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
 			return
@@ -651,7 +651,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		orderStatus := utils.SetOrderStatusType(payload.OrderStatus)
+		orderStatus := utils.OrderStatusStringToInt(payload.OrderStatus)
 		if orderStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
 			return

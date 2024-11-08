@@ -3,7 +3,7 @@ package utils
 import "github.com/nicolaics/jim-carrier/constants"
 
 // to set the order status from string into int
-func SetOrderStatusType(orderStr string) int {
+func OrderStatusStringToInt(orderStr string) int {
 	var orderStatus int
 	switch orderStr {
 	case constants.WAITING_STATUS_STR:
@@ -24,7 +24,7 @@ func SetOrderStatusType(orderStr string) int {
 }
 
 // to get the order status string from int
-func GetOrderStatusType(orderStatus int) string {
+func OrderStatusIntToString(orderStatus int) string {
 	var orderStr string
 	switch orderStatus {
 	case constants.ORDER_STATUS_CANCELLED:
@@ -43,7 +43,7 @@ func GetOrderStatusType(orderStatus int) string {
 }
 
 // to set the payment status from string into int
-func SetPaymentStatusType(paymentStr string) int {
+func PaymentStatusStringToInt(paymentStr string) int {
 	var paymentStatus int
 	switch paymentStr {
 	case constants.PENDING_STATUS_STR:
@@ -60,7 +60,7 @@ func SetPaymentStatusType(paymentStr string) int {
 }
 
 // to get the payment status string from int
-func GetPaymentStatusType(paymentStatus int) string {
+func PaymentStatusIntToString(paymentStatus int) string {
 	var paymentStr string
 	switch paymentStatus {
 	case constants.PAYMENT_STATUS_CANCELLED:
