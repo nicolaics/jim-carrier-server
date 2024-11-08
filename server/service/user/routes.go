@@ -159,8 +159,12 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if the newly created user exists
-	_, err = h.store.GetUserByEmail(payload.Email)
-	if err == nil {
+	exist, _, err := h.store.CheckProvider(payload.Email)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if exist {
 		utils.WriteError(w, http.StatusBadRequest,
 			fmt.Errorf("user with email %s already exists", payload.Email))
 		return
@@ -625,7 +629,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.CreateJWT(user.ID)
+	tokenDetails, err := jwt.CreateJWT(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
 		return
@@ -639,7 +643,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		logger.WriteServerLog(logMsg)
 	}
 
-	err = h.store.SaveToken(user.ID, token)
+	err = h.store.SaveToken(user.ID, tokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
@@ -647,7 +651,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 
 	response := map[string]interface{}{
 		"user":  user,
-		"token": token,
+		"token": tokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response)
@@ -682,13 +686,12 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check whether the provider is google or not
-	user, err := h.store.GetUserByEmail(email)
+	exist, _, err := h.store.CheckProvider(email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
-	if user != nil {
+	if exist {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account exist already"))
 		return
 	}
@@ -701,29 +704,34 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		PhoneNumber: payload.PhoneNumber,
 		Provider:    "google",
 		FCMToken:    payload.FCMToken,
+		ProfilePictureURL: payload.ProfilePictureURL,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create user: %v", err))
 		return
 	}
 
-	user, err = h.store.GetUserByEmail(email)
+	user, err := h.store.GetUserByEmail(email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	token, err := jwt.CreateJWT(user.ID)
+	tokenDetails, err := jwt.CreateJWT(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
 		return
 	}
 
-	err = h.store.SaveToken(user.ID, token)
+	err = h.store.SaveToken(user.ID, tokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, "Register successfully using Google")
+	tokens := map[string]string{
+		"token": tokenDetails.Token,
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, tokens)
 }
