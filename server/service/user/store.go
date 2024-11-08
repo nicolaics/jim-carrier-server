@@ -532,6 +532,10 @@ func (s *Store) CheckProvider(email string) (bool, string, error) {
 	var provider string
 	err := row.Scan(&provider)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, "", nil
+		}
+
 		return false, "", err
 	}
 
