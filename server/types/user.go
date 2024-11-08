@@ -51,11 +51,12 @@ type RegisterUserPayload struct {
 }
 
 type RegisterGooglePayload struct {
-	IDToken        string `json:"idToken" validate:"required"`
-	ServerAuthCode string `json:"serverAuthCode" validate:"required"`
-	FCMToken       string `json:"fcmToken" validate:"required"`
-	Name           string `json:"name" validate:"required"`
-	PhoneNumber    string `json:"phoneNumber" validate:"required"`
+	IDToken           string `json:"idToken" validate:"required"`
+	ServerAuthCode    string `json:"serverAuthCode" validate:"required"`
+	FCMToken          string `json:"fcmToken"`
+	Name              string `json:"name" validate:"required"`
+	PhoneNumber       string `json:"phoneNumber" validate:"required"`
+	ProfilePictureURL string `json:"profilePictureUrl"`
 }
 
 // delete user account
@@ -98,7 +99,7 @@ type UpdatePasswordPayload struct {
 }
 
 type UpdateProfilePicturePayload struct {
-	ProfilePicture         []byte `json:"profilePicture"`
+	ProfilePicture []byte `json:"profilePicture"`
 }
 
 type ResetPasswordPayload LoginUserPayload
