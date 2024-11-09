@@ -83,7 +83,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("not found, invalid email: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user not found"))
 		return
 	}
 
@@ -95,7 +95,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	// check password match
 	if !(auth.ComparePassword(password, []byte(payload.Password))) {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("password incorrect"))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid Password"))
 		return
 	}
 
@@ -148,7 +148,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !valid {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid verification code or code has expired"))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("wrong verification code or code has expired"))
 		return
 	}
 
@@ -166,7 +166,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	if exist {
 		utils.WriteError(w, http.StatusBadRequest,
-			fmt.Errorf("user with email %s already exists", payload.Email))
+			fmt.Errorf("user already exists, please proceed to Login"))
 		return
 	}
 
@@ -191,7 +191,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	user, _ := h.store.GetUserByEmail(payload.Email)
 
 	if len(payload.ProfilePicture) > constants.PROFILE_IMG_MAX_BYTES {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("the image size exceeds the limit of 5MB"))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("image size exceeds the limit of 5MB"))
 		return
 	} else if len(payload.ProfilePicture) > 0 {
 		var imageExtension string
@@ -534,7 +534,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 	var imageExtension string
 
 	if len(payload.ProfilePicture) > constants.PROFILE_IMG_MAX_BYTES {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("the image size exceeds the limit of 5MB"))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("image size exceeds the limit of 5MB"))
 		return
 	} else if len(payload.ProfilePicture) > 0 {
 		// check image type
@@ -693,7 +693,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if exist {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account exist already"))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user exist already, proceed to login"))
 		return
 	}
 
