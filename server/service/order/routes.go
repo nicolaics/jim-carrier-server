@@ -583,12 +583,12 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			filePath := constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePaymentProofFilename(imageExtension)
+			filePath := constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePaymentProofFileName(imageExtension)
 
 			isPaymentProofUrlExist := h.orderStore.IsPaymentProofURLExist(filePath)
 
 			for isPaymentProofUrlExist {
-				filePath = constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePaymentProofFilename(imageExtension)
+				filePath = constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePaymentProofFileName(imageExtension)
 				isPaymentProofUrlExist = h.orderStore.IsPaymentProofURLExist(filePath)
 			}
 

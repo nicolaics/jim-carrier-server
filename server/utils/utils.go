@@ -48,14 +48,13 @@ func GenerateRandomCodeAlphanumeric(length int) string {
 	return string(result)
 }
 
-func GeneratePaymentProofFilename(fileExtension string) string {
+func GeneratePaymentProofFileName(fileExtension string) string {
 	// set the image file name
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	randomNumberOne := GenerateRandomCodeNumbers(6)
 	randomNumberTwo := GenerateRandomCodeNumbers(6)
 
 	fileName := fmt.Sprintf("%s-%s%s", randomNumberOne, randomNumberTwo, fileExtension)
-	
+
 	return fileName
 }
-
