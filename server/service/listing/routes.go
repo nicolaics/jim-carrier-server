@@ -67,7 +67,7 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 
 	carrier, err = h.userStore.GetUserByID(carrier.ID)
 	if carrier == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user not found"))
 		return
 	}
 	if err != nil {
@@ -92,7 +92,7 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 
 	isDuplicate, err := h.listingStore.IsListingDuplicate(carrier.ID, payload.Destination, payload.WeightAvailable, *departureDate)
 	if err != nil || isDuplicate {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("duplicate listing: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing with the same information exists already"))
 		return
 	}
 

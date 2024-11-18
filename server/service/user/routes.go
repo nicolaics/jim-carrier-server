@@ -81,6 +81,21 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check whether the provider is email or not
+	exists, provider, err := h.store.CheckProvider(payload.Email)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if exists && provider != "email" {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("this email is associated with a different login method"))
+		return
+	} else if !exists {
+		utils.WriteError(w, http.StatusNotFound, fmt.Errorf("account not found, go to registration"))
+		return
+	}
+
 	user, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user not found"))
@@ -95,7 +110,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	// check password match
 	if !(auth.ComparePassword(password, []byte(payload.Password))) {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid Password"))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid password"))
 		return
 	}
 
