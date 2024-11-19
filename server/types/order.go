@@ -53,7 +53,6 @@ type ModifyOrderPayload struct {
 	PackageContent  string  `json:"packageContent" validate:"required"`
 	PackageImage    []byte  `json:"packageImage"`
 	PaymentStatus   string  `json:"paymentStatus" validate:"required"`
-	OrderStatus     string  `json:"orderStatus" validate:"required"`
 	PackageLocation string  `json:"packageLocation" validate:"required"`
 	Notes           string  `json:"notes"`
 }
