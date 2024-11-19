@@ -14,7 +14,7 @@ type ReviewStore interface {
 
 	DeleteReview(id int) error
 
-	ModifyReview(id int, content string, rating int) error
+	ModifyReview(id int, content string, rating float64) error
 
 	IsReviewDuplicate(reviewerId, revieweeId, orderId int) (bool, error)
 
@@ -22,10 +22,10 @@ type ReviewStore interface {
 }
 
 type RegisterReviewPayload struct {
-	OrderID      int    `json:"orderId" validate:"required"`
-	RevieweeName string `json:"revieweeName" validate:"required"`
-	Content      string `json:"content"`
-	Rating       int    `json:"rating" validate:"required"`
+	OrderID      int     `json:"orderId" validate:"required"`
+	RevieweeName string  `json:"revieweeName" validate:"required"`
+	Content      string  `json:"content"`
+	Rating       float64 `json:"rating" validate:"required"`
 }
 
 type DeleteReviewPayload struct {
@@ -33,16 +33,16 @@ type DeleteReviewPayload struct {
 }
 
 type ModifyReviewPayload struct {
-	ID      int    `json:"id" validate:"required"`
-	Content string `json:"content"`
-	Rating  int    `json:"rating" validate:"required"`
+	ID      int     `json:"id" validate:"required"`
+	Content string  `json:"content"`
+	Rating  float64 `json:"rating" validate:"required"`
 }
 
 type ReceivedReviewReturnPayload struct {
 	ID                 int       `json:"id"`
 	ReviewerID         int       `json:"reviewerId"`
 	Content            string    `json:"content"`
-	Rating             int       `json:"rating"`
+	Rating             float64   `json:"rating"`
 	PackageDestination string    `json:"packageDestination"`
 	DepartureDate      time.Time `json:"departureDate"`
 	LastModifiedAt     time.Time `json:"lastModifiedAt"`
@@ -52,7 +52,7 @@ type SentReviewReturnPayload struct {
 	ID                 int       `json:"id"`
 	RevieweeName       string    `json:"revieweeName"`
 	Content            string    `json:"content"`
-	Rating             int       `json:"rating"`
+	Rating             float64   `json:"rating"`
 	PackageDestination string    `json:"packageDestination"`
 	DepartureDate      time.Time `json:"departureDate"`
 	LastModifiedAt     time.Time `json:"lastModifiedAt"`
@@ -64,7 +64,7 @@ type Review struct {
 	ReviewerID     int       `json:"reviewerId"`
 	RevieweeID     int       `json:"revieweeId"`
 	Content        string    `json:"content"`
-	Rating         int       `json:"rating"`
+	Rating         float64   `json:"rating"`
 	ReviewType     int       `json:"reviewType"`
 	CreatedAt      time.Time `json:"createdAt"`
 	LastModifiedAt time.Time `json:"lastModifiedAt"`

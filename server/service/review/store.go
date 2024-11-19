@@ -124,7 +124,7 @@ func (s *Store) DeleteReview(id int) error {
 	return nil
 }
 
-func (s *Store) ModifyReview(id int, content string, rating int) error {
+func (s *Store) ModifyReview(id int, content string, rating float64) error {
 	query := `UPDATE review SET content = ?, rating = ? WHERE id = ?`
 	_, err := s.db.Exec(query, content, rating, id)
 	if err != nil {
@@ -182,7 +182,7 @@ func scanRowIntoReceivedReview(rows *sql.Rows) (*types.ReceivedReviewReturnPaylo
 		ID                 int
 		ReviewerID         int
 		Content            sql.NullString
-		Rating             int
+		Rating             float64
 		PackageDestination string
 		DepartureDate      time.Time
 		LastModifiedAt     time.Time
@@ -228,7 +228,7 @@ func scanRowIntoSentReview(rows *sql.Rows) (*types.SentReviewReturnPayload, erro
 		ID                 int
 		RevieweeName       string
 		Content            sql.NullString
-		Rating             int
+		Rating             float64
 		PackageDestination string
 		DepartureDate      time.Time
 		LastModifiedAt     time.Time
@@ -276,7 +276,7 @@ func scanRowIntoReview(rows *sql.Rows) (*types.Review, error) {
 		ReviewerID     int
 		RevieweeID     int
 		Content        sql.NullString
-		Rating         int
+		Rating         float64
 		ReviewType     int
 		CreatedAt      time.Time
 		LastModifiedAt time.Time
