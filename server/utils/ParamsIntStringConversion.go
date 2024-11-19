@@ -12,8 +12,8 @@ func OrderStatusStringToInt(orderStr string) int {
 		orderStatus = constants.ORDER_STATUS_COMPLETED
 	case constants.CANCELLED_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_CANCELLED
-	case constants.VERIFYING_STATUS_STR:
-		orderStatus = constants.ORDER_STATUS_VERIFYING
+	case constants.CONFIRMED_STATUS_STR:
+		orderStatus = constants.ORDER_STATUS_CONFIRMED
 	case constants.EN_ROUTE_STATUS_STR:
 		orderStatus = constants.ORDER_STATUS_EN_ROUTE
 	default:
@@ -35,8 +35,8 @@ func OrderStatusIntToString(orderStatus int) string {
 		orderStr = constants.COMPLETED_STATUS_STR
 	case constants.ORDER_STATUS_EN_ROUTE:
 		orderStr = constants.EN_ROUTE_STATUS_STR
-	case constants.ORDER_STATUS_VERIFYING:
-		orderStr = constants.VERIFYING_STATUS_STR
+	case constants.ORDER_STATUS_CONFIRMED:
+		orderStr = constants.CONFIRMED_STATUS_STR
 	}
 
 	return orderStr
