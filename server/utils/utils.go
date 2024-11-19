@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -57,4 +58,29 @@ func GeneratePictureFileName(fileExtension string) string {
 	fileName := fmt.Sprintf("%s-%s%s", randomNumberOne, randomNumberTwo, fileExtension)
 
 	return fileName
+}
+
+func WrapText(text string, width int) []string {
+	var lines []string
+	words := strings.Fields(text) // Split the text into words
+	line := ""
+
+	for _, word := range words {
+		if (len(line) + len(word) + 1) > width { // Check if adding the word exceeds the width
+			lines = append(lines, line) // Append the current line to the list
+			line = word                 // Start a new line with the current word
+		} else {
+			if line != "" {
+				line += " " // Add a space before appending the word
+			}
+
+			line += word
+		}
+	}
+
+	if line != "" {
+		lines = append(lines, line) // Append the last line
+	}
+
+	return lines
 }
