@@ -24,7 +24,7 @@ func CreateJWT(userId int) (*types.TokenDetails, error) {
 	tokenExp := time.Second * time.Duration(config.Envs.JWTExpirationInSeconds)
 
 	tokenDetails.TokenExp = time.Now().Add(tokenExp).Unix()
-	log.Println("tokenExp:", tokenDetails.TokenExp)
+	// log.Println("tokenExp:", tokenDetails.TokenExp)
 
 	tempUUID, err := uuid.NewV7()
 	if err != nil {
