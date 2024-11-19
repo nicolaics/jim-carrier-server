@@ -19,17 +19,18 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) CreateOrder(order types.Order) error {
 	values := "?"
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 7; i++ {
 		values += ", ?"
 	}
 
 	query := `INSERT INTO order_list (
 					listing_id, giver_id, weight, price,
-					currency_id, notes) 
+					currency_id, package_content, package_img_url, notes) 
 					VALUES (` + values + `)`
 
 	_, err := s.db.Exec(query, order.ListingID, order.GiverID, order.Weight,
-		order.Price, order.CurrencyID, order.Notes)
+		order.Price, order.CurrencyID, order.PackageContent, order.PackageImageURL, 
+		order.Notes)
 	if err != nil {
 		return err
 	}
@@ -91,6 +92,7 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 					 user.name, user.phone_number, 
 					 o.weight, o.price, 
 					 c.name, 
+					 o.package_content, o.package_img_url, 
 					 o.payment_status, o.paid_at, 
 					 o.payment_proof_url, 
 					 o.order_status, o.package_location, 
@@ -126,6 +128,7 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, 
 						c.name, 
+						o.package_content, o.package_img_url, 
 						o.payment_status, o.paid_at,
 						o.payment_proof_url, 
 						o.order_status, o.package_location, 
@@ -167,6 +170,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 					 user.name, user.phone_number, 
 					 o.weight, o.price, 
 					 c.name, 
+					 o.package_content, o.package_img_url, 
 					 o.payment_status, o.paid_at, 
 					 o.payment_proof_url, 
 					 o.order_status, o.package_location, 
@@ -205,6 +209,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, 
 						c.name, 
+						o.package_content, o.package_img_url, 
 						o.payment_status, o.paid_at, 
 						o.payment_proof_url, 
 						o.order_status, o.package_location, 
@@ -255,12 +260,13 @@ func (s *Store) DeleteOrder(orderId int, userId int) error {
 
 func (s *Store) ModifyOrder(id int, order types.Order) error {
 	query := `UPDATE order_list SET weight = ?, price = ?, 
-					currency_id = ?, 
+					currency_id = ?, package_content = ?, package_img_url = ?, 
 					payment_status = ?, package_location = ?, 
 					order_status = ?, notes = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
-	_, err := s.db.Exec(query, order.Weight, order.Price, order.CurrencyID, order.PaymentStatus,
+	_, err := s.db.Exec(query, order.Weight, order.Price, order.CurrencyID, 
+		order.PackageContent, order.PackageImageURL, order.PaymentStatus,
 		order.PackageLocation, order.OrderStatus, order.Notes,
 		time.Now(), id)
 	if err != nil {
@@ -366,6 +372,21 @@ func (s *Store) IsPaymentProofURLExist(paymentProofUrl string) bool {
 	return (count > 0)
 }
 
+func (s *Store) IsPackageImageURLExist(packageImgUrl string) bool {
+	query := `SELECT COUNT(*) FROM order_list WHERE package_img_url = ? 
+											AND deleted_at IS NULL`
+
+	row := s.db.QueryRow(query, packageImgUrl)
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return true
+	}
+
+	return (count > 0)
+}
+
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 	order := new(types.Order)
 
@@ -376,6 +397,8 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 		&order.Weight,
 		&order.Price,
 		&order.CurrencyID,
+		&order.PackageContent,
+		&order.PackageImageURL,
 		&order.PaymentStatus,
 		&order.PaidAt,
 		&order.PaymentProofURL,
@@ -410,6 +433,8 @@ func scanRowIntoOrderForCarrier(rows *sql.Rows) (*types.OrderCarrierReturnFromDB
 		&order.Weight,
 		&order.Price,
 		&order.Currency,
+		&order.PackageContent,
+		&order.PackageImageURL,
 		&order.PaymentStatus,
 		&order.PaidAt,
 		&order.PaymentProofURL,
@@ -442,6 +467,8 @@ func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, er
 		&order.Weight,
 		&order.Price,
 		&order.Currency,
+		&order.PackageContent,
+		&order.PackageImageURL,
 		&order.PaymentStatus,
 		&order.PaidAt,
 		&order.PaymentProofURL,

@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier/constants"
+	"github.com/nicolaics/jim-carrier/logger"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
 )
@@ -121,13 +122,53 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var packageImgURL string
+
+	if len(payload.PackageImage) > constants.PACKAGE_IMG_MAX_BYTES {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("image size exceeds the limit of 10MB"))
+		return
+	} else if len(payload.PackageImage) > 0 {
+		var imageExtension string
+
+		// check image type
+		mimeType := http.DetectContentType(payload.PackageImage)
+		switch mimeType {
+		case "image/jpeg":
+			imageExtension = ".jpg"
+		case "image/png":
+			imageExtension = ".png"
+		default:
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unsupported image type"))
+			return
+		}
+
+		filePath := constants.PACKAGE_IMG_DIR_PATH + utils.GeneratePictureFileName(imageExtension)
+
+		isPackageImageURLExist := h.orderStore.IsPackageImageURLExist(filePath)
+
+		for isPackageImageURLExist {
+			filePath = constants.PACKAGE_IMG_DIR_PATH + utils.GeneratePictureFileName(imageExtension)
+			isPackageImageURLExist = h.orderStore.IsPackageImageURLExist(filePath)
+		}
+
+		// save the image
+		err := utils.SavePackageImage(payload.PackageImage, filePath)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("error saving package image: %v", err))
+		}
+
+		packageImgURL = filePath
+	}
+
 	err = h.orderStore.CreateOrder(types.Order{
-		ListingID:  listing.ID,
-		GiverID:    user.ID,
-		Weight:     payload.Weight,
-		Price:      payload.Price,
-		CurrencyID: currency.ID,
-		Notes:      payload.Notes,
+		ListingID:       listing.ID,
+		GiverID:         user.ID,
+		Weight:          payload.Weight,
+		Price:           payload.Price,
+		CurrencyID:      currency.ID,
+		PackageContent:  payload.PackageContent,
+		PackageImageURL: packageImgURL,
+		Notes:           payload.Notes,
 	})
 	if err != nil {
 		errTemp := h.listingStore.AddWeightAvailable(listing.ID, payload.Weight)
@@ -189,6 +230,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				Weight:           order.Weight,
 				Price:            order.Price,
 				Currency:         order.Currency,
+				PackageContent:   order.PackageContent,
+				PackageImageURL:  order.PackageImageURL,
 				PaymentStatus:    paymentStatus,
 				PaidAt:           order.PaidAt.Time,
 				PaymentProofURL:  order.PaymentProofURL.String,
@@ -221,6 +264,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				Weight:          order.Weight,
 				Price:           order.Price,
 				Currency:        order.Currency,
+				PackageContent:  order.PackageContent,
+				PackageImageURL: order.PackageImageURL,
 				PaymentStatus:   paymentStatus,
 				PaidAt:          order.PaidAt.Time,
 				PaymentProofURL: order.PaymentProofURL.String,
@@ -299,6 +344,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			Weight:           order.Weight,
 			Price:            order.Price,
 			Currency:         order.Currency,
+			PackageContent:   order.PackageContent,
+			PackageImageURL:  order.PackageImageURL,
 			PaymentStatus:    paymentStatus,
 			PaidAt:           order.PaidAt.Time,
 			PaymentProofURL:  order.PaymentProofURL.String,
@@ -325,6 +372,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			Weight:          order.Weight,
 			Price:           order.Price,
 			Currency:        order.Currency,
+			PackageContent:  order.PackageContent,
+			PackageImageURL: order.PackageImageURL,
 			PaymentStatus:   paymentStatus,
 			PaidAt:          order.PaidAt.Time,
 			PaymentProofURL: order.PaymentProofURL.String,
@@ -465,6 +514,46 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		packageImgURL := order.PackageImageURL
+
+		if order.PackageContent != payload.PackageContent {
+			if len(payload.PackageImage) > constants.PACKAGE_IMG_MAX_BYTES {
+				utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("image size exceeds the limit of 10MB"))
+				return
+			} else if len(payload.PackageImage) > 0 {
+				var imageExtension string
+
+				// check image type
+				mimeType := http.DetectContentType(payload.PackageImage)
+				switch mimeType {
+				case "image/jpeg":
+					imageExtension = ".jpg"
+				case "image/png":
+					imageExtension = ".png"
+				default:
+					utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unsupported image type"))
+					return
+				}
+
+				filePath := constants.PACKAGE_IMG_DIR_PATH + utils.GeneratePictureFileName(imageExtension)
+
+				isPackageImageURLExist := h.orderStore.IsPackageImageURLExist(filePath)
+
+				for isPackageImageURLExist {
+					filePath = constants.PACKAGE_IMG_DIR_PATH + utils.GeneratePictureFileName(imageExtension)
+					isPackageImageURLExist = h.orderStore.IsPackageImageURLExist(filePath)
+				}
+
+				// save the image
+				err := utils.SavePackageImage(payload.PackageImage, filePath)
+				if err != nil {
+					logger.WriteServerLog(fmt.Sprintf("error saving package image: %v", err))
+				}
+
+				packageImgURL = filePath
+			}
+		}
+
 		err = h.listingStore.AddWeightAvailable(listing.ID, order.Weight)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reset weight available: %v", err))
@@ -481,6 +570,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			Weight:          payload.Weight,
 			Price:           payload.Price,
 			CurrencyID:      currency.ID,
+			PackageContent:  payload.PackageContent,
+			PackageImageURL: packageImgURL,
 			PaymentStatus:   paymentStatus,
 			OrderStatus:     orderStatus,
 			PackageLocation: payload.PackageLocation,
@@ -583,12 +674,12 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			filePath := constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePaymentProofFileName(imageExtension)
+			filePath := constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePictureFileName(imageExtension)
 
 			isPaymentProofUrlExist := h.orderStore.IsPaymentProofURLExist(filePath)
 
 			for isPaymentProofUrlExist {
-				filePath = constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePaymentProofFileName(imageExtension)
+				filePath = constants.PAYMENT_PROOF_DIR_PATH + utils.GeneratePictureFileName(imageExtension)
 				isPaymentProofUrlExist = h.orderStore.IsPaymentProofURLExist(filePath)
 			}
 

@@ -25,14 +25,17 @@ type OrderStore interface {
 
 	IsOrderDuplicate(userId int, listingId int) (bool, error)
 	IsPaymentProofURLExist(string) bool
+	IsPackageImageURLExist(packageImgUrl string) bool
 }
 
 type RegisterOrderPayload struct {
-	ListingID int     `json:"listingId" validate:"required"`
-	Weight    float64 `json:"weight" validate:"required"`
-	Price     float64 `json:"price" validate:"required"`
-	Currency  string  `json:"currency" validate:"required"`
-	Notes     string  `json:"notes"`
+	ListingID      int     `json:"listingId" validate:"required"`
+	Weight         float64 `json:"weight" validate:"required"`
+	Price          float64 `json:"price" validate:"required"`
+	Currency       string  `json:"currency" validate:"required"`
+	PackageContent string  `json:"packageContent" validate:"required"`
+	PackageImage   []byte  `json:"packageImage" validate:"required"`
+	Notes          string  `json:"notes"`
 }
 
 type ViewOrderDetailPayload struct {
@@ -47,6 +50,8 @@ type ModifyOrderPayload struct {
 	Weight          float64 `json:"weight" validate:"required"`
 	Price           float64 `json:"price" validate:"required"`
 	Currency        string  `json:"currency" validate:"required"`
+	PackageContent  string  `json:"packageContent" validate:"required"`
+	PackageImage    []byte  `json:"packageImage"`
 	PaymentStatus   string  `json:"paymentStatus" validate:"required"`
 	OrderStatus     string  `json:"orderStatus" validate:"required"`
 	PackageLocation string  `json:"packageLocation" validate:"required"`
@@ -84,6 +89,8 @@ type OrderGiverReturnFromDB struct {
 	Weight          float64        `json:"weight"`
 	Price           float64        `json:"price"`
 	Currency        string         `json:"currency"`
+	PackageContent  string         `json:"packageContent"`
+	PackageImageURL string         `json:"packageImageUrl"`
 	PaymentStatus   int            `json:"paymentStatus"`
 	PaidAt          sql.NullTime   `json:"paidAt"`
 	PaymentProofURL sql.NullString `json:"paymentProofUrl"`
@@ -106,6 +113,8 @@ type OrderGiverReturnPayload struct {
 	Weight          float64   `json:"weight"`
 	Price           float64   `json:"price"`
 	Currency        string    `json:"currency"`
+	PackageContent  string    `json:"packageContent"`
+	PackageImageURL string    `json:"packageImageUrl"`
 	PaymentStatus   string    `json:"paymentStatus"`
 	PaidAt          time.Time `json:"paidAt"`
 	PaymentProofURL string    `json:"paymentProofUrl"`
@@ -136,6 +145,8 @@ type OrderCarrierReturnFromDB struct {
 	Weight           float64        `json:"weight"`
 	Price            float64        `json:"price"`
 	Currency         string         `json:"currency"`
+	PackageContent   string         `json:"packageContent"`
+	PackageImageURL  string         `json:"packageImageUrl"`
 	PaymentStatus    int            `json:"paymentStatus"`
 	PaidAt           sql.NullTime   `json:"paidAt"`
 	PaymentProofURL  sql.NullString `json:"paymentProofUrl"`
@@ -159,6 +170,8 @@ type OrderCarrierReturnPayload struct {
 	Weight           float64   `json:"weight"`
 	Price            float64   `json:"price"`
 	Currency         string    `json:"currency"`
+	PackageContent   string    `json:"packageContent"`
+	PackageImageURL  string    `json:"packageImageUrl"`
 	PaymentStatus    string    `json:"paymentStatus"`
 	PaidAt           time.Time `json:"paidAt"`
 	PaymentProofURL  string    `json:"paymentProofUrl"`
@@ -176,6 +189,8 @@ type Order struct {
 	Weight          float64        `json:"weight"`
 	Price           float64        `json:"price"`
 	CurrencyID      int            `json:"currencyId"`
+	PackageContent  string         `json:"packageContent"`
+	PackageImageURL string         `json:"packageImageUrl"`
 	PaymentStatus   int            `json:"paymentStatus"`
 	PaidAt          sql.NullTime   `json:"paidAt"`
 	PaymentProofURL sql.NullString `json:"paymentProofUrl"`
