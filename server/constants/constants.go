@@ -11,13 +11,13 @@ const PAYMENT_STATUS_REFUNDED = 3
 const ORDER_STATUS_WAITING = 0
 const ORDER_STATUS_COMPLETED = 1
 const ORDER_STATUS_CANCELLED = 2
-const ORDER_STATUS_VERIFYING = 3
+const ORDER_STATUS_CONFIRMED = 3
 const ORDER_STATUS_EN_ROUTE = 4
 
 const WAITING_STATUS_STR = "waiting"
 const COMPLETED_STATUS_STR = "completed"
 const CANCELLED_STATUS_STR = "cancelled"
-const VERIFYING_STATUS_STR = "verifying"
+const CONFIRMED_STATUS_STR = "confirmed"
 const EN_ROUTE_STATUS_STR = "en-route"
 const PENDING_STATUS_STR = "pending"
 const REFUNDED_STATUS_STR = "refunded"
