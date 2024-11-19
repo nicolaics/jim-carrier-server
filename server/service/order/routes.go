@@ -86,6 +86,16 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	carrier, err := h.userStore.GetUserByID(listing.CarrierID)
+	if carrier == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("carrier not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	isDuplicate, err := h.orderStore.IsOrderDuplicate(user.ID, listing.ID)
 	if isDuplicate {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("duplicate order"))
@@ -182,6 +192,36 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 		utils.WriteError(w, http.StatusInternalServerError, errorMsg)
 		return
+	}
+
+	packageContents := utils.WrapText(payload.PackageContent, 100)
+
+	subject := "New Order Arrived!"
+
+	body := "New order just arrived to your listing!\n\n"
+	body += "Here are the details:\n"
+	body += fmt.Sprintf("\t%-15s: %s\n", "Name", user.Name)
+	body += fmt.Sprintf("\t%-15s: %s\n", "Destination", listing.Destination)
+	body += fmt.Sprintf("\t%-15s: %.1f\n", "Weight", payload.Weight)
+	body += fmt.Sprintf("\t%-15s: %.1f\n", "Total Price", payload.Price)
+	body += fmt.Sprintf("\t%-15s: %s\n", "Package Content", packageContents[0])
+
+	for _, line := range packageContents[1:] {
+		fmt.Printf("\t%-15s  %s\n", "", line)
+	}
+
+	if payload.Notes != "" {
+		body += fmt.Sprintf("\t%-15s: %s\n", "Notes", payload.Notes)
+	}
+
+	body += "\nAttached is the image of the package!\n\n"
+	body += "Confirm the order before\n"
+	body += fmt.Sprintf("\t\t%s 23:59 KST (GMT +09)\n", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006"))
+	body += "If not confirmed by then, the order will automatically be cancelled!"
+
+	err = utils.SendEmail(carrier.Email, subject, body, "", "")
+	if err != nil {
+		logger.WriteServerLog(fmt.Sprintf("error send email to carrier: %v", err))
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, "order created")

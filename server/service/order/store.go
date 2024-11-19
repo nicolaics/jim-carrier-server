@@ -19,18 +19,22 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) CreateOrder(order types.Order) error {
 	values := "?"
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 8; i++ {
 		values += ", ?"
 	}
 
 	query := `INSERT INTO order_list (
 					listing_id, giver_id, weight, price,
-					currency_id, package_content, package_img_url, notes) 
+					currency_id, package_content, package_img_url, notes, 
+					order_confirmation_deadline) 
 					VALUES (` + values + `)`
+	
+	deadline := time.Date(time.Now().Local().Year(), time.Now().Local().Month(), time.Now().Local().Day(), 0, 0, 0, 0, time.Now().Local().Location())
+	deadline = deadline.AddDate(0, 0, 2)
 
 	_, err := s.db.Exec(query, order.ListingID, order.GiverID, order.Weight,
 		order.Price, order.CurrencyID, order.PackageContent, order.PackageImageURL, 
-		order.Notes)
+		order.Notes, deadline)
 	if err != nil {
 		return err
 	}
@@ -261,13 +265,16 @@ func (s *Store) DeleteOrder(orderId int, userId int) error {
 func (s *Store) ModifyOrder(id int, order types.Order) error {
 	query := `UPDATE order_list SET weight = ?, price = ?, 
 					currency_id = ?, package_content = ?, package_img_url = ?, 
-					payment_status = ?, package_location = ?, 
+					payment_status = ?, package_location = ?, order_confirmation_deadline = ?, 
 					order_status = ?, notes = ?, last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
 
+	deadline := time.Date(time.Now().Local().Year(), time.Now().Local().Month(), time.Now().Local().Day(), 0, 0, 0, 0, time.Now().Local().Location())
+	deadline = deadline.AddDate(0, 0, 2)
+
 	_, err := s.db.Exec(query, order.Weight, order.Price, order.CurrencyID, 
 		order.PackageContent, order.PackageImageURL, order.PaymentStatus,
-		order.PackageLocation, order.OrderStatus, order.Notes,
+		order.PackageLocation, deadline, order.OrderStatus, order.Notes,
 		time.Now(), id)
 	if err != nil {
 		return err
@@ -402,6 +409,7 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 		&order.PaymentStatus,
 		&order.PaidAt,
 		&order.PaymentProofURL,
+		&order.OrderConfirmationDeadline,
 		&order.OrderStatus,
 		&order.PackageLocation,
 		&order.Notes,
@@ -416,6 +424,7 @@ func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 
 	order.CreatedAt = order.CreatedAt.Local()
 	order.LastModifiedAt = order.LastModifiedAt.Local()
+	order.OrderConfirmationDeadline = order.OrderConfirmationDeadline.Local()
 
 	return order, nil
 }
