@@ -48,7 +48,7 @@ func GenerateRandomCodeAlphanumeric(length int) string {
 	return string(result)
 }
 
-func GeneratePaymentProofFileName(fileExtension string) string {
+func GeneratePictureFileName(fileExtension string) string {
 	// set the image file name
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	randomNumberOne := GenerateRandomCodeNumbers(6)
