@@ -488,12 +488,6 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		orderStatus := utils.OrderStatusStringToInt(payload.OrderStatus)
-		if orderStatus == -1 {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown order status"))
-			return
-		}
-
 		currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
@@ -573,7 +567,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			PackageContent:  payload.PackageContent,
 			PackageImageURL: packageImgURL,
 			PaymentStatus:   paymentStatus,
-			OrderStatus:     orderStatus,
+			OrderStatus:     constants.ORDER_STATUS_WAITING,
 			PackageLocation: payload.PackageLocation,
 			Notes:           payload.Notes,
 		})
