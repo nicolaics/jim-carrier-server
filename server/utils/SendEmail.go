@@ -87,6 +87,8 @@ func SendEmail(to, subject, body, attachmentUrl, attachedFileName string) error 
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 
+	body += "\n\nCopyright 2024. Jim Carrier International."
+	
 	// email message
 	message := &Message{
 		To: []string{to},
