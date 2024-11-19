@@ -87,6 +87,30 @@ func SavePaymentProof(imageData []byte, fileName string) error {
 	return nil
 }
 
+func SavePackageImage(imageData []byte, fileName string) error {
+	if err := os.MkdirAll(constants.PACKAGE_IMG_DIR_PATH, 0744); err != nil {
+		return err
+	}
+
+	// set the image file name
+	imagePath := constants.PACKAGE_IMG_DIR_PATH + fileName
+
+	// create the empty file for the image
+	file, err := os.Create(imagePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// save the image data
+	_, err = file.Write(imageData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func DownloadImage(srcURL string) ([]byte, string, error) {
 	resp, err := http.Head(srcURL)
 	if err != nil {
