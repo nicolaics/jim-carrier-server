@@ -33,7 +33,8 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/listing", h.handlePost).Methods(http.MethodPost)
 	router.HandleFunc("/listing", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	router.HandleFunc("/listing", h.handleGetAll).Methods(http.MethodGet)
+	router.HandleFunc("/listing/{reqType}", h.handleGetAll).Methods(http.MethodGet)
+	router.HandleFunc("/listing/{reqType}", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	router.HandleFunc("/listing/detail", h.handleGetDetail).Methods(http.MethodPost)
 	router.HandleFunc("/listing/detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
@@ -137,15 +138,41 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	// validate token
-	_, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
-	listings, err := h.listingStore.GetAllListings()
+	user, err = h.userStore.GetUserByID(user.ID)
+	if user == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
+		return
+	}
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	reqType := vars["reqType"]
+
+	var listings []types.ListingReturnFromDB
+
+	if reqType == "all" {
+		listings, err = h.listingStore.GetAllListings()
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	} else if reqType == "carrier" {
+		listings, err = h.listingStore.GetListingsByCarrierID(user.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, err)
+			return
+		}
+	} else {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown request parameter"))
 		return
 	}
 
@@ -181,7 +208,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			Currency:              listing.Currency,
 			DepartureDate:         listing.DepartureDate,
 			LastReceivedDate:      listing.LastReceivedDate,
-			Description:           listing.Description,
+			Description:           listing.Description.String,
 			CarrierRating:         avgRating,
 			LastModifiedAt:        listing.LastModifiedAt,
 		})

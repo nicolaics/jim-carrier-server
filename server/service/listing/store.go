@@ -76,6 +76,38 @@ func (s *Store) GetAllListings() ([]types.ListingReturnFromDB, error) {
 	return listings, nil
 }
 
+func (s *Store) GetListingsByCarrierID(carrierId int) ([]types.ListingReturnFromDB, error) {
+	query := `SELECT l.id, l.carrier_id, user.name, l.destination, 
+					l.weight_available, l.price_per_kg, 
+					c.name, 
+					l.departure_date, 
+					l.last_received_date, l.description, 
+					l.last_modified_at  
+				FROM listing AS l 
+				JOIN user ON user.id = l.carrier_id 
+				JOIN currency AS c ON c.id = l.currency_id 
+				WHERE l.carrier_id = ? 
+				AND l.deleted_at IS NULL 
+				ORDER BY l.departure_date DESC`
+	rows, err := s.db.Query(query, carrierId)
+	if err != nil {
+		return nil, err
+	}
+
+	listings := make([]types.ListingReturnFromDB, 0)
+
+	for rows.Next() {
+		listing, err := scanRowIntoListingReturn(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		listings = append(listings, *listing)
+	}
+
+	return listings, nil
+}
+
 func (s *Store) UpdateListingExpStatus() error {
 	query := `UPDATE listing SET exp_status = ? 
 				WHERE (departure_date < ? OR weight_available <= 0) AND deleted_at IS NULL`
@@ -155,9 +187,9 @@ func (s *Store) GetListingByID(id int) (*types.ListingReturnFromDB, error) {
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
 				JOIN currency AS c ON c.id = l.currency_id 
-				WHERE l.id = ? AND l.exp_status = ? 
+				WHERE l.id = ?  
 				AND l.deleted_at IS NULL`
-	rows, err := s.db.Query(query, id, constants.EXP_STATUS_AVAILABLE)
+	rows, err := s.db.Query(query, id)
 	if err != nil {
 		return nil, err
 	}

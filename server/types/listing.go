@@ -8,6 +8,7 @@ import (
 type ListingStore interface {
 	CreateListing(Listing) error
 	GetAllListings() ([]ListingReturnFromDB, error)
+	GetListingsByCarrierID(carrierId int) ([]ListingReturnFromDB, error)
 
 	UpdateListingExpStatus() error
 	IsListingDuplicate(carrierId int, destination string, weightAvailable float64, departureDate time.Time) (bool, error)
@@ -61,18 +62,18 @@ type ListingReturnPayload struct {
 }
 
 type ListingReturnFromDB struct {
-	ID                    int       `json:"id"`
-	CarrierID             int       `json:"carrierId"`
-	CarrierName           string    `json:"carrierName"`
-	Destination           string    `json:"destination"`
-	WeightAvailable       float64   `json:"weightAvailable"`
-	PricePerKg            float64   `json:"pricePerKg"`
-	Currency              string    `json:"currency"`
-	DepartureDate         time.Time `json:"departureDate"`
-	LastReceivedDate      time.Time `json:"lastReceivedDate"`
-	Description           string    `json:"description"`
-	CarrierRating         float64   `json:"carrierRating"`
-	LastModifiedAt        time.Time `json:"lastModifiedAt"`
+	ID               int            `json:"id"`
+	CarrierID        int            `json:"carrierId"`
+	CarrierName      string         `json:"carrierName"`
+	Destination      string         `json:"destination"`
+	WeightAvailable  float64        `json:"weightAvailable"`
+	PricePerKg       float64        `json:"pricePerKg"`
+	Currency         string         `json:"currency"`
+	DepartureDate    time.Time      `json:"departureDate"`
+	LastReceivedDate time.Time      `json:"lastReceivedDate"`
+	Description      sql.NullString `json:"description"`
+	CarrierRating    float64        `json:"carrierRating"`
+	LastModifiedAt   time.Time      `json:"lastModifiedAt"`
 }
 
 type Listing struct {
