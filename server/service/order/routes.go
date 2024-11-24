@@ -49,6 +49,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/order/confirm", h.handleConfirmOrder).Methods(http.MethodPost)
 	router.HandleFunc("/order/confirm", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
+	router.HandleFunc("/order/get-payment-details", h.handleGetPaymentDetails).Methods(http.MethodPost)
+	router.HandleFunc("/order/get-payment-details", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
 	// router.HandleFunc("/order/get-payment-proof", h.handleGetPaymentProofImage).Methods(http.MethodPost)
 	// router.HandleFunc("/order/get-payment-proof", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
@@ -937,4 +940,50 @@ func (h *Handler) handleConfirmOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, "update order status success")
+}
+
+func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request) {
+	var payload types.GetPaymentDetailsPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	_, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	carrier, err := h.userStore.GetUserByID(payload.CarrierID)
+	if carrier == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	var returnMsg interface{}
+
+	if carrier.BankName == "" || carrier.BankAccountNumber == "" {
+		returnMsg = "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!"	
+	} else {
+		returnMsg = map[string]string{
+			"bank_name": carrier.BankName,
+			"account_number": carrier.BankAccountNumber,
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, returnMsg)
 }

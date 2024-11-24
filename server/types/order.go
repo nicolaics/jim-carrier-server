@@ -89,6 +89,10 @@ type ConfirmOrderPayload struct {
 	ID int `json:"id" validate:"required"`
 }
 
+type GetPaymentDetailsPayload struct {
+	CarrierID int `json:"carrierId" validate:"required"`
+}
+
 type OrderGiverReturnFromDB struct {
 	ID              int            `json:"id"`
 	Weight          float64        `json:"weight"`
@@ -119,7 +123,7 @@ type OrderGiverReturnPayload struct {
 	Price           float64   `json:"price"`
 	Currency        string    `json:"currency"`
 	PackageContent  string    `json:"packageContent"`
-	PackageImage     []byte    `json:"packageImage"`
+	PackageImage    []byte    `json:"packageImage"`
 	PaymentStatus   string    `json:"paymentStatus"`
 	PaidAt          time.Time `json:"paidAt"`
 	PaymentProofURL string    `json:"paymentProofUrl"`
