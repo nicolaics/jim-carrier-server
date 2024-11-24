@@ -9,6 +9,7 @@ def create_users(BACKEND_ROOT):
             "email": "adam1@gmail.com",
             "password": "adampassword",
             "phoneNumber": "0819288176",
+            "verificationCode": "123456",
         },
     )
     print(r.json())
@@ -20,6 +21,7 @@ def create_users(BACKEND_ROOT):
             "email": "bob@gmail.com",
             "password": "bobpassword",
             "phoneNumber": "0819288326",
+            "verificationCode": "123456",
         },
     )
     print(r.json())
@@ -31,6 +33,7 @@ def create_users(BACKEND_ROOT):
             "email": "charlie@gmail.com",
             "password": "charliepassword",
             "phoneNumber": "0813318326",
+            "verificationCode": "123456",
         },
     )
     print(r.json())
@@ -42,6 +45,7 @@ def create_users(BACKEND_ROOT):
             "email": "delta@gmail.com",
             "password": "deltapassword",
             "phoneNumber": "081921296",
+            "verificationCode": "123456",
         },
     )
     print(r.json())
@@ -330,7 +334,7 @@ def logout_users(BACKEND_ROOT, tokens):
 def main():
     # BACKEND_ROOT = input("enter backend host:port: ")
     BACKEND_ROOT = "localhost:9988"
-    # create_users(BACKEND_ROOT)
+    create_users(BACKEND_ROOT)
     tokens = login_users(BACKEND_ROOT)
     create_listings(BACKEND_ROOT, tokens)
     create_orders(BACKEND_ROOT, tokens)
