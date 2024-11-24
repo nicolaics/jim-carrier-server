@@ -40,15 +40,18 @@ func (m *Message) ToBytes() []byte {
 	buf.WriteString("MIME-Version: 1.0\r\n")
 	writer := multipart.NewWriter(buf)
 	boundary := writer.Boundary()
+
 	if withAttachments {
 		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\r\n", boundary))
+		buf.WriteString("\r\n")
 		buf.WriteString(fmt.Sprintf("--%s\n", boundary))
-	} else {
-		buf.WriteString("Content-Type: text/plain; charset=utf-8\r\n")
 	}
 
+	buf.WriteString("Content-Type: text/html; charset=utf-8\r\n")
+	buf.WriteString("Content-Transfer-Encoding: 7bit\r\n\r\n")
 	buf.WriteString("\r\n")
 	buf.WriteString(m.Body)
+	buf.WriteString("\r\n")
 
 	if withAttachments {
 		for k, v := range m.Attachments {
@@ -88,7 +91,7 @@ func SendEmail(to, subject, body, attachmentUrl, attachedFileName string) error 
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 
-	body += "\n\nCopyright 2024. Jim Carrier International."
+	body += "<br><br><p>Copyright 2024. Jim Carrier International.</p>"
 
 	// email message
 	message := &Message{
@@ -112,36 +115,31 @@ func SendEmail(to, subject, body, attachmentUrl, attachedFileName string) error 
 	return smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, message.ToBytes())
 }
 
-func CreateEmailBodyOfOrder(subject, name, destination, notes, packageContent string, weight, price float64) string {
-	packageContents := WrapText(packageContent, 100)
-
+func CreateEmailBodyOfOrder(subject, name, destination, currency, notes, packageContent string, weight, price float64) string {
 	var body string
 
 	if subject == "New Order Arrived!" {
-		body = "New order just arrived to your listing!\n\n"
+		body += "<h2>New order just arrived to your listing!</h2><br>"
 	} else if subject == "Re-confirm Needed!" {
-		body = "Someone just modified their order!\nPlease Re-confirm it!\n\n"
+		body += "<h2>Someone just modified their order!</h2>"
+		body += "<p><b>Please Re-confirm it!</b></p><br>"
 	}
 	
-	body += "Here are the details:\n"
-	body += fmt.Sprintf("\t%-15s: %s\n", "Name", name)
-	body += fmt.Sprintf("\t%-15s: %s\n", "Destination", destination)
-	body += fmt.Sprintf("\t%-15s: %.1f\n", "Weight", weight)
-	body += fmt.Sprintf("\t%-15s: %.1f\n", "Total Price", price)
-	body += fmt.Sprintf("\t%-15s: %s\n", "Package Content", packageContents[0])
-
-	for _, line := range packageContents[1:] {
-		fmt.Printf("\t%-15s  %s\n", "", line)
-	}
+	body += "<p>Here are the details:</p>"
+	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Name</b>: %s</p>", name)
+	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Destination</b>: %s</p>", destination)
+	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Weight</b>: %.1f</p>", weight)
+	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Total Price</b>: %s %.1f</p>", currency, price)
+	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Package Content</b>: %s</p>", packageContent)
 
 	if notes != "" {
-		body += fmt.Sprintf("\t%-15s: %s\n", "Notes", notes)
+		body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Notes<b></b>: %s</p>", notes)
 	}
-
-	body += "\nAttached is the image of the package!\n\n"
-	body += "Confirm the order before\n"
-	body += fmt.Sprintf("\t\t%s 23:59 KST (GMT +09)\n", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006"))
-	body += "If not confirmed by then, the order will automatically be cancelled!"
+	
+	body += "<br><p>Attached is the image of the package!</p>"
+	body += "<p>Confirm the order before:</p>"
+	body += fmt.Sprintf("<h3 style='color:red; padding-left: 30px;'>%s 23:59 KST (GMT +09)</h3>", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006"))
+	body += "<p>If not confirmed by then, the order will automatically be cancelled!</p>"
 
 	return body
 }
