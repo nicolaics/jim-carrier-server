@@ -9,18 +9,19 @@ import (
 )
 
 type Config struct {
-	PublicHost             string
-	Port                   string
-	DBUser                 string
-	DBPassword             string
-	DBAddress              string
-	DBName                 string
-	JWTExpirationInSeconds int64
-	JWTSecret              string
-	CompanyEmail           string
-	CompanyEmailPassword   string
-	GoogleClientID         string
-	GoogleClientSecret     string
+	PublicHost                       string
+	Port                             string
+	DBUser                           string
+	DBPassword                       string
+	DBAddress                        string
+	DBName                           string
+	JWTExpirationInSeconds           int64
+	JWTSecret                        string
+	CompanyEmail                     string
+	CompanyEmailPassword             string
+	GoogleClientID                   string
+	GoogleClientSecret               string
+	GoogleApplicationCredentialsPath string
 }
 
 var Envs = initConfig()
@@ -42,6 +43,7 @@ func initConfig() Config {
 		CompanyEmailPassword:   getEnv("COMPANY_EMAIL_PASSWORD", "1234"),
 		GoogleClientID:         getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret:     getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GoogleApplicationCredentialsPath: getEnv("GOOGLE_APPLICATION_CREDENTIALS_PATH", ""),
 	}
 }
 
