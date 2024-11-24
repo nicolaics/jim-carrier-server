@@ -22,7 +22,8 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, last_logged_in, created_at 
+					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					last_logged_in, created_at 
 				FROM user WHERE email = ?`
 	rows, err := s.db.Query(query, email)
 	if err != nil {
@@ -49,7 +50,8 @@ func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 
 func (s *Store) GetUserByName(name string) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, last_logged_in, created_at 
+				profile_picture_url, fcm_token, bank_name, bank_account_number, 
+				last_logged_in, created_at 
 				FROM user WHERE name = ?`
 	rows, err := s.db.Query(query, name)
 	if err != nil {
@@ -108,7 +110,8 @@ func (s *Store) GetUserBySearchName(name string) ([]types.User, error) {
 
 	if count == 0 {
 		query = `SELECT id, name, email, phone_number, provider, 
-						profile_picture_url, fcm_token, last_logged_in, created_at 
+					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					last_logged_in, created_at 
 					FROM user WHERE name LIKE ?`
 		searchVal := "%"
 
@@ -139,7 +142,8 @@ func (s *Store) GetUserBySearchName(name string) ([]types.User, error) {
 		return users, nil
 	}
 	query = `SELECT id, name, email, phone_number, provider, 
-						profile_picture_url, fcm_token, last_logged_in, created_at 
+					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					last_logged_in, created_at 
 					FROM user WHERE name = ?`
 	rows, err := s.db.Query(query, name)
 	if err != nil {
@@ -178,7 +182,8 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 
 	if count == 0 {
 		query = `SELECT id, name, email, phone_number, provider, 
-						profile_picture_url, fcm_token, last_logged_in, created_at 
+					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					last_logged_in, created_at 
 					FROM user WHERE phone_number LIKE ?`
 		searchVal := "%"
 
@@ -210,7 +215,8 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 	}
 
 	query = `SELECT id, name, email, phone_number, provider, 
-						profile_picture_url, fcm_token, last_logged_in, created_at 
+					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					last_logged_in, created_at 
 					FROM user WHERE phone_number = ?`
 	rows, err := s.db.Query(query, phoneNumber)
 	if err != nil {
@@ -233,7 +239,8 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 
 func (s *Store) GetUserByID(id int) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, last_logged_in, created_at 
+				profile_picture_url, fcm_token, bank_name, bank_account_number, 
+				last_logged_in, created_at 
 				FROM user WHERE id = ?`
 	rows, err := s.db.Query(query, id)
 	if err != nil {
@@ -264,11 +271,11 @@ func (s *Store) CreateUser(user types.User) error {
 								fcm_token, profile_picture_url) 
 				VALUES (?, ?, ?, ?, ?, ?, ?)`
 
-	defaultProfilePicture := constants.PROFILE_IMG_DIR_PATH  + "default.png"
+	defaultProfilePicture := constants.PROFILE_IMG_DIR_PATH + "default.png"
 
-	_, err := s.db.Exec(query, user.Name, user.Email, user.Password, 
-					user.PhoneNumber, user.Provider, user.FCMToken, 
-					defaultProfilePicture)
+	_, err := s.db.Exec(query, user.Name, user.Email, user.Password,
+		user.PhoneNumber, user.Provider, user.FCMToken,
+		defaultProfilePicture)
 	if err != nil {
 		return err
 	}
@@ -309,7 +316,7 @@ func (s *Store) DeleteUser(user *types.User) error {
 	if count > 0 {
 		return fmt.Errorf("there is still pending carrying order")
 	}
-	
+
 	_, err = s.db.Exec("DELETE FROM review WHERE reviewer_id = ?", user.ID)
 	if err != nil {
 		return err
@@ -371,6 +378,16 @@ func (s *Store) UpdateProfilePicture(id int, profPicUrl string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *Store) UpdateBankDetails(id int, bankName, bankAccountNumber string) error {
+	query := `UPDATE user SET bank_name = ?, bank_account_number = ? WHERE id = ?`
+	_, err := s.db.Exec(query, bankName, bankAccountNumber, id)
+	if err != nil {
+		return err
+	}
+	
 	return nil
 }
 
@@ -464,7 +481,7 @@ func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("failed to validate login code: %v", err)
 	}
-	
+
 	return count > 0, nil
 }
 
@@ -476,13 +493,13 @@ func (s *Store) ValidateLoginCodeWithinTime(email, code string, minutes int) (bo
 	if err != nil {
 		return false, err
 	}
-	
+
 	query = `SELECT COUNT(*) FROM verify_code 
 			  WHERE email = ? AND code = ? AND status = ? 
 			  AND TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP) <= ?`
-	
+
 	var count int
-	
+
 	err = s.db.QueryRow(query, email, code, constants.VERIFY_CODE_WAITING, minutes).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("failed to validate login code: %v", err)
@@ -507,7 +524,7 @@ func (s *Store) UpdateVerificationCodeStatus(email string, status int) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -553,22 +570,49 @@ func (s *Store) UpdateFCMToken(id int, fcmToken string) error {
 }
 
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
-	user := new(types.User)
+	temp := new(struct {
+		ID                int
+		Name              string
+		Email             string
+		PhoneNumber       string
+		Provider          string
+		ProfilePictureURL string
+		FCMToken          sql.NullString
+		BankName          sql.NullString
+		BankAccountNumber sql.NullString
+		LastLoggedIn      time.Time `json:"lastLoggedIn"`
+		CreatedAt         time.Time `json:"createdAt"`
+	})
 
 	err := rows.Scan(
-		&user.ID,
-		&user.Name,
-		&user.Email,
-		&user.PhoneNumber,
-		&user.Provider,
-		&user.ProfilePictureURL,
-		&user.FCMToken,
-		&user.LastLoggedIn,
-		&user.CreatedAt,
+		&temp.ID,
+		&temp.Name,
+		&temp.Email,
+		&temp.PhoneNumber,
+		&temp.Provider,
+		&temp.ProfilePictureURL,
+		&temp.FCMToken,
+		&temp.BankName,
+		&temp.BankAccountNumber,
+		&temp.LastLoggedIn,
+		&temp.CreatedAt,
 	)
-
 	if err != nil {
 		return nil, err
+	}
+
+	user := &types.User{
+		ID:                temp.ID,
+		Name:              temp.Name,
+		Email:             temp.Email,
+		PhoneNumber:       temp.PhoneNumber,
+		Provider:          temp.Provider,
+		ProfilePictureURL: temp.ProfilePictureURL,
+		FCMToken:          temp.FCMToken.String,
+		BankName:          temp.BankName.String,
+		BankAccountNumber: temp.BankAccountNumber.String,
+		LastLoggedIn:      temp.LastLoggedIn,
+		CreatedAt:         temp.CreatedAt,
 	}
 
 	user.CreatedAt = user.CreatedAt.Local()
