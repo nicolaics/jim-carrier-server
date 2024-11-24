@@ -32,10 +32,8 @@ type PostListingPayload struct {
 	DepartureDate     string  `json:"departureDate" validate:"required"`
 	LastReceivedDate  string  `json:"lastReceivedDate" validate:"required"`
 	Description       string  `json:"description"`
-	BankName          string  `json:"bankName"`
-	BankAccountNumber string  `json:"bankAccountNumber"`
-	// BankName          string  `json:"bankName" validate:"required"`
-	// BankAccountNumber string  `json:"bankAccountNumber" validate:"required"`
+	BankName          string  `json:"bankName" validate:"required"`
+	BankAccountNumber string  `json:"bankAccountNumber" validate:"required"`
 }
 
 type GetListingDetailPayload struct {
