@@ -188,22 +188,22 @@ type OrderCarrierReturnPayload struct {
 }
 
 type Order struct {
-	ID                        int            `json:"id"`
-	ListingID                 int            `json:"listingId"`
-	GiverID                   int            `json:"giverId"`
-	Weight                    float64        `json:"weight"`
-	Price                     float64        `json:"price"`
-	CurrencyID                int            `json:"currencyId"`
-	PackageContent            string         `json:"packageContent"`
-	PackageImageURL           string         `json:"packageImageUrl"`
-	PaymentStatus             int            `json:"paymentStatus"`
-	PaidAt                    sql.NullTime   `json:"paidAt"`
-	PaymentProofURL           sql.NullString `json:"paymentProofUrl"`
-	OrderConfirmationDeadline time.Time      `json:"orderConfirmationDeadline"`
-	OrderStatus               int            `json:"orderStatus"`
-	PackageLocation           string         `json:"packageLocation"`
-	Notes                     string         `json:"notes"`
-	CreatedAt                 time.Time      `json:"createdAt"`
-	LastModifiedAt            time.Time      `json:"lastModifiedAt"`
-	DeletedAt                 sql.NullTime   `json:"deletedAt"`
+	ID                        int          `json:"id"`
+	ListingID                 int          `json:"listingId"`
+	GiverID                   int          `json:"giverId"`
+	Weight                    float64      `json:"weight"`
+	Price                     float64      `json:"price"`
+	CurrencyID                int          `json:"currencyId"`
+	PackageContent            string       `json:"packageContent"`
+	PackageImageURL           string       `json:"packageImageUrl"`
+	PaymentStatus             int          `json:"paymentStatus"`
+	PaidAt                    time.Time    `json:"paidAt"`
+	PaymentProofURL           string       `json:"paymentProofUrl"`
+	OrderConfirmationDeadline time.Time    `json:"orderConfirmationDeadline"`
+	OrderStatus               int          `json:"orderStatus"`
+	PackageLocation           string       `json:"packageLocation"`
+	Notes                     string       `json:"notes"`
+	CreatedAt                 time.Time    `json:"createdAt"`
+	LastModifiedAt            time.Time    `json:"lastModifiedAt"`
+	DeletedAt                 sql.NullTime `json:"deletedAt"`
 }
