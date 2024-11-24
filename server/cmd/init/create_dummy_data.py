@@ -164,6 +164,8 @@ def create_orders(BACKEND_ROOT, tokens):
             "weight": 5,
             "price": (12000 * 5),
             "currency": "KRW",
+            "packageContent": "Test",
+            "packageImage": int(1).to_bytes(1, 'big')
         },
         headers={
             "Authorization": "Bearer " + tokens[0],
@@ -178,6 +180,8 @@ def create_orders(BACKEND_ROOT, tokens):
             "weight": 2,
             "price": (11000 * 2),
             "currency": "IDR",
+            "packageContent": "Test",
+            "packageImage": int(1).to_bytes(1, 'big'),
             "noted": "test",
         },
         headers={
@@ -192,6 +196,8 @@ def create_orders(BACKEND_ROOT, tokens):
             "listingId": 3,
             "weight": 8,
             "price": (11000 * 3),
+            "packageContent": "Test",
+            "packageImage": int(1).to_bytes(1, 'big'),
             "currency": "KRW",
         },
         headers={
@@ -207,6 +213,8 @@ def create_orders(BACKEND_ROOT, tokens):
             "weight": 5,
             "price": (12000 * 5),
             "currency": "USD",
+            "packageContent": "Test",
+            "packageImage": int(1).to_bytes(1, 'big'),
         },
         headers={
             "Authorization": "Bearer " + tokens[3],
@@ -221,6 +229,8 @@ def create_orders(BACKEND_ROOT, tokens):
             "weight": 26,
             "price": (12000 * 26),
             "currency": "USD",
+            "packageContent": "Test",
+            "packageImage": int(1).to_bytes(1, 'big'),
         },
         headers={
             "Authorization": "Bearer " + tokens[2],
@@ -320,7 +330,7 @@ def logout_users(BACKEND_ROOT, tokens):
 def main():
     # BACKEND_ROOT = input("enter backend host:port: ")
     BACKEND_ROOT = "localhost:9988"
-    create_users(BACKEND_ROOT)
+    # create_users(BACKEND_ROOT)
     tokens = login_users(BACKEND_ROOT)
     create_listings(BACKEND_ROOT, tokens)
     create_orders(BACKEND_ROOT, tokens)
