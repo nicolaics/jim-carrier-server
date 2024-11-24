@@ -10,6 +10,7 @@ bin
 *.png
 *.jpg
 static/
+firebase-service-account.json
 
 # Miscellaneous
 *.class
