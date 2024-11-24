@@ -22,7 +22,7 @@ func NewStore(db *sql.DB) *Store {
 
 func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					profile_picture_url, fcm_token, 
 					last_logged_in, created_at 
 				FROM user WHERE email = ?`
 	rows, err := s.db.Query(query, email)
@@ -50,7 +50,7 @@ func (s *Store) GetUserByEmail(email string) (*types.User, error) {
 
 func (s *Store) GetUserByName(name string) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-				profile_picture_url, fcm_token, bank_name, bank_account_number, 
+				profile_picture_url, fcm_token, 
 				last_logged_in, created_at 
 				FROM user WHERE name = ?`
 	rows, err := s.db.Query(query, name)
@@ -110,7 +110,7 @@ func (s *Store) GetUserBySearchName(name string) ([]types.User, error) {
 
 	if count == 0 {
 		query = `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					profile_picture_url, fcm_token, 
 					last_logged_in, created_at 
 					FROM user WHERE name LIKE ?`
 		searchVal := "%"
@@ -142,7 +142,7 @@ func (s *Store) GetUserBySearchName(name string) ([]types.User, error) {
 		return users, nil
 	}
 	query = `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					profile_picture_url, fcm_token, 
 					last_logged_in, created_at 
 					FROM user WHERE name = ?`
 	rows, err := s.db.Query(query, name)
@@ -182,7 +182,7 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 
 	if count == 0 {
 		query = `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					profile_picture_url, fcm_token, 
 					last_logged_in, created_at 
 					FROM user WHERE phone_number LIKE ?`
 		searchVal := "%"
@@ -215,7 +215,7 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 	}
 
 	query = `SELECT id, name, email, phone_number, provider, 
-					profile_picture_url, fcm_token, bank_name, bank_account_number, 
+					profile_picture_url, fcm_token, 
 					last_logged_in, created_at 
 					FROM user WHERE phone_number = ?`
 	rows, err := s.db.Query(query, phoneNumber)
@@ -239,7 +239,7 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 
 func (s *Store) GetUserByID(id int) (*types.User, error) {
 	query := `SELECT id, name, email, phone_number, provider, 
-				profile_picture_url, fcm_token, bank_name, bank_account_number, 
+				profile_picture_url, fcm_token, 
 				last_logged_in, created_at 
 				FROM user WHERE id = ?`
 	rows, err := s.db.Query(query, id)
@@ -378,16 +378,6 @@ func (s *Store) UpdateProfilePicture(id int, profPicUrl string) error {
 		return err
 	}
 
-	return nil
-}
-
-func (s *Store) UpdateBankDetails(id int, bankName, bankAccountNumber string) error {
-	query := `UPDATE user SET bank_name = ?, bank_account_number = ? WHERE id = ?`
-	_, err := s.db.Exec(query, bankName, bankAccountNumber, id)
-	if err != nil {
-		return err
-	}
-	
 	return nil
 }
 
@@ -578,8 +568,6 @@ func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 		Provider          string
 		ProfilePictureURL string
 		FCMToken          sql.NullString
-		BankName          sql.NullString
-		BankAccountNumber sql.NullString
 		LastLoggedIn      time.Time `json:"lastLoggedIn"`
 		CreatedAt         time.Time `json:"createdAt"`
 	})
@@ -592,8 +580,6 @@ func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 		&temp.Provider,
 		&temp.ProfilePictureURL,
 		&temp.FCMToken,
-		&temp.BankName,
-		&temp.BankAccountNumber,
 		&temp.LastLoggedIn,
 		&temp.CreatedAt,
 	)
@@ -609,8 +595,6 @@ func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
 		Provider:          temp.Provider,
 		ProfilePictureURL: temp.ProfilePictureURL,
 		FCMToken:          temp.FCMToken.String,
-		BankName:          temp.BankName.String,
-		BankAccountNumber: temp.BankAccountNumber.String,
 		LastLoggedIn:      temp.LastLoggedIn,
 		CreatedAt:         temp.CreatedAt,
 	}

@@ -388,31 +388,71 @@ func (s *Store) UpdateOrderStatusByDeadline() error {
 }
 
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
-	order := new(types.Order)
+	temp := new(struct {
+		ID                        int            `json:"id"`
+		ListingID                 int            `json:"listingId"`
+		GiverID                   int            `json:"giverId"`
+		Weight                    float64        `json:"weight"`
+		Price                     float64        `json:"price"`
+		CurrencyID                int            `json:"currencyId"`
+		PackageContent            string         `json:"packageContent"`
+		PackageImageURL           sql.NullString `json:"packageImageUrl"`
+		PaymentStatus             int            `json:"paymentStatus"`
+		PaidAt                    sql.NullTime   `json:"paidAt"`
+		PaymentProofURL           sql.NullString `json:"paymentProofUrl"`
+		OrderConfirmationDeadline time.Time      `json:"orderConfirmationDeadline"`
+		OrderStatus               int            `json:"orderStatus"`
+		PackageLocation           string         `json:"packageLocation"`
+		Notes                     sql.NullString `json:"notes"`
+		CreatedAt                 time.Time      `json:"createdAt"`
+		LastModifiedAt            time.Time      `json:"lastModifiedAt"`
+		DeletedAt                 sql.NullTime   `json:"deletedAt"`
+	})
 
 	err := rows.Scan(
-		&order.ID,
-		&order.ListingID,
-		&order.GiverID,
-		&order.Weight,
-		&order.Price,
-		&order.CurrencyID,
-		&order.PackageContent,
-		&order.PackageImageURL,
-		&order.PaymentStatus,
-		&order.PaidAt,
-		&order.PaymentProofURL,
-		&order.OrderConfirmationDeadline,
-		&order.OrderStatus,
-		&order.PackageLocation,
-		&order.Notes,
-		&order.CreatedAt,
-		&order.LastModifiedAt,
-		&order.DeletedAt,
+		&temp.ID,
+		&temp.ListingID,
+		&temp.GiverID,
+		&temp.Weight,
+		&temp.Price,
+		&temp.CurrencyID,
+		&temp.PackageContent,
+		&temp.PackageImageURL,
+		&temp.PaymentStatus,
+		&temp.PaidAt,
+		&temp.PaymentProofURL,
+		&temp.OrderConfirmationDeadline,
+		&temp.OrderStatus,
+		&temp.PackageLocation,
+		&temp.Notes,
+		&temp.CreatedAt,
+		&temp.LastModifiedAt,
+		&temp.DeletedAt,
 	)
 
 	if err != nil {
 		return nil, err
+	}
+
+	order := &types.Order{
+		ID:                        temp.ID,
+		ListingID:                 temp.ListingID,
+		GiverID:                   temp.GiverID,
+		Weight:                    temp.Weight,
+		Price:                     temp.Price,
+		CurrencyID:                temp.CurrencyID,
+		PackageContent:            temp.PackageContent,
+		PackageImageURL:           temp.PackageImageURL.String,
+		PaymentStatus:             temp.PaymentStatus,
+		PaidAt:                    temp.PaidAt.Time,
+		PaymentProofURL:           temp.PaymentProofURL.String,
+		OrderConfirmationDeadline: temp.OrderConfirmationDeadline,
+		OrderStatus:               temp.OrderStatus,
+		PackageLocation:           temp.PackageLocation,
+		Notes:                     temp.Notes.String,
+		CreatedAt:                 temp.CreatedAt,
+		LastModifiedAt:            temp.LastModifiedAt,
+		DeletedAt:                 temp.DeletedAt,
 	}
 
 	order.CreatedAt = order.CreatedAt.Local()

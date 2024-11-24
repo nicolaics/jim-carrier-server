@@ -37,8 +37,6 @@ type UserStore interface {
 	CheckProvider(email string) (bool, string, error)
 
 	UpdateFCMToken(id int, fcmToken string) error
-
-	UpdateBankDetails(id int, bankName, bankAccountNumber string) error
 }
 
 // register new user
@@ -128,8 +126,6 @@ type User struct {
 	Provider          string    `json:"provider"`
 	ProfilePictureURL string    `json:"profilePictureURL"`
 	FCMToken          string    `json:"fcmToken"` // Firebase Cloud Messaging for notification
-	BankName          string    `json:"bankName"`
-	BankAccountNumber string    `json:"bankAccountNumber"`
 	LastLoggedIn      time.Time `json:"lastLoggedIn"`
 	CreatedAt         time.Time `json:"createdAt"`
 }

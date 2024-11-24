@@ -19,16 +19,19 @@ type Handler struct {
 	listingStore    types.ListingStore
 	currencyStore   types.CurrencyStore
 	fcmHistoryStore types.FCMHistoryStore
+	bankDetailStore types.BankDetailStore
 }
 
 func NewHandler(orderStore types.OrderStore, userStore types.UserStore,
-	listingStore types.ListingStore, currencyStore types.CurrencyStore, fcmHistoryStore types.FCMHistoryStore) *Handler {
+	listingStore types.ListingStore, currencyStore types.CurrencyStore,
+	fcmHistoryStore types.FCMHistoryStore, bankDetailStore types.BankDetailStore) *Handler {
 	return &Handler{
 		orderStore:      orderStore,
 		userStore:       userStore,
 		listingStore:    listingStore,
 		currencyStore:   currencyStore,
 		fcmHistoryStore: fcmHistoryStore,
+		bankDetailStore: bankDetailStore,
 	}
 }
 
@@ -919,14 +922,21 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(carrier.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+	
 	var returnMsg interface{}
 
-	if carrier.BankName == "" || carrier.BankAccountNumber == "" {
+	if bankDetail == nil {
 		returnMsg = "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!"
 	} else {
 		returnMsg = map[string]string{
-			"bank_name":      carrier.BankName,
-			"account_number": carrier.BankAccountNumber,
+			"bank_name":      bankDetail.BankName,
+			"account_number": bankDetail.AccountNumber,
+			"account_holder": bankDetail.AccountHolder,
 		}
 	}
 
