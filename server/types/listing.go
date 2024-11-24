@@ -25,15 +25,16 @@ type ListingStore interface {
 }
 
 type PostListingPayload struct {
-	Destination       string  `json:"destination" validate:"required"`
-	WeightAvailable   float64 `json:"weightAvailable" validate:"required"`
-	PricePerKg        float64 `json:"pricePerKg" validate:"required"`
-	Currency          string  `json:"currency" validate:"required"`
-	DepartureDate     string  `json:"departureDate" validate:"required"`
-	LastReceivedDate  string  `json:"lastReceivedDate" validate:"required"`
-	Description       string  `json:"description"`
-	BankName          string  `json:"bankName" validate:"required"`
-	BankAccountNumber string  `json:"bankAccountNumber" validate:"required"`
+	Destination      string  `json:"destination" validate:"required"`
+	WeightAvailable  float64 `json:"weightAvailable" validate:"required"`
+	PricePerKg       float64 `json:"pricePerKg" validate:"required"`
+	Currency         string  `json:"currency" validate:"required"`
+	DepartureDate    string  `json:"departureDate" validate:"required"`
+	LastReceivedDate string  `json:"lastReceivedDate" validate:"required"`
+	Description      string  `json:"description"`
+	BankName         string  `json:"bankName" validate:"required"`
+	AccountNumber    string  `json:"accountNumber" validate:"required"`
+	AccountHolder    string  `json:"accountHolder" validate:"required"`
 }
 
 type GetListingDetailPayload struct {

@@ -14,19 +14,22 @@ import (
 )
 
 type Handler struct {
-	listingStore  types.ListingStore
-	userStore     types.UserStore
-	currencyStore types.CurrencyStore
-	reviewStore   types.ReviewStore
+	listingStore    types.ListingStore
+	userStore       types.UserStore
+	currencyStore   types.CurrencyStore
+	reviewStore     types.ReviewStore
+	bankDetailStore types.BankDetailStore
 }
 
 func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
-	currencyStore types.CurrencyStore, reviewStore types.ReviewStore) *Handler {
+	currencyStore types.CurrencyStore, reviewStore types.ReviewStore,
+	bankDetailStore types.BankDetailStore) *Handler {
 	return &Handler{
-		listingStore:  listingStore,
-		userStore:     userStore,
-		currencyStore: currencyStore,
-		reviewStore:   reviewStore,
+		listingStore:    listingStore,
+		userStore:       userStore,
+		currencyStore:   currencyStore,
+		reviewStore:     reviewStore,
+		bankDetailStore: bankDetailStore,
 	}
 }
 
@@ -134,7 +137,7 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.userStore.UpdateBankDetails(carrier.ID, payload.BankName, payload.BankAccountNumber)
+	err = h.bankDetailStore.UpdateBankDetails(carrier.ID, payload.BankName, payload.AccountNumber, payload.AccountHolder)
 	if err != nil {
 		logger.WriteServerLog(fmt.Errorf("failed to update bank details: %v", err))
 	}
