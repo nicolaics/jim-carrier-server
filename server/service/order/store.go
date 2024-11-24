@@ -28,12 +28,12 @@ func (s *Store) CreateOrder(order types.Order) error {
 					currency_id, package_content, package_img_url, notes, 
 					order_confirmation_deadline) 
 					VALUES (` + values + `)`
-	
+
 	deadline := time.Date(time.Now().Local().Year(), time.Now().Local().Month(), time.Now().Local().Day(), 0, 0, 0, 0, time.Now().Local().Location())
 	deadline = deadline.AddDate(0, 0, 2)
 
 	_, err := s.db.Exec(query, order.ListingID, order.GiverID, order.Weight,
-		order.Price, order.CurrencyID, order.PackageContent, order.PackageImageURL, 
+		order.Price, order.CurrencyID, order.PackageContent, order.PackageImageURL,
 		order.Notes, deadline)
 	if err != nil {
 		return err
@@ -66,31 +66,12 @@ func (s *Store) GetOrderByID(id int) (*types.Order, error) {
 	return order, nil
 }
 
-// func (s *Store) GetOrderByPaymentProofURL(paymentProofUrl string) (*types.Order, error) {
-// 	query := `SELECT * FROM order_list WHERE payment_proof_url = ? AND deleted_at IS NULL`
-// 	rows, err := s.db.Query(query, paymentProofUrl)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
-
-// 	order := new(types.Order)
-
-// 	for rows.Next() {
-// 		order, err = scanRowIntoOrder(rows)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 	}
-
-// 	if order.ID == 0 {
-// 		return nil, fmt.Errorf("order not found")
-// 	}
-
-// 	return order, nil
-// }
-
 func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, error) {
+	err := s.UpdateOrderStatusByDeadline()
+	if err != nil {
+		return nil, err
+	}
+
 	query := `SELECT l.id, l.destination, l.departure_date, 
 					 o.id, 
 					 user.name, user.phone_number, 
@@ -272,7 +253,7 @@ func (s *Store) ModifyOrder(id int, order types.Order) error {
 	deadline := time.Date(time.Now().Local().Year(), time.Now().Local().Month(), time.Now().Local().Day(), 0, 0, 0, 0, time.Now().Local().Location())
 	deadline = deadline.AddDate(0, 0, 2)
 
-	_, err := s.db.Exec(query, order.Weight, order.Price, order.CurrencyID, 
+	_, err := s.db.Exec(query, order.Weight, order.Price, order.CurrencyID,
 		order.PackageContent, order.PackageImageURL, order.PaymentStatus,
 		order.PackageLocation, deadline, order.OrderStatus, order.Notes,
 		time.Now(), id)
@@ -392,6 +373,18 @@ func (s *Store) IsPackageImageURLExist(packageImgUrl string) bool {
 	}
 
 	return (count > 0)
+}
+
+func (s *Store) UpdateOrderStatusByDeadline() error {
+	query := `UPDATE order_list SET order_status = ?, last_modified_at = ? 
+				WHERE order_confirmation_deadline < ? AND deleted_at IS NULL`
+
+	_, err := s.db.Exec(query, constants.ORDER_STATUS_CANCELLED, time.Now(), time.Now().UTC().Format("2006-01-02 15:04:05"))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {

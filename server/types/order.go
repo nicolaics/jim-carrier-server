@@ -26,6 +26,8 @@ type OrderStore interface {
 	IsOrderDuplicate(userId int, listingId int) (bool, error)
 	IsPaymentProofURLExist(string) bool
 	IsPackageImageURLExist(packageImgUrl string) bool
+
+	UpdateOrderStatusByDeadline() error
 }
 
 type RegisterOrderPayload struct {
@@ -81,6 +83,10 @@ type GetPaymentProofImagePayload struct {
 
 type ReturnPaymentProofImagePayload struct {
 	PaymentProof []byte `json:"paymentProof" validate:"required"`
+}
+
+type ConfirmOrderPayload struct {
+	ID          int    `json:"id" validate:"required"`
 }
 
 type OrderGiverReturnFromDB struct {
