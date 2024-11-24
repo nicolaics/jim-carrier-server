@@ -14,19 +14,21 @@ import (
 )
 
 type Handler struct {
-	orderStore    types.OrderStore
-	userStore     types.UserStore
-	listingStore  types.ListingStore
-	currencyStore types.CurrencyStore
+	orderStore      types.OrderStore
+	userStore       types.UserStore
+	listingStore    types.ListingStore
+	currencyStore   types.CurrencyStore
+	fcmHistoryStore types.FCMHistoryStore
 }
 
 func NewHandler(orderStore types.OrderStore, userStore types.UserStore,
-	listingStore types.ListingStore, currencyStore types.CurrencyStore) *Handler {
+	listingStore types.ListingStore, currencyStore types.CurrencyStore, fcmHistoryStore types.FCMHistoryStore) *Handler {
 	return &Handler{
-		orderStore:    orderStore,
-		userStore:     userStore,
-		listingStore:  listingStore,
-		currencyStore: currencyStore,
+		orderStore:      orderStore,
+		userStore:       userStore,
+		listingStore:    listingStore,
+		currencyStore:   currencyStore,
+		fcmHistoryStore: fcmHistoryStore,
 	}
 }
 
@@ -182,34 +184,29 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	packageContents := utils.WrapText(payload.PackageContent, 100)
-
 	subject := "New Order Arrived!"
 
-	body := "New order just arrived to your listing!\n\n"
-	body += "Here are the details:\n"
-	body += fmt.Sprintf("\t%-15s: %s\n", "Name", user.Name)
-	body += fmt.Sprintf("\t%-15s: %s\n", "Destination", listing.Destination)
-	body += fmt.Sprintf("\t%-15s: %.1f\n", "Weight", payload.Weight)
-	body += fmt.Sprintf("\t%-15s: %.1f\n", "Total Price", payload.Price)
-	body += fmt.Sprintf("\t%-15s: %s\n", "Package Content", packageContents[0])
-
-	for _, line := range packageContents[1:] {
-		fmt.Printf("\t%-15s  %s\n", "", line)
-	}
-
-	if payload.Notes != "" {
-		body += fmt.Sprintf("\t%-15s: %s\n", "Notes", payload.Notes)
-	}
-
-	body += "\nAttached is the image of the package!\n\n"
-	body += "Confirm the order before\n"
-	body += fmt.Sprintf("\t\t%s 23:59 KST (GMT +09)\n", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006"))
-	body += "If not confirmed by then, the order will automatically be cancelled!"
+	body := utils.CreateEmailBodyOfOrder(subject, user.Name, listing.Destination, payload.Notes, payload.PackageContent, payload.Weight, payload.Price)
 
 	err = utils.SendEmail(carrier.Email, subject, body, "", "")
 	if err != nil {
 		logger.WriteServerLog(fmt.Sprintf("error send email to carrier: %v", err))
+	}
+
+	fcmHistory := types.FCMHistory{
+		ToUserID: carrier.ID,
+		Title:    subject,
+		Body:     fmt.Sprintf("Please confirm the order before %s 23:59 KST (GMT +09)", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006")),
+	}
+
+	fcmHistory.Response, err = utils.SendFCMToOne(carrier.FCMToken, fcmHistory.Title, fcmHistory.Body)
+	if err != nil {
+		logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
+	}
+
+	err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+	if err != nil {
+		logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, "order created")
@@ -510,6 +507,12 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		carrier, err := h.userStore.GetUserByID(listing.CarrierID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("carrier id %d not found: %v", listing.CarrierID, err))
+			return
+		}
+
 		paymentStatus := utils.PaymentStatusStringToInt(payload.PaymentStatus)
 		if paymentStatus == -1 {
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown payment status"))
@@ -596,6 +599,31 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify order: %v", err))
 			return
+		}
+
+		subject := "Re-confirm Needed!"
+
+		body := utils.CreateEmailBodyOfOrder(subject, user.Name, listing.Destination, payload.Notes, payload.PackageContent, payload.Weight, payload.Price)
+
+		err = utils.SendEmail(carrier.Email, subject, body, "", "")
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("error send email to carrier: %v", err))
+		}
+
+		fcmHistory := types.FCMHistory{
+			ToUserID: carrier.ID,
+			Title:    subject,
+			Body:     fmt.Sprintf("Please confirm the order before %s 23:59 KST (GMT +09)", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006")),
+		}
+
+		fcmHistory.Response, err = utils.SendFCMToOne(carrier.FCMToken, fcmHistory.Title, fcmHistory.Body)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
+		}
+
+		err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
 		}
 
 		returnMsg = "order modified"
@@ -859,7 +887,7 @@ func (h *Handler) handleConfirmOrder(w http.ResponseWriter, r *http.Request) {
 		err = h.orderStore.UpdateOrderStatus(order.ID, constants.ORDER_STATUS_CANCELLED, "")
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
-			return	
+			return
 		}
 
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order has been automatically canceled due to the deadline has passed"))
@@ -885,57 +913,3 @@ func (h *Handler) handleConfirmOrder(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSON(w, http.StatusOK, "update order status success")
 }
-
-/*
-func (h *Handler) handleGetPaymentProofImage(w http.ResponseWriter, r *http.Request) {
-	var payload types.GetPaymentProofImagePayload
-
-	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
-		return
-	}
-
-	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
-		return
-	}
-
-	user, err = h.userStore.GetUserByID(user.ID)
-	if user == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
-		return
-	}
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	order, err := h.orderStore.GetOrderByPaymentProofURL(payload.PaymentProofURL)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error getting order: %v", err))
-		return
-	}
-
-	listing, err := h.listingStore.GetListingByID(order.ListingID)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error getting listing: %v", err))
-		return
-	}
-
-	if user.ID != order.GiverID && user.ID != listing.CarrierID {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not related to this order"))
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusOK, )
-}
-*/
