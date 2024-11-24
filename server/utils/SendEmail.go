@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"time"
 
 	"mime/multipart"
 	"net/http"
@@ -31,11 +32,11 @@ func (m *Message) ToBytes() []byte {
 	if len(m.CC) > 0 {
 		buf.WriteString(fmt.Sprintf("Cc: %s\r\n", strings.Join(m.CC, ",")))
 	}
-	
+
 	if len(m.BCC) > 0 {
 		buf.WriteString(fmt.Sprintf("Bcc: %s\r\n", strings.Join(m.BCC, ",")))
 	}
-	
+
 	buf.WriteString("MIME-Version: 1.0\r\n")
 	writer := multipart.NewWriter(buf)
 	boundary := writer.Boundary()
@@ -88,12 +89,12 @@ func SendEmail(to, subject, body, attachmentUrl, attachedFileName string) error 
 	smtpPort := "587"
 
 	body += "\n\nCopyright 2024. Jim Carrier International."
-	
+
 	// email message
 	message := &Message{
-		To: []string{to},
-		Subject: subject,
-		Body: body,
+		To:          []string{to},
+		Subject:     subject,
+		Body:        body,
 		Attachments: make(map[string][]byte),
 	}
 
@@ -109,4 +110,38 @@ func SendEmail(to, subject, body, attachmentUrl, attachedFileName string) error 
 
 	// send the email
 	return smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{to}, message.ToBytes())
+}
+
+func CreateEmailBodyOfOrder(subject, name, destination, notes, packageContent string, weight, price float64) string {
+	packageContents := WrapText(packageContent, 100)
+
+	var body string
+
+	if subject == "New Order Arrived!" {
+		body = "New order just arrived to your listing!\n\n"
+	} else if subject == "Re-confirm Needed!" {
+		body = "Someone just modified their order!\nPlease Re-confirm it!\n\n"
+	}
+	
+	body += "Here are the details:\n"
+	body += fmt.Sprintf("\t%-15s: %s\n", "Name", name)
+	body += fmt.Sprintf("\t%-15s: %s\n", "Destination", destination)
+	body += fmt.Sprintf("\t%-15s: %.1f\n", "Weight", weight)
+	body += fmt.Sprintf("\t%-15s: %.1f\n", "Total Price", price)
+	body += fmt.Sprintf("\t%-15s: %s\n", "Package Content", packageContents[0])
+
+	for _, line := range packageContents[1:] {
+		fmt.Printf("\t%-15s  %s\n", "", line)
+	}
+
+	if notes != "" {
+		body += fmt.Sprintf("\t%-15s: %s\n", "Notes", notes)
+	}
+
+	body += "\nAttached is the image of the package!\n\n"
+	body += "Confirm the order before\n"
+	body += fmt.Sprintf("\t\t%s 23:59 KST (GMT +09)\n", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006"))
+	body += "If not confirmed by then, the order will automatically be cancelled!"
+
+	return body
 }
