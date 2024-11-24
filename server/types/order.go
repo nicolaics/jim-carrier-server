@@ -86,7 +86,7 @@ type ReturnPaymentProofImagePayload struct {
 }
 
 type ConfirmOrderPayload struct {
-	ID          int    `json:"id" validate:"required"`
+	ID int `json:"id" validate:"required"`
 }
 
 type OrderGiverReturnFromDB struct {
@@ -119,7 +119,7 @@ type OrderGiverReturnPayload struct {
 	Price           float64   `json:"price"`
 	Currency        string    `json:"currency"`
 	PackageContent  string    `json:"packageContent"`
-	PackageImageURL string    `json:"packageImageUrl"`
+	PackageImage     []byte    `json:"packageImage"`
 	PaymentStatus   string    `json:"paymentStatus"`
 	PaidAt          time.Time `json:"paidAt"`
 	PaymentProofURL string    `json:"paymentProofUrl"`
@@ -176,7 +176,7 @@ type OrderCarrierReturnPayload struct {
 	Price            float64   `json:"price"`
 	Currency         string    `json:"currency"`
 	PackageContent   string    `json:"packageContent"`
-	PackageImageURL  string    `json:"packageImageUrl"`
+	PackageImage     []byte    `json:"packageImage"`
 	PaymentStatus    string    `json:"paymentStatus"`
 	PaidAt           time.Time `json:"paidAt"`
 	PaymentProofURL  string    `json:"paymentProofUrl"`

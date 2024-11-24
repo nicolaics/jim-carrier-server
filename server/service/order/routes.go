@@ -242,10 +242,17 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ordersReturnTemp := make([]types.OrderCarrierReturnPayload, 0)
+
 		for _, order := range orders {
 			paymentStatus := utils.PaymentStatusIntToString(order.PaymentStatus)
 
 			orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
+
+			packageImage, err := utils.GetImage(order.PackageImageURL)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+				return
+			}
 
 			temp := types.OrderCarrierReturnPayload{
 				Listing:          order.Listing,
@@ -256,7 +263,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				Price:            order.Price,
 				Currency:         order.Currency,
 				PackageContent:   order.PackageContent,
-				PackageImageURL:  order.PackageImageURL,
+				PackageImage:     packageImage,
 				PaymentStatus:    paymentStatus,
 				PaidAt:           order.PaidAt.Time,
 				PaymentProofURL:  order.PaymentProofURL.String,
@@ -283,6 +290,12 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 			orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
+			packageImage, err := utils.GetImage(order.PackageImageURL)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+				return
+			}
+
 			temp := types.OrderGiverReturnPayload{
 				Listing:         order.Listing,
 				ID:              order.ID,
@@ -290,7 +303,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				Price:           order.Price,
 				Currency:        order.Currency,
 				PackageContent:  order.PackageContent,
-				PackageImageURL: order.PackageImageURL,
+				PackageImage:    packageImage,
 				PaymentStatus:   paymentStatus,
 				PaidAt:          order.PaidAt.Time,
 				PaymentProofURL: order.PaymentProofURL.String,
@@ -361,6 +374,12 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
+		packageImage, err := utils.GetImage(order.PackageImageURL)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+			return
+		}
+
 		returnOrder = types.OrderCarrierReturnPayload{
 			Listing:          order.Listing,
 			ID:               order.ID,
@@ -370,7 +389,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			Price:            order.Price,
 			Currency:         order.Currency,
 			PackageContent:   order.PackageContent,
-			PackageImageURL:  order.PackageImageURL,
+			PackageImage:     packageImage,
 			PaymentStatus:    paymentStatus,
 			PaidAt:           order.PaidAt.Time,
 			PaymentProofURL:  order.PaymentProofURL.String,
@@ -391,6 +410,12 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
+		packageImage, err := utils.GetImage(order.PackageImageURL)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+			return
+		}
+
 		returnOrder = types.OrderGiverReturnPayload{
 			Listing:         order.Listing,
 			ID:              order.ID,
@@ -398,7 +423,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 			Price:           order.Price,
 			Currency:        order.Currency,
 			PackageContent:  order.PackageContent,
-			PackageImageURL: order.PackageImageURL,
+			PackageImage:    packageImage,
 			PaymentStatus:   paymentStatus,
 			PaidAt:          order.PaidAt.Time,
 			PaymentProofURL: order.PaymentProofURL.String,
