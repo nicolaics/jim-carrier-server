@@ -85,10 +85,6 @@ type ReturnPaymentProofImagePayload struct {
 	PaymentProof []byte `json:"paymentProof" validate:"required"`
 }
 
-type ConfirmOrderPayload struct {
-	ID int `json:"id" validate:"required"`
-}
-
 type GetPaymentDetailsPayload struct {
 	CarrierID int `json:"carrierId" validate:"required"`
 }

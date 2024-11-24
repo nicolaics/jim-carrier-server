@@ -46,14 +46,8 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/order/{reqType}", h.handleModify).Methods(http.MethodPatch)
 
-	router.HandleFunc("/order/confirm", h.handleConfirmOrder).Methods(http.MethodPost)
-	router.HandleFunc("/order/confirm", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
-
 	router.HandleFunc("/order/get-payment-details", h.handleGetPaymentDetails).Methods(http.MethodPost)
 	router.HandleFunc("/order/get-payment-details", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
-
-	// router.HandleFunc("/order/get-payment-proof", h.handleGetPaymentProofImage).Methods(http.MethodPost)
-	// router.HandleFunc("/order/get-payment-proof", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -189,9 +183,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	subject := "New Order Arrived!"
 
-	body := utils.CreateEmailBodyOfOrder(subject, user.Name, listing.Destination, payload.Notes, payload.PackageContent, payload.Weight, payload.Price)
+	body := utils.CreateEmailBodyOfOrder(subject, user.Name, listing.Destination, currency.Name, payload.Notes, payload.PackageContent, payload.Weight, payload.Price)
 
-	err = utils.SendEmail(carrier.Email, subject, body, "", "")
+	err = utils.SendEmail(carrier.Email, subject, body, packageImgURL, "Package Image")
 	if err != nil {
 		logger.WriteServerLog(fmt.Sprintf("error send email to carrier: %v", err))
 	}
@@ -205,11 +199,11 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	fcmHistory.Response, err = utils.SendFCMToOne(carrier.FCMToken, fcmHistory.Title, fcmHistory.Body)
 	if err != nil {
 		logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
-	}
-
-	err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
-	if err != nil {
-		logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+	} else {
+		err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+		}
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, "order created")
@@ -631,7 +625,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		subject := "Re-confirm Needed!"
 
-		body := utils.CreateEmailBodyOfOrder(subject, user.Name, listing.Destination, payload.Notes, payload.PackageContent, payload.Weight, payload.Price)
+		body := utils.CreateEmailBodyOfOrder(subject, user.Name, listing.Destination, currency.Name, payload.Notes, payload.PackageContent, payload.Weight, payload.Price)
 
 		err = utils.SendEmail(carrier.Email, subject, body, "", "")
 		if err != nil {
@@ -647,11 +641,11 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		fcmHistory.Response, err = utils.SendFCMToOne(carrier.FCMToken, fcmHistory.Title, fcmHistory.Body)
 		if err != nil {
 			logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
-		}
-
-		err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
-		if err != nil {
-			logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+		} else {
+			err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+			if err != nil {
+				logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+			}
 		}
 
 		returnMsg = "order modified"
@@ -811,6 +805,53 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if orderStatus == constants.ORDER_STATUS_CONFIRMED {
+			listing, err := h.listingStore.GetListingByID(order.ListingID)
+			if listing == nil {
+				utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing not found"))
+				return
+			}
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			if listing.CarrierID != user.ID {
+				utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not the carrier"))
+				return
+			}
+
+			if order.OrderStatus != constants.ORDER_STATUS_WAITING {
+				utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("order is not in the waiting status"))
+				return
+			}
+
+			deadline := time.Date(time.Now().Local().Year(), time.Now().Local().Month(), time.Now().Local().Day(), 0, 0, 0, 0, time.Now().Local().Location())
+			deadline = deadline.AddDate(0, 0, 2)
+
+			if order.OrderConfirmationDeadline.After(deadline) {
+				err = h.orderStore.UpdateOrderStatus(order.ID, constants.ORDER_STATUS_CANCELLED, "")
+				if err != nil {
+					utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
+					return
+				}
+
+				utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order has been automatically canceled due to the deadline has passed"))
+				return
+			}
+
+			if (listing.WeightAvailable - order.Weight) < 0.0 {
+				utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("weight available is not enough"))
+				return
+			}
+
+			err = h.listingStore.SubtractWeightAvailable(listing.ID, order.Weight)
+			if err != nil {
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
+				return
+			}
+		}
+
 		err = h.orderStore.UpdateOrderStatus(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
@@ -844,102 +885,6 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, returnMsg)
-}
-
-func (h *Handler) handleConfirmOrder(w http.ResponseWriter, r *http.Request) {
-	var payload types.ConfirmOrderPayload
-
-	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
-		return
-	}
-
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
-		return
-	}
-
-	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
-	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
-		return
-	}
-
-	user, err = h.userStore.GetUserByID(user.ID)
-	if user == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
-		return
-	}
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	order, err := h.orderStore.GetOrderByID(payload.ID)
-	if order == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found"))
-		return
-	}
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	listing, err := h.listingStore.GetListingByID(order.ListingID)
-	if listing == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing not found"))
-		return
-	}
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	if listing.CarrierID != user.ID {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not the carrier"))
-		return
-	}
-
-	if order.OrderStatus != constants.ORDER_STATUS_WAITING {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("order is not in the waiting status"))
-		return
-	}
-
-	deadline := time.Date(time.Now().Local().Year(), time.Now().Local().Month(), time.Now().Local().Day(), 0, 0, 0, 0, time.Now().Local().Location())
-	deadline = deadline.AddDate(0, 0, 2)
-
-	if order.OrderConfirmationDeadline.After(deadline) {
-		err = h.orderStore.UpdateOrderStatus(order.ID, constants.ORDER_STATUS_CANCELLED, "")
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
-			return
-		}
-
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order has been automatically canceled due to the deadline has passed"))
-		return
-	}
-
-	if (listing.WeightAvailable - order.Weight) < 0.0 {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("weight available is not enough"))
-		return
-	}
-
-	err = h.listingStore.SubtractWeightAvailable(listing.ID, order.Weight)
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
-		return
-	}
-
-	err = h.orderStore.UpdateOrderStatus(order.ID, constants.ORDER_STATUS_CONFIRMED, "")
-	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error updating order status"))
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusOK, "update order status success")
 }
 
 func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request) {
@@ -977,10 +922,10 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 	var returnMsg interface{}
 
 	if carrier.BankName == "" || carrier.BankAccountNumber == "" {
-		returnMsg = "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!"	
+		returnMsg = "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!"
 	} else {
 		returnMsg = map[string]string{
-			"bank_name": carrier.BankName,
+			"bank_name":      carrier.BankName,
 			"account_number": carrier.BankAccountNumber,
 		}
 	}
