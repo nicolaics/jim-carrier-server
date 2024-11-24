@@ -252,21 +252,9 @@ func (s *Store) SubtractWeightAvailable(listingId int, minusValue float64) error
 }
 
 func (s *Store) AddWeightAvailable(listingId int, addValue float64) error {
-	query := `SELECT weight_available FROM listing WHERE id = ? AND deleted_at IS NULL`
-	row := s.db.QueryRow(query, listingId)
-	if row.Err() != nil {
-		return row.Err()
-	}
-
-	var oldWeightAvail float64
-	err := row.Scan(&oldWeightAvail)
-	if err != nil {
-		return err
-	}
-
-	query = `UPDATE listing SET weight_available = ?, last_modified_at = ? 
+	query := `UPDATE listing SET weight_available = (weight_available + ?), last_modified_at = ? 
 				WHERE id = ? AND deleted_at IS NULL`
-	_, err = s.db.Exec(query, (oldWeightAvail + addValue), time.Now(), listingId)
+	_, err := s.db.Exec(query, addValue, time.Now(), listingId)
 	if err != nil {
 		return err
 	}
