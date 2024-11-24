@@ -98,7 +98,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user not found"))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user not found: %v", err))
 		return
 	}
 
@@ -347,27 +347,26 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
-	// validate token
-	user, err := h.store.ValidateUserToken(w, r)
+	accessDetails, err := jwt.ExtractTokenFromClient(r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
 	// check user exists or not
-	_, err = h.store.GetUserByID(user.ID)
+	_, err = h.store.GetUserByID(accessDetails.UserID)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user id %d doesn't exists", user.ID))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user id %d doesn't exists", accessDetails.UserID))
 		return
 	}
 
-	err = h.store.UpdateLastLoggedIn(user.ID)
+	err = h.store.UpdateLastLoggedIn(accessDetails.UserID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	err = h.store.DeleteToken(user.ID)
+	err = h.store.DeleteToken(accessDetails.UserID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
