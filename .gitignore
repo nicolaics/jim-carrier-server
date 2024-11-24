@@ -11,6 +11,7 @@ bin
 *.jpg
 static/
 firebase-service-account.json
+*.http
 
 # Miscellaneous
 *.class
