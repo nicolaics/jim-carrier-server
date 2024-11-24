@@ -63,16 +63,13 @@ func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string,
 	return imagePath, nil
 }
 
-func SavePaymentProof(imageData []byte, fileName string) error {
+func SavePaymentProof(imageData []byte, filePath string) error {
 	if err := os.MkdirAll(constants.PAYMENT_PROOF_DIR_PATH, 0744); err != nil {
 		return err
 	}
 
-	// set the image file name
-	imagePath := constants.PAYMENT_PROOF_DIR_PATH + fileName
-
 	// create the empty file for the image
-	file, err := os.Create(imagePath)
+	file, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
@@ -87,16 +84,13 @@ func SavePaymentProof(imageData []byte, fileName string) error {
 	return nil
 }
 
-func SavePackageImage(imageData []byte, fileName string) error {
+func SavePackageImage(imageData []byte, filePath string) error {
 	if err := os.MkdirAll(constants.PACKAGE_IMG_DIR_PATH, 0744); err != nil {
 		return err
 	}
 
-	// set the image file name
-	imagePath := constants.PACKAGE_IMG_DIR_PATH + fileName
-
 	// create the empty file for the image
-	file, err := os.Create(imagePath)
+	file, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
