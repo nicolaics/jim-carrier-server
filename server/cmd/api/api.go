@@ -11,6 +11,7 @@ import (
 	"github.com/nicolaics/jim-carrier/service/auth"
 	"github.com/nicolaics/jim-carrier/service/auth/jwt"
 	"github.com/nicolaics/jim-carrier/service/currency"
+	"github.com/nicolaics/jim-carrier/service/fcm"
 	"github.com/nicolaics/jim-carrier/service/listing"
 	"github.com/nicolaics/jim-carrier/service/order"
 	"github.com/nicolaics/jim-carrier/service/review"
@@ -42,6 +43,7 @@ func (s *APIServer) Run() error {
 	orderStore := order.NewStore(s.db)
 	reviewStore := review.NewStore(s.db)
 	currencyStore := currency.NewStore(s.db)
+	fcmStore := fcm.NewStore(s.db)
 
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(subrouter)
@@ -50,7 +52,7 @@ func (s *APIServer) Run() error {
 	listingHandler := listing.NewHandler(listingStore, userStore, currencyStore, reviewStore)
 	listingHandler.RegisterRoutes(subrouter)
 
-	orderHandler := order.NewHandler(orderStore, userStore, listingStore, currencyStore)
+	orderHandler := order.NewHandler(orderStore, userStore, listingStore, currencyStore, fcmStore)
 	orderHandler.RegisterRoutes(subrouter)
 
 	reviewHandler := review.NewHandler(reviewStore, orderStore, listingStore, userStore)
