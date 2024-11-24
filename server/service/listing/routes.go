@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier/constants"
+	"github.com/nicolaics/jim-carrier/logger"
 	"github.com/nicolaics/jim-carrier/types"
 	"github.com/nicolaics/jim-carrier/utils"
 )
@@ -131,6 +132,11 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create listing: %v", err))
 		return
+	}
+
+	err = h.userStore.UpdateBankDetails(carrier.ID, payload.BankName, payload.BankAccountNumber)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("failed to update bank details: %v", err))
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, "listing created")
