@@ -105,6 +105,9 @@ def create_listings(BACKEND_ROOT, tokens):
             "currency": "KRW",
             "departureDate": "2024-10-09 +0900KST",
             "lastReceivedDate": "2024-10-05 +0900KST",
+            "bankName": "abc",
+            "accountNumber": "1234",
+            "accountHolder": "pweo",
         },
         headers={
             "Authorization": "Bearer " + tokens[0],
@@ -121,6 +124,9 @@ def create_listings(BACKEND_ROOT, tokens):
             "currency": "IDR",
             "departureDate": "2024-12-09 +0700KST",
             "lastReceivedDate": "2024-11-05 +0700UTC",
+            "bankName": "abc",
+            "accountNumber": "1234",
+            "accountHolder": "pweo",
         },
         headers={
             "Authorization": "Bearer " + tokens[1],
@@ -137,6 +143,9 @@ def create_listings(BACKEND_ROOT, tokens):
             "currency": "MYR",
             "departureDate": "2025-10-09 +0900KST",
             "lastReceivedDate": "2025-10-05 +0900KST",
+            "bankName": "abc",
+            "accountNumber": "1234",
+            "accountHolder": "pweo",
         },
         headers={
             "Authorization": "Bearer " + tokens[2],
@@ -153,6 +162,9 @@ def create_listings(BACKEND_ROOT, tokens):
             "currency": "USD",
             "departureDate": "2025-01-10 +0900KST",
             "lastReceivedDate": "2025-01-05 +0900KST",
+            "bankName": "abc",
+            "accountNumber": "1234",
+            "accountHolder": "pweo",
         },
         headers={
             "Authorization": "Bearer " + tokens[3],
@@ -169,7 +181,7 @@ def create_orders(BACKEND_ROOT, tokens):
             "price": (12000 * 5),
             "currency": "KRW",
             "packageContent": "Test",
-            "packageImage": int(1).to_bytes(1, 'big')
+            "packageImage": "/9j/4AAQSkZJRgABAQABAAD/2wBD"
         },
         headers={
             "Authorization": "Bearer " + tokens[0],
@@ -185,7 +197,7 @@ def create_orders(BACKEND_ROOT, tokens):
             "price": (11000 * 2),
             "currency": "IDR",
             "packageContent": "Test",
-            "packageImage": int(1).to_bytes(1, 'big'),
+            "packageImage": "/9j/4AAQSkZJRgABAQABAAD/2wBD",
             "noted": "test",
         },
         headers={
@@ -201,7 +213,7 @@ def create_orders(BACKEND_ROOT, tokens):
             "weight": 8,
             "price": (11000 * 3),
             "packageContent": "Test",
-            "packageImage": int(1).to_bytes(1, 'big'),
+            "packageImage": "/9j/4AAQSkZJRgABAQABAAD/2wBD",
             "currency": "KRW",
         },
         headers={
@@ -218,7 +230,7 @@ def create_orders(BACKEND_ROOT, tokens):
             "price": (12000 * 5),
             "currency": "USD",
             "packageContent": "Test",
-            "packageImage": int(1).to_bytes(1, 'big'),
+            "packageImage": "/9j/4AAQSkZJRgABAQABAAD/2wBD",
         },
         headers={
             "Authorization": "Bearer " + tokens[3],
@@ -234,7 +246,7 @@ def create_orders(BACKEND_ROOT, tokens):
             "price": (12000 * 26),
             "currency": "USD",
             "packageContent": "Test",
-            "packageImage": int(1).to_bytes(1, 'big'),
+            "packageImage": "/9j/4AAQSkZJRgABAQABAAD/2wBD",
         },
         headers={
             "Authorization": "Bearer " + tokens[2],
@@ -246,7 +258,7 @@ def create_reviews(BACKEND_ROOT, tokens):
     r = rq.post(
         f"http://{BACKEND_ROOT}/api/v1/review",
         json={
-            "orderId": 11,
+            "orderId": 1,
             "revieweeName": "Bob bob",
             "content": "nice",
             "rating": 5,
@@ -260,7 +272,7 @@ def create_reviews(BACKEND_ROOT, tokens):
     r = rq.post(
         f"http://{BACKEND_ROOT}/api/v1/review",
         json={
-            "orderId": 12,
+            "orderId": 2,
             "revieweeName": "Adam adam",
             "rating": 4,
         },
@@ -273,7 +285,7 @@ def create_reviews(BACKEND_ROOT, tokens):
     r = rq.post(
         f"http://{BACKEND_ROOT}/api/v1/review",
         json={
-            "orderId": 13,
+            "orderId": 3,
             "revieweeName": "Adam adam",
             "content": "kind",
             "rating": 4,
@@ -287,7 +299,7 @@ def create_reviews(BACKEND_ROOT, tokens):
     r = rq.post(
         f"http://{BACKEND_ROOT}/api/v1/review",
         json={
-            "orderId": 14,
+            "orderId": 4,
             "revieweeName": "Adam adam",
             "content": "okay",
             "rating": 3,
