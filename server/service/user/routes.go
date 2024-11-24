@@ -347,26 +347,27 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
-	accessDetails, err := jwt.ExtractTokenFromClient(r)
+	// validate token
+	user, err := h.store.ValidateUserToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
 	// check user exists or not
-	_, err = h.store.GetUserByID(accessDetails.UserID)
+	_, err = h.store.GetUserByID(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user id %d doesn't exists", accessDetails.UserID))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user id %d doesn't exists", user.ID))
 		return
 	}
 
-	err = h.store.UpdateLastLoggedIn(accessDetails.UserID)
+	err = h.store.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	err = h.store.DeleteToken(accessDetails.UserID)
+	err = h.store.DeleteToken(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
