@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func WriteServerLog(data any) error {
+func WriteServerLog(errorMessage any) error {
 	logFolder := "static/log/server"
 	if err := os.MkdirAll(logFolder, 0755); err != nil {
 		return err
@@ -17,20 +17,20 @@ func WriteServerLog(data any) error {
 
 	fileName := fmt.Sprintf("%s/%s.log", logFolder, currentDate)
 
-	// 로그 파일 열기
+	// open the log file
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	// JSON으로 변환
-	jsonData, err := json.Marshal(data)
+	// change the data into JSON
+	jsonData, err := json.Marshal(errorMessage)
 	if err != nil {
 		return err
 	}
 
-	// 파일에 로그 기록
+	// store the data into the file
 	_, err = file.WriteString(fmt.Sprintf("%s\n", jsonData))
 	if err != nil {
 		return err
@@ -38,39 +38,3 @@ func WriteServerLog(data any) error {
 
 	return nil
 }
-
-/*
-logType = ["delete", "modify"]
-logDataType = ["user", "invoice", "prescription", etc]
-*/
-// func WriteLog(logType string, logDataType string, userName string, dataId int, deletedData any) error {
-// 	logFolder := fmt.Sprintf("static/log/%s/%s", logType, logDataType)
-// 	if err := os.MkdirAll(logFolder, 0755); err != nil {
-// 		return err
-// 	}
-
-// 	currentDate := time.Now().Format("060102-1504") // YYMMDD 형식
-
-// 	fileName := fmt.Sprintf("%s/%s_%s_%d.log", logFolder, currentDate, userName, dataId)
-
-// 	// 로그 파일 열기
-// 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer file.Close()
-
-// 	// JSON으로 변환
-// 	jsonData, err := json.Marshal(deletedData)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	// 파일에 로그 기록
-// 	_, err = file.WriteString(fmt.Sprintf("%s\n", jsonData))
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
