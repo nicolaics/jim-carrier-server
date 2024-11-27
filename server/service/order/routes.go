@@ -927,13 +927,17 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
-	
+
 	var returnMsg interface{}
 
 	if bankDetail == nil {
-		returnMsg = "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!"
+		returnMsg = map[string]string{
+			"status":  "not exist",
+			"message": "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!",
+		}
 	} else {
 		returnMsg = map[string]string{
+			"status":         "exist",
 			"bank_name":      bankDetail.BankName,
 			"account_number": bankDetail.AccountNumber,
 			"account_holder": bankDetail.AccountHolder,
