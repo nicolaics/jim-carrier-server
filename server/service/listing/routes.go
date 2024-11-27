@@ -19,7 +19,7 @@ type Handler struct {
 	currencyStore   types.CurrencyStore
 	reviewStore     types.ReviewStore
 	bankDetailStore types.BankDetailStore
-	orderStore types.OrderStore
+	orderStore      types.OrderStore
 }
 
 func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
@@ -31,7 +31,7 @@ func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 		currencyStore:   currencyStore,
 		reviewStore:     reviewStore,
 		bankDetailStore: bankDetailStore,
-		orderStore: orderStore,
+		orderStore:      orderStore,
 	}
 }
 
@@ -482,9 +482,9 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 
 	subject := "Your Package Location is Updated"
 
-	for _, order := range(orders) {
-		body := fmt.Sprintf("<h4>Your package for order number %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>", 
-								order.ID, payload.PackageLocation)
+	for _, order := range orders {
+		body := fmt.Sprintf("<h4>Your package for order number %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>",
+			order.ID, payload.PackageLocation)
 		err = utils.SendEmail(order.GiverEmail, subject, body, "", "")
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error sending email to %s for updating package location: %v", order.GiverEmail, err))

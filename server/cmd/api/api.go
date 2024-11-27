@@ -51,7 +51,7 @@ func (s *APIServer) Run() error {
 	userHandler.RegisterRoutes(subrouter)
 	userHandler.RegisterUnprotectedRoutes(subrouterUnprotected)
 
-	listingHandler := listing.NewHandler(listingStore, userStore, currencyStore, reviewStore, bankDetailStore)
+	listingHandler := listing.NewHandler(listingStore, userStore, currencyStore, reviewStore, bankDetailStore, orderStore)
 	listingHandler.RegisterRoutes(subrouter)
 
 	orderHandler := order.NewHandler(orderStore, userStore, listingStore, currencyStore, fcmStore, bankDetailStore)
