@@ -5,6 +5,13 @@ import "time"
 type BankDetailStore interface {
 	UpdateBankDetails(uid int, bankName, accountNumber, accountHolder string) error
 	GetBankDetailByUserID(uid int) (*BankDetail, error)
+	GetBankDataOfUser(uid int) (*BankDetailReturn, error)
+}
+
+type BankDetailReturn struct {
+	BankName       string    `json:"bankName"`
+	AccountNumber  string    `json:"accountNumber"`
+	AccountHolder  string    `json:"accountHolder"`
 }
 
 type BankDetail struct {

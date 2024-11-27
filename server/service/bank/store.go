@@ -82,3 +82,28 @@ func (s *Store) GetBankDetailByUserID(uid int) (*types.BankDetail, error) {
 
 	return bankDetail, nil
 }
+
+func (s *Store) GetBankDataOfUser(uid int) (*types.BankDetailReturn, error) {
+	query := `SELECT bank_name, account_number, account_holder FROM bank_detail WHERE user_id = ?`
+	row := s.db.QueryRow(query, uid)
+	if row.Err() != nil {
+		if row.Err() == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, row.Err()
+	}
+
+	bankDetail := new(types.BankDetailReturn)
+
+	err := row.Scan(
+		&bankDetail.BankName,
+		&bankDetail.AccountNumber,
+		&bankDetail.AccountHolder,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return bankDetail, nil
+}
