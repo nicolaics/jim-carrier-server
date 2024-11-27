@@ -19,17 +19,19 @@ type Handler struct {
 	currencyStore   types.CurrencyStore
 	reviewStore     types.ReviewStore
 	bankDetailStore types.BankDetailStore
+	orderStore types.OrderStore
 }
 
 func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 	currencyStore types.CurrencyStore, reviewStore types.ReviewStore,
-	bankDetailStore types.BankDetailStore) *Handler {
+	bankDetailStore types.BankDetailStore, orderStore types.OrderStore) *Handler {
 	return &Handler{
 		listingStore:    listingStore,
 		userStore:       userStore,
 		currencyStore:   currencyStore,
 		reviewStore:     reviewStore,
 		bankDetailStore: bankDetailStore,
+		orderStore: orderStore,
 	}
 }
 
@@ -46,6 +48,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/listing", h.handleDelete).Methods(http.MethodDelete)
 
 	router.HandleFunc("/listing", h.handleModify).Methods(http.MethodPatch)
+
+	router.HandleFunc("/listing/package-location", h.handleUpdatePackageLocation).Methods(http.MethodPatch)
+	router.HandleFunc("/listing/package-location", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	router.HandleFunc("/listing/bank-detail", h.handleGetBankDetail).Methods(http.MethodGet)
 	router.HandleFunc("/listing/bank-detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
@@ -430,4 +435,61 @@ func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, bankDetail)
+}
+
+func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Request) {
+	var payload types.UpdateBulkPackageLocationPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	user, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	listing, err := h.listingStore.GetListingByID(payload.ID)
+	if listing == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if listing.CarrierID != user.ID {
+		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("you are not the owner of the listing"))
+		return
+	}
+
+	orders, err := h.orderStore.GetOrdersByListingID(listing.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	subject := "Your Package Location is Updated"
+
+	for _, order := range(orders) {
+		body := fmt.Sprintf("<h4>Your package for order number %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>", 
+								order.ID, payload.PackageLocation)
+		err = utils.SendEmail(order.GiverEmail, subject, body, "", "")
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error sending email to %s for updating package location: %v", order.GiverEmail, err))
+		}
+	}
+
+	utils.WriteJSON(w, http.StatusOK, "package location updated")
 }

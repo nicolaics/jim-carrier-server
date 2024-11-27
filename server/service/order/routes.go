@@ -675,10 +675,41 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		orderStatus := utils.OrderStatusStringToInt(payload.OrderStatus)
 
+		listing, err := h.listingStore.GetListingByID(order.ListingID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing not found"))
+			return
+		}
+
+		carrier, err := h.userStore.GetUserByID(listing.CarrierID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("carrier not found"))
+			return
+		}
+
+		if carrier.ID != user.ID {
+			utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("unauthorized"))
+			return
+		}
+
+		giver, err := h.userStore.GetUserByID(order.GiverID)
+		if err != nil {
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("carrier not found"))
+			return
+		}
+
 		err = h.orderStore.UpdatePackageLocation(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update package location: %v", err))
 			return
+		}
+
+		subject := "Your Package Location is Updated"
+		body := fmt.Sprintf("<h4>Your package for order number %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>", 
+								order.ID, payload.PackageLocation)
+		err = utils.SendEmail(giver.Email, subject, body, "", "")
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error sending email to %s for updating package location: %v", giver.Email, err))
 		}
 
 		returnMsg = "package location updated"
@@ -946,3 +977,4 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 
 	utils.WriteJSON(w, http.StatusOK, returnMsg)
 }
+

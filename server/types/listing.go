@@ -43,6 +43,11 @@ type GetListingDetailPayload struct {
 
 type DeleteListingPayload GetListingDetailPayload
 
+type UpdateBulkPackageLocationPayload struct {
+	ID              int    `json:"id" validate:"required"`
+	PackageLocation string `json:"packageLocation" validate:"required"`
+}
+
 type ModifyListingPayload struct {
 	ID      int                `json:"id"`
 	NewData PostListingPayload `json:"newData" validate:"required"`

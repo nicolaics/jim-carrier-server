@@ -387,6 +387,36 @@ func (s *Store) UpdateOrderStatusByDeadline() error {
 	return nil
 }
 
+func (s *Store) GetOrdersByListingID(listingId int) ([]types.OrderBulk, error) {
+	query := `SELECT o.id, user.email 
+				FROM order_list AS o 
+				JOIN listing AS l ON l.id = o.listing_id 
+				JOIN user ON o.giver_id = user.id 
+				WHERE l.id = ? 
+				AND l.deleted_at IS NULL
+				AND o.deleted_at IS NULL`
+	rows, err := s.db.Query(query, listingId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orderBulks := make([]types.OrderBulk, 0)
+
+	for rows.Next() {
+		orderBulk := new(types.OrderBulk)
+
+		err = rows.Scan(&orderBulk.ID, &orderBulk.GiverEmail)
+		if err != nil {
+			return nil, err
+		}
+
+		orderBulks = append(orderBulks, *orderBulk)
+	}
+	
+	return orderBulks, nil
+}
+
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 	temp := new(struct {
 		ID                        int            `json:"id"`

@@ -28,6 +28,8 @@ type OrderStore interface {
 	IsPackageImageURLExist(packageImgUrl string) bool
 
 	UpdateOrderStatusByDeadline() error
+
+	GetOrdersByListingID(listingId int) ([]OrderBulk, error)
 }
 
 type RegisterOrderPayload struct {
@@ -185,6 +187,11 @@ type OrderCarrierReturnPayload struct {
 	Notes            string    `json:"notes"`
 	CreatedAt        time.Time `json:"createdAt"`
 	LastModifiedAt   time.Time `json:"lastModifiedAt"`
+}
+
+type OrderBulk struct {
+	ID         int    `json:"id"`
+	GiverEmail string `json:"giverEmail"`
 }
 
 type Order struct {
