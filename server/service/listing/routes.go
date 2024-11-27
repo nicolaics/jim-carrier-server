@@ -46,6 +46,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/listing", h.handleDelete).Methods(http.MethodDelete)
 
 	router.HandleFunc("/listing", h.handleModify).Methods(http.MethodPatch)
+
+	router.HandleFunc("/listing/bank-detail", h.handleGetBankDetail).Methods(http.MethodGet)
+	router.HandleFunc("/listing/bank-detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
@@ -400,4 +403,31 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, "modify success")
+}
+
+func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
+	// validate token
+	user, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	user, err = h.userStore.GetUserByID(user.ID)
+	if user == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	bankDetail, err := h.bankDetailStore.GetBankDataOfUser(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, bankDetail)
 }
