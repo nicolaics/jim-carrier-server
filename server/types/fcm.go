@@ -10,6 +10,7 @@ type FCMData struct {
 	TitleLoc string `json:"title_loc_key,omitempty"`
 	BodyLoc  string `json:"body_loc_key,omitempty"`
 	Type     string `json:"type,omitempty"`
+	OrderID  string `json:"order_id,omitempty"`
 }
 
 type FCMHistory struct {

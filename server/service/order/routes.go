@@ -213,6 +213,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		ToToken:  carrier.FCMToken,
 		Data: types.FCMData{
 			Type: "confirm_order",
+			OrderID: fmt.Sprintf("%d", orderId),
 		},
 		Title: subject,
 		Body:  fmt.Sprintf("Confirm order no. %d before %s 23:59 KST (GMT +09)", orderId, time.Now().Local().AddDate(0, 0, 2).Format("02 Jan 2006")),
@@ -659,6 +660,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			ToToken:  carrier.FCMToken,
 			Data: types.FCMData{
 				Type: "confirm_order",
+				OrderID: fmt.Sprintf("%d", order.ID),
 			},
 			Title: subject,
 			Body:  fmt.Sprintf("Confirm order no. %d before %s 23:59 KST (GMT +09)", order.ID, time.Now().Local().AddDate(0, 0, 2).Format("02 Jan 2006")),
