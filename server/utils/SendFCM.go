@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"log"
-
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/messaging"
 	"github.com/nicolaics/jim-carrier/config"
@@ -23,14 +21,12 @@ func SendFCMToOne(fcm types.FCMHistory) (string, error) {
 
 	app, err := firebase.NewApp(context.Background(), nil, cfg)
 	if err != nil {
-		// log.Printf("error initializing app: %v\n", err)
 		return "", err
 	}
 
 	ctx := context.Background()
 	client, err := app.Messaging(ctx)
 	if err != nil {
-		// log.Printf("error getting Messaging client: %v\n", err)
 		return "", err
 	}
 
@@ -38,10 +34,6 @@ func SendFCMToOne(fcm types.FCMHistory) (string, error) {
 
 	fcmDataMarshal, _ := json.Marshal(fcm.Data)
 	json.Unmarshal(fcmDataMarshal, &fcmData)
-
-	log.Println("fcm Title: ", fcm.Title)
-	log.Println("fcm Body: ", fcm.Body)
-	log.Println("fcm Data: ", fcmData)
 
 	message := &messaging.Message{
 		Notification: &messaging.Notification{
