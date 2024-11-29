@@ -417,6 +417,35 @@ func (s *Store) GetOrdersByListingID(listingId int) ([]types.OrderBulk, error) {
 	return orderBulks, nil
 }
 
+func (s *Store) GetOrderID(order types.Order) (int, error) {
+	query := `SELECT id  
+				FROM order_list 
+				WHERE listing_id = ? 
+				AND giver_id = ? 
+				AND weight = ? 
+				AND price = ? 
+				AND currency_id = ? 
+				AND package_content = ? 
+				AND package_img_url = ? 
+				AND notes = ? 
+				AND deleted_at IS NULL`
+	row := s.db.QueryRow(query, order.ListingID, order.GiverID, order.Weight,
+		order.Price, order.CurrencyID, order.PackageContent, order.PackageImageURL,
+		order.Notes)
+	if row.Err() != nil {
+		return 0, row.Err()
+	}
+
+	var id int
+
+	err := row.Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {
 	temp := new(struct {
 		ID                        int            `json:"id"`

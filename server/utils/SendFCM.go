@@ -2,18 +2,20 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	// "log"
+	"log"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/messaging"
 	"github.com/nicolaics/jim-carrier/config"
+	"github.com/nicolaics/jim-carrier/types"
 	"google.golang.org/api/option"
 )
 
-func SendFCMToOne(toToken, title, body string) (string, error) {
-	if toToken == "" {
+func SendFCMToOne(fcm types.FCMHistory) (string, error) {
+	if fcm.ToToken == "" {
 		return "", fmt.Errorf("destination token must be specified")
 	}
 
@@ -32,12 +34,25 @@ func SendFCMToOne(toToken, title, body string) (string, error) {
 		return "", err
 	}
 
+	var fcmData map[string]string
+
+	fcmDataMarshal, _ := json.Marshal(fcm.Data)
+	json.Unmarshal(fcmDataMarshal, &fcmData)
+
+	log.Println("fcm Title: ", fcm.Title)
+	log.Println("fcm Body: ", fcm.Body)
+	log.Println("fcm Data: ", fcmData)
+
 	message := &messaging.Message{
 		Notification: &messaging.Notification{
-			Title: title,
-			Body:  body,
+			Title: fcm.Title,
+			Body:  fcm.Body,
 		},
-		Token: toToken,
+		Token: fcm.ToToken,
+		Data: fcmData,
+		Android: &messaging.AndroidConfig{
+			Priority: "high",
+		},
 	}
 
 	response, err := client.Send(ctx, message)

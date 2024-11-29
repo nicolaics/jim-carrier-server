@@ -30,6 +30,7 @@ type OrderStore interface {
 	UpdateOrderStatusByDeadline() error
 
 	GetOrdersByListingID(listingId int) ([]OrderBulk, error)
+	GetOrderID(order Order) (int, error)
 }
 
 type RegisterOrderPayload struct {

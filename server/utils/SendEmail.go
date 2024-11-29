@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/nicolaics/jim-carrier/config"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 type Message struct {
@@ -116,6 +118,7 @@ func SendEmail(to, subject, body, attachmentUrl, attachedFileName string) error 
 }
 
 func CreateEmailBodyOfOrder(subject, name, destination, currency, notes, packageContent string, weight, price float64) string {
+	var printer = message.NewPrinter(language.English)
 	var body string
 
 	if subject == "New Order Arrived!" {
@@ -124,21 +127,22 @@ func CreateEmailBodyOfOrder(subject, name, destination, currency, notes, package
 		body += "<h2>Someone just modified their order!</h2>"
 		body += "<p><b>Please Re-confirm it!</b></p><br>"
 	}
-	
+
 	body += "<p>Here are the details:</p>"
 	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Name</b>: %s</p>", name)
 	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Destination</b>: %s</p>", destination)
-	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Weight</b>: %.1f</p>", weight)
-	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Total Price</b>: %s %.1f</p>", currency, price)
+	body += printer.Sprintf("<p style='padding-left: 30px;'><b>Weight</b>: %.1f</p>", weight)
+	body += printer.Sprintf("<p style='padding-left: 30px;'><b>Total Price</b>: %s %.1f</p>", currency, price)
 	body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Package Content</b>: %s</p>", packageContent)
 
 	if notes != "" {
 		body += fmt.Sprintf("<p style='padding-left: 30px;'><b>Notes<b></b>: %s</p>", notes)
 	}
-	
+
 	body += "<br><p>Attached is the image of the package!</p>"
 	body += "<p>Confirm the order before:</p>"
-	body += fmt.Sprintf("<h3 style='color:red; padding-left: 30px;'>%s 23:59 KST (GMT +09)</h3>", time.Now().Local().AddDate(0, 0, 2).Format("02 JAN 2006"))
+	body += fmt.Sprintf("<h3 style='color:red; padding-left: 30px;'><i><u>%s 23:59 KST (GMT +09)</u></i></h3>", 
+						time.Now().Local().AddDate(0, 0, 2).Format("02 Jan 2006"))
 	body += "<p>If not confirmed by then, the order will automatically be cancelled!</p>"
 
 	return body
