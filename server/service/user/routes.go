@@ -132,6 +132,13 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if user.FCMToken != payload.FCMToken {
+		err = h.store.UpdateFCMToken(user.ID, payload.FCMToken)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
+		}
+	}
+
 	tokens := map[string]string{
 		"token": tokenDetails.Token,
 	}
@@ -636,6 +643,13 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	if err != nil || user == nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	if user.FCMToken != payload.FCMToken {
+		err = h.store.UpdateFCMToken(user.ID, payload.FCMToken)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
+		}
 	}
 
 	// delete tokens issued to the user

@@ -80,6 +80,7 @@ type GetOneUserPayload struct {
 type LoginUserPayload struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
+	FCMToken       string `json:"fcmToken" validate:"required"`
 }
 
 type LoginGooglePayload struct {
