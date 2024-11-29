@@ -212,7 +212,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		ToUserID: carrier.ID,
 		ToToken:  carrier.FCMToken,
 		Data: types.FCMData{
-			Type: "confirm_order",
+			Type:    "confirm_order",
 			OrderID: fmt.Sprintf("%d", orderId),
 		},
 		Title: subject,
@@ -659,7 +659,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			ToUserID: carrier.ID,
 			ToToken:  carrier.FCMToken,
 			Data: types.FCMData{
-				Type: "confirm_order",
+				Type:    "confirm_order",
 				OrderID: fmt.Sprintf("%d", order.ID),
 			},
 			Title: subject,
@@ -730,11 +730,32 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		}
 
 		subject := "Your Package Location is Updated"
-		body := fmt.Sprintf("<h4>Your package for order number %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>",
+		body := fmt.Sprintf("<h4>Your package for order no. %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>",
 			order.ID, payload.PackageLocation)
 		err = utils.SendEmail(giver.Email, subject, body, "", "")
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error sending email to %s for updating package location: %v", giver.Email, err))
+		}
+
+		fcmHistory := types.FCMHistory{
+			ToUserID: giver.ID,
+			ToToken:  giver.FCMToken,
+			Data: types.FCMData{
+				Type:    "order_updated",
+				OrderID: fmt.Sprintf("%d", order.ID),
+			},
+			Title: subject,
+			Body:  fmt.Sprintf("Package location for order no. %d is %s", order.ID, payload.PackageLocation),
+		}
+
+		fcmHistory.Response, err = utils.SendFCMToOne(fcmHistory)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
+		} else {
+			err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+			if err != nil {
+				logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+			}
 		}
 
 		returnMsg = "package location updated"
@@ -818,13 +839,34 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			}
 
 			subject := fmt.Sprintf("Payment Completed for Order No. %d", order.ID)
-			body := fmt.Sprintf("Payment has been completed by %s for package to %s at %s!\nBelow is the payment proof!",
-				user.Name, listing.Destination, listing.DepartureDate.Format("2006-01-02"))
+			body := fmt.Sprintf("<h4>Payment has been</h4><br><h2>completed</h2><br><h4>by %s for order no. %d!</h4><p>Below is the payment proof!<p>",
+									user.Name, order.ID)
 
 			err = utils.SendEmail(carrier.Email, subject, body, filePath, "Payment Proof")
 			if err != nil {
 				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error sending payment completion email to carrier: %v", err))
 				return
+			}
+			
+			fcmHistory := types.FCMHistory{
+				ToUserID: carrier.ID,
+				ToToken:  carrier.FCMToken,
+				Data: types.FCMData{
+					Type:    "payment_updated",
+					OrderID: fmt.Sprintf("%d", order.ID),
+				},
+				Title: subject,
+				Body:  fmt.Sprintf("Payment has been completed by %s for order no. %d!", user.Name, order.ID),
+			}
+	
+			fcmHistory.Response, err = utils.SendFCMToOne(fcmHistory)
+			if err != nil {
+				logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
+			} else {
+				err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+				if err != nil {
+					logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+				}
 			}
 
 			paymentProofUrl = filePath
@@ -931,12 +973,33 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			}
 
 			subject := fmt.Sprintf("Order Completed for Order No. %d", order.ID)
-			body := fmt.Sprintf("Package has been delivered to %s at %s!", listing.Destination, time.Now().Format("2006-01-02 15:04"))
+			body := fmt.Sprintf("<h4>Package has been delivered to</h4><br><h2>%s at %s!</h2>", listing.Destination, time.Now().Format("2006-01-02 15:04"))
 
 			err = utils.SendEmail(giver.Email, subject, body, "", "")
 			if err != nil {
 				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error sending payment completion email to carrier: %v", err))
 				return
+			}
+
+			fcmHistory := types.FCMHistory{
+				ToUserID: giver.ID,
+				ToToken:  giver.FCMToken,
+				Data: types.FCMData{
+					Type:    "order_updated",
+					OrderID: fmt.Sprintf("%d", order.ID),
+				},
+				Title: subject,
+				Body:  fmt.Sprintf("Package has been delivered to %s at %s!", listing.Destination, time.Now().Format("2006-01-02 15:04")),
+			}
+	
+			fcmHistory.Response, err = utils.SendFCMToOne(fcmHistory)
+			if err != nil {
+				logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
+			} else {
+				err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+				if err != nil {
+					logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+				}
 			}
 		}
 

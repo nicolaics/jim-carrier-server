@@ -20,11 +20,13 @@ type Handler struct {
 	reviewStore     types.ReviewStore
 	bankDetailStore types.BankDetailStore
 	orderStore      types.OrderStore
+	fcmHistoryStore types.FCMHistoryStore
 }
 
 func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 	currencyStore types.CurrencyStore, reviewStore types.ReviewStore,
-	bankDetailStore types.BankDetailStore, orderStore types.OrderStore) *Handler {
+	bankDetailStore types.BankDetailStore, orderStore types.OrderStore,
+	fcmHistoryStore types.FCMHistoryStore) *Handler {
 	return &Handler{
 		listingStore:    listingStore,
 		userStore:       userStore,
@@ -32,6 +34,7 @@ func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 		reviewStore:     reviewStore,
 		bankDetailStore: bankDetailStore,
 		orderStore:      orderStore,
+		fcmHistoryStore: fcmHistoryStore,
 	}
 }
 
@@ -483,11 +486,38 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 	subject := "Your Package Location is Updated"
 
 	for _, order := range orders {
-		body := fmt.Sprintf("<h4>Your package for order number %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>",
+		giver, err := h.userStore.GetUserByEmail(order.GiverEmail)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error finding account of %s for updating package location: %v", order.GiverEmail, err))
+			continue
+		}
+		
+		body := fmt.Sprintf("<h4>Your package for order no. %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>",
 			order.ID, payload.PackageLocation)
-		err = utils.SendEmail(order.GiverEmail, subject, body, "", "")
+		err = utils.SendEmail(giver.Email, subject, body, "", "")
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error sending email to %s for updating package location: %v", order.GiverEmail, err))
+		}
+
+		fcmHistory := types.FCMHistory{
+			ToUserID: giver.ID,
+			ToToken:  giver.FCMToken,
+			Data: types.FCMData{
+				Type:    "order_updated",
+				OrderID: fmt.Sprintf("%d", order.ID),
+			},
+			Title: subject,
+			Body:  fmt.Sprintf("Package location for order no. %d is %s", order.ID, payload.PackageLocation),
+		}
+
+		fcmHistory.Response, err = utils.SendFCMToOne(fcmHistory)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("error sending notification to carrier: %v", err))
+		} else {
+			err = h.fcmHistoryStore.CreateFCMHistory(fcmHistory)
+			if err != nil {
+				logger.WriteServerLog(fmt.Sprintf("error update fcm history: %v", err))
+			}
 		}
 	}
 
