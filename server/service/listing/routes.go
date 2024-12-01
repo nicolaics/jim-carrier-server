@@ -57,6 +57,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/listing/bank-detail", h.handleGetBankDetail).Methods(http.MethodGet)
 	router.HandleFunc("/listing/bank-detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/listing/count-orders", h.handleCountOrders).Methods(http.MethodGet)
+	router.HandleFunc("/listing/count-orders", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
@@ -217,6 +220,12 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		bankDetail, err := h.bankDetailStore.GetBankDataOfUser(carrier.ID)
+		if err != nil {
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data for %d: %v", listing.CarrierID, err))
+			return
+		}
+
 		response = append(response, types.ListingReturnPayload{
 			ID:                    listing.ID,
 			CarrierID:             listing.CarrierID,
@@ -231,6 +240,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			Description:           listing.Description.String,
 			CarrierRating:         avgRating,
 			LastModifiedAt:        listing.LastModifiedAt,
+			BankDetail:            *bankDetail,
 		})
 	}
 
@@ -491,7 +501,7 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 			logger.WriteServerLog(fmt.Errorf("error finding account of %s for updating package location: %v", order.GiverEmail, err))
 			continue
 		}
-		
+
 		body := fmt.Sprintf("<h4>Your package for order no. %d has an update!</h4><h4>It status now is</h4><br><h2>%s</h2>",
 			order.ID, payload.PackageLocation)
 		err = utils.SendEmail(giver.Email, subject, body, "", "")
@@ -522,4 +532,34 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 	}
 
 	utils.WriteJSON(w, http.StatusOK, "package location updated")
+}
+
+func (h *Handler) handleCountOrders(w http.ResponseWriter, r *http.Request) {
+	// validate token
+	user, err := h.userStore.ValidateUserToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	orderCount, err := h.orderStore.GetOrderCountByCarrierID(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	var returnMsg map[string]bool
+	if orderCount == 0 {
+		returnMsg = map[string]bool{
+			"modify": true,
+		}
+
+		utils.WriteJSON(w, http.StatusOK, returnMsg)
+	} else {
+		returnMsg = map[string]bool{
+			"modify": false,
+		}
+
+		utils.WriteJSON(w, http.StatusForbidden, returnMsg)
+	}
 }

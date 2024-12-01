@@ -66,7 +66,7 @@ func (s *Store) GetOrderByID(id int) (*types.Order, error) {
 	return order, nil
 }
 
-func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, error) {
+func (s *Store) GetOrdersByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, error) {
 	err := s.UpdateOrderStatusByDeadline()
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (s *Store) GetOrderByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, e
 	return orders, nil
 }
 
-func (s *Store) GetOrderByGiverID(id int) ([]types.OrderGiverReturnFromDB, error) {
+func (s *Store) GetOrdersByGiverID(id int) ([]types.OrderGiverReturnFromDB, error) {
 	query := `SELECT o.id, o.weight, o.price, 
 						c.name, 
 						o.package_content, o.package_img_url, 
@@ -381,8 +381,8 @@ func (s *Store) UpdateOrderStatusByDeadline() error {
 				AND order_status = ? 
 				AND deleted_at IS NULL`
 
-	_, err := s.db.Exec(query, constants.ORDER_STATUS_CANCELLED, time.Now(), 
-						time.Now().UTC().Format("2006-01-02 15:04:05"), constants.ORDER_STATUS_WAITING)
+	_, err := s.db.Exec(query, constants.ORDER_STATUS_CANCELLED, time.Now(),
+		time.Now().UTC().Format("2006-01-02 15:04:05"), constants.ORDER_STATUS_WAITING)
 	if err != nil {
 		return err
 	}
@@ -416,7 +416,7 @@ func (s *Store) GetOrdersByListingID(listingId int) ([]types.OrderBulk, error) {
 
 		orderBulks = append(orderBulks, *orderBulk)
 	}
-	
+
 	return orderBulks, nil
 }
 
@@ -447,6 +447,32 @@ func (s *Store) GetOrderID(order types.Order) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (s *Store) GetOrderCountByCarrierID(id int) (int, error) {
+	err := s.UpdateOrderStatusByDeadline()
+	if err != nil {
+		return 0, err
+	}
+
+	query := `SELECT COUNT(*)
+				FROM order_list AS o 
+				JOIN listing AS l ON l.id = o.listing_id 
+				WHERE l.carrier_id = ? 
+				AND o.deleted_at IS NULL 
+				AND l.deleted_at IS NULL`
+	row := s.db.QueryRow(query, id)
+	if row.Err() != nil {
+		return 0, row.Err()
+	}
+
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func scanRowIntoOrder(rows *sql.Rows) (*types.Order, error) {

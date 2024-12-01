@@ -258,7 +258,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 	var ordersReturn interface{}
 	if reqType == "carrier" {
-		orders, err := h.orderStore.GetOrderByCarrierID(user.ID)
+		orders, err := h.orderStore.GetOrdersByCarrierID(user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
@@ -301,7 +301,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 		ordersReturn = ordersReturnTemp
 	} else if reqType == "giver" {
-		orders, err := h.orderStore.GetOrderByGiverID(user.ID)
+		orders, err := h.orderStore.GetOrdersByGiverID(user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return

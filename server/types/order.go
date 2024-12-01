@@ -10,8 +10,8 @@ type OrderStore interface {
 	GetOrderByID(int) (*Order, error)
 	// GetOrderByPaymentProofURL(paymentProofUrl string) (*Order, error)
 
-	GetOrderByCarrierID(int) ([]OrderCarrierReturnFromDB, error)
-	GetOrderByGiverID(int) ([]OrderGiverReturnFromDB, error)
+	GetOrdersByCarrierID(int) ([]OrderCarrierReturnFromDB, error)
+	GetOrdersByGiverID(int) ([]OrderGiverReturnFromDB, error)
 
 	GetCarrierOrderByID(orderId int, userId int) (*OrderCarrierReturnFromDB, error)
 	GetGiverOrderByID(orderId int, userId int) (*OrderGiverReturnFromDB, error)
@@ -31,6 +31,8 @@ type OrderStore interface {
 
 	GetOrdersByListingID(listingId int) ([]OrderBulk, error)
 	GetOrderID(order Order) (int, error)
+
+	GetOrderCountByCarrierID(id int) (int, error)
 }
 
 type RegisterOrderPayload struct {

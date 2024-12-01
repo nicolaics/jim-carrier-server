@@ -54,19 +54,20 @@ type ModifyListingPayload struct {
 }
 
 type ListingReturnPayload struct {
-	ID                    int       `json:"id"`
-	CarrierID             int       `json:"carrierId"`
-	CarrierName           string    `json:"carrierName"`
-	CarrierProfilePicture []byte    `json:"carrierProfilePicture"`
-	Destination           string    `json:"destination"`
-	WeightAvailable       float64   `json:"weightAvailable"`
-	PricePerKg            float64   `json:"pricePerKg"`
-	Currency              string    `json:"currency"`
-	DepartureDate         time.Time `json:"departureDate"`
-	LastReceivedDate      time.Time `json:"lastReceivedDate"`
-	Description           string    `json:"description"`
-	CarrierRating         float64   `json:"carrierRating"`
-	LastModifiedAt        time.Time `json:"lastModifiedAt"`
+	ID                    int              `json:"id"`
+	CarrierID             int              `json:"carrierId"`
+	CarrierName           string           `json:"carrierName"`
+	CarrierProfilePicture []byte           `json:"carrierProfilePicture"`
+	Destination           string           `json:"destination"`
+	WeightAvailable       float64          `json:"weightAvailable"`
+	PricePerKg            float64          `json:"pricePerKg"`
+	Currency              string           `json:"currency"`
+	DepartureDate         time.Time        `json:"departureDate"`
+	LastReceivedDate      time.Time        `json:"lastReceivedDate"`
+	Description           string           `json:"description"`
+	CarrierRating         float64          `json:"carrierRating"`
+	LastModifiedAt        time.Time        `json:"lastModifiedAt"`
+	BankDetail            BankDetailReturn `json:"bankDetail"`
 }
 
 type ListingReturnFromDB struct {
