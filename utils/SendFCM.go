@@ -7,8 +7,8 @@ import (
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/messaging"
-	"github.com/nicolaics/jim-carrier/config"
-	"github.com/nicolaics/jim-carrier/types"
+	"github.com/nicolaics/jim-carrier-server/config"
+	"github.com/nicolaics/jim-carrier-server/types"
 	"google.golang.org/api/option"
 )
 

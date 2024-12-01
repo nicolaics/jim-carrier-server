@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/nicolaics/jim-carrier/constants"
+	"github.com/nicolaics/jim-carrier-server/constants"
 )
 
 func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string, error) {

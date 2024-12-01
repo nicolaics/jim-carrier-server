@@ -12,7 +12,7 @@ import (
 	"net/smtp"
 	"strings"
 
-	"github.com/nicolaics/jim-carrier/config"
+	"github.com/nicolaics/jim-carrier-server/config"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )

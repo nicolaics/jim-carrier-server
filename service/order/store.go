@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nicolaics/jim-carrier/constants"
-	"github.com/nicolaics/jim-carrier/types"
+	"github.com/nicolaics/jim-carrier-server/constants"
+	"github.com/nicolaics/jim-carrier-server/types"
 )
 
 type Store struct {

@@ -8,13 +8,13 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/nicolaics/jim-carrier/constants"
-	"github.com/nicolaics/jim-carrier/logger"
-	"github.com/nicolaics/jim-carrier/service/auth"
-	"github.com/nicolaics/jim-carrier/service/auth/jwt"
-	"github.com/nicolaics/jim-carrier/service/auth/oauth"
-	"github.com/nicolaics/jim-carrier/types"
-	"github.com/nicolaics/jim-carrier/utils"
+	"github.com/nicolaics/jim-carrier-server/constants"
+	"github.com/nicolaics/jim-carrier-server/logger"
+	"github.com/nicolaics/jim-carrier-server/service/auth"
+	"github.com/nicolaics/jim-carrier-server/service/auth/jwt"
+	"github.com/nicolaics/jim-carrier-server/service/auth/oauth"
+	"github.com/nicolaics/jim-carrier-server/types"
+	"github.com/nicolaics/jim-carrier-server/utils"
 )
 
 type Handler struct {

@@ -3,7 +3,7 @@ package fcm
 import (
 	"database/sql"
 
-	"github.com/nicolaics/jim-carrier/types"
+	"github.com/nicolaics/jim-carrier-server/types"
 )
 
 type Store struct {

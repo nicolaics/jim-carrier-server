@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	"github.com/nicolaics/jim-carrier/cmd/api"
-	"github.com/nicolaics/jim-carrier/config"
-	"github.com/nicolaics/jim-carrier/db"
+	"github.com/nicolaics/jim-carrier-server/cmd/api"
+	"github.com/nicolaics/jim-carrier-server/config"
+	"github.com/nicolaics/jim-carrier-server/db"
 )
 
 func main() {

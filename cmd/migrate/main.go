@@ -11,8 +11,8 @@ import (
 	mySqlConfig "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/nicolaics/jim-carrier/config"
-	"github.com/nicolaics/jim-carrier/db"
+	"github.com/nicolaics/jim-carrier-server/config"
+	"github.com/nicolaics/jim-carrier-server/db"
 )
 
 func main() {

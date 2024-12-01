@@ -7,16 +7,16 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/nicolaics/jim-carrier/logger"
-	"github.com/nicolaics/jim-carrier/service/auth"
-	"github.com/nicolaics/jim-carrier/service/auth/jwt"
-	"github.com/nicolaics/jim-carrier/service/bank"
-	"github.com/nicolaics/jim-carrier/service/currency"
-	"github.com/nicolaics/jim-carrier/service/fcm"
-	"github.com/nicolaics/jim-carrier/service/listing"
-	"github.com/nicolaics/jim-carrier/service/order"
-	"github.com/nicolaics/jim-carrier/service/review"
-	"github.com/nicolaics/jim-carrier/service/user"
+	"github.com/nicolaics/jim-carrier-server/logger"
+	"github.com/nicolaics/jim-carrier-server/service/auth"
+	"github.com/nicolaics/jim-carrier-server/service/auth/jwt"
+	"github.com/nicolaics/jim-carrier-server/service/bank"
+	"github.com/nicolaics/jim-carrier-server/service/currency"
+	"github.com/nicolaics/jim-carrier-server/service/fcm"
+	"github.com/nicolaics/jim-carrier-server/service/listing"
+	"github.com/nicolaics/jim-carrier-server/service/order"
+	"github.com/nicolaics/jim-carrier-server/service/review"
+	"github.com/nicolaics/jim-carrier-server/service/user"
 )
 
 type APIServer struct {

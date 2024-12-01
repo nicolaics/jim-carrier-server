@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/nicolaics/jim-carrier/constants"
+import "github.com/nicolaics/jim-carrier-server/constants"
 
 // to set the order status from string into int
 func OrderStatusStringToInt(orderStr string) int {

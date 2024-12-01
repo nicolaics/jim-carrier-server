@@ -10,8 +10,8 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/nicolaics/jim-carrier/config"
-	"github.com/nicolaics/jim-carrier/types"
+	"github.com/nicolaics/jim-carrier-server/config"
+	"github.com/nicolaics/jim-carrier-server/types"
 )
 
 type contextKey string
