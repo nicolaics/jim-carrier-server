@@ -487,14 +487,14 @@ func (s *Store) ValidateUserAccessToken(w http.ResponseWriter, r *http.Request) 
 	return user, nil
 }
 
-func (s *Store) ValidateUserRefreshToken(w http.ResponseWriter, r *http.Request) (*types.User, error) {
+func (s *Store) ValidateUserRefreshToken(refreshToken string) (*types.User, error) {
 	query := "DELETE FROM verify_token WHERE expired_at < ?"
 	_, err := s.db.Exec(query, time.Now().UTC().Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return nil, fmt.Errorf("error deleting expired token: %v", err)
 	}
 
-	accessDetails, err := jwt.ExtractRefreshTokenFromClient(r)
+	accessDetails, err := jwt.ExtractRefreshTokenFromClient(refreshToken)
 	if err != nil {
 		return nil, err
 	}
@@ -561,6 +561,22 @@ func (s *Store) UpdateAccessToken(userId int, accessTokenDetails *types.TokenDet
 	}
 
 	return nil
+}
+
+func (s *Store) IsAccessTokenExist(userId int) (bool, error) {
+	query := `SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND expired_at >= ? AND token_type = ?`
+	row := s.db.QueryRow(query, userId, time.Now().UTC().Format("2006-01-02 15:04:05"), constants.ACCESS_TOKEN)
+	if row.Err() != nil {
+		return true, row.Err()
+	}
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return true, err
+	}
+
+	return (count > 0), nil
 }
 
 func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {

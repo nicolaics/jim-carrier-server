@@ -26,8 +26,9 @@ type UserStore interface {
 	SaveToken(userId int, accessTokenDetails *TokenDetails, refreshTokenDetails *TokenDetails) error
 	DeleteToken(int) error
 	ValidateUserAccessToken(http.ResponseWriter, *http.Request) (*User, error)
-	ValidateUserRefreshToken(w http.ResponseWriter, r *http.Request) (*User, error)
+	ValidateUserRefreshToken(refreshToken string) (*User, error)
 	UpdateAccessToken(userId int, accessTokenDetails *TokenDetails) error
+	IsAccessTokenExist(userId int) (bool, error)
 
 	DelayCodeWithinTime(email string, minutes int) (bool, error)
 	SaveVerificationCode(email, code string, requestType int) error
@@ -106,6 +107,10 @@ type UpdateProfilePicturePayload struct {
 }
 
 type ResetPasswordPayload LoginUserPayload
+
+type RefreshTokenPayload struct {
+	RefreshToken string `json:"refreshToken" validate:"required"`
+}
 
 type ReturnUserPayload struct {
 	ID             int       `json:"id"`

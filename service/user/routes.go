@@ -43,9 +43,6 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/user/logout", h.handleLogout).Methods(http.MethodPost)
 	router.HandleFunc("/user/logout", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
-
-	router.HandleFunc("/user/refresh", h.handleRefreshToken).Methods(http.MethodGet)
-	router.HandleFunc("/user/refresh", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
@@ -66,6 +63,9 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 
 	router.HandleFunc("/user/register/google", h.handleRegisterGoogle).Methods(http.MethodPost)
 	router.HandleFunc("/user/register/google", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/user/refresh", h.handleRefreshToken).Methods(http.MethodPost)
+	router.HandleFunc("/user/refresh", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +114,17 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	// check password match
 	if !(auth.ComparePassword(password, []byte(payload.Password))) {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid password"))
+		return
+	}
+
+	isAccessTokenExist, err := h.store.IsAccessTokenExist(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if isAccessTokenExist {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("logged in from other device"))
 		return
 	}
 
@@ -816,10 +827,24 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
+	var payload types.RefreshTokenPayload
 	// validate token
-	user, err := h.store.ValidateUserRefreshToken(w, r)
+	
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error parsing JSON: %v", err))
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	user, err := h.store.ValidateUserRefreshToken(payload.RefreshToken)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid refresh token: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, err)
 		return
 	}
 
