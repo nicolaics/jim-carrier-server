@@ -1,45 +1,75 @@
-# Jim Carrier
+# Jim Carrier API Server
 
 ## Directory Structure
 ```
 .
+├── cmd
+|   ├── api
+|   ├── migrate
+|   └── main.go
+├── config
+|   └── env.go
+├── constants
+|   └── constants.go
+├── db
+|   └── db.go
+├── logger
+|   ├── logger.go
+|   └── WriteLog.go
+├── service
+|   ├── auth
+|   |   ├── jwt
+|   |   |   ├── jwt.go
+|   |   |   └── JwtMiddleware.go
+|   |   ├── oauth
+|   |   |   └── VerifyToken.go
+|   |   ├── CorsMiddleware.go
+|   |   └── password.go
+|   ├── bank
+|   |   └── store.go
+|   ├── currency
+|   |   └── store.go
+|   ├── fcm
+|   |   └── store.go
+|   ├── listing
+|   |   ├── routes.go
+|   |   └── store.go
+|   ├── order
+|   |   ├── routes.go
+|   |   └── store.go
+|   ├── review
+|   |   ├── routes.go
+|   |   └── store.go
+|   └── user
+|   |   ├── routes.go
+|   |   └── store.go
+├── types
+|   ├── bank.go
+|   ├── currency.go
+|   ├── fcm.go
+|   ├── listing.go
+|   ├── order.go
+|   ├── review.go
+|   ├── types.go
+|   └── user.go
+├── utils
+|   ├── GetImage.go
+|   ├── ParamsIntStringConversion.go
+|   ├── ParseDate.go
+|   ├── SaveImage.go
+|   ├── SendEmail.go
+|   ├── SendFCM.go
+|   ├── utils.go
+|   └── WriteJson.go
 ├── .gitignore
+├── go.mod
+├── go.sum
 ├── LICENSE
-├── README.md
-├── frontend
-|   ├── android
-|   ├── assets
-|   ├── ios
-|   ├── lib
-|   ├── linux
-|   ├── macos
-|   ├── test
-|   ├── web
-|   ├── windows
-|   ├── .metadata
-|   ├── analysis_options.yaml
-|   ├── pubspec.lock
-|   └── pubspec.yaml
-└── server
-    ├── cmd
-    |   ├── api
-    |   ├── migrate
-    |   └── main.go
-    ├── config
-    ├── constants
-    ├── db
-    ├── logger
-    ├── service
-    |   ├── auth
-    |   ├── listing
-    |   ├── order
-    |   └── user
-    ├── types
-    ├── utils
-    └── Makefile
+├── Makefile
+└── README.md
 ```
 
-## Server
+## Installation
 
 To run the server, make sure you have go and makefile installed
 
