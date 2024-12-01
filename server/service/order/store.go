@@ -377,9 +377,12 @@ func (s *Store) IsPackageImageURLExist(packageImgUrl string) bool {
 
 func (s *Store) UpdateOrderStatusByDeadline() error {
 	query := `UPDATE order_list SET order_status = ?, last_modified_at = ? 
-				WHERE order_confirmation_deadline < ? AND deleted_at IS NULL`
+				WHERE order_confirmation_deadline < ? 
+				AND order_status = ? 
+				AND deleted_at IS NULL`
 
-	_, err := s.db.Exec(query, constants.ORDER_STATUS_CANCELLED, time.Now(), time.Now().UTC().Format("2006-01-02 15:04:05"))
+	_, err := s.db.Exec(query, constants.ORDER_STATUS_CANCELLED, time.Now(), 
+						time.Now().UTC().Format("2006-01-02 15:04:05"), constants.ORDER_STATUS_WAITING)
 	if err != nil {
 		return err
 	}
