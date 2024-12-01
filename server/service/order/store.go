@@ -165,7 +165,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 					JOIN user ON user.id = o.giver_id 
 					JOIN currency AS c ON c.id = o.currency_id 
 					WHERE o.id = ? 
-					AND l.carried_id = ? 
+					AND l.carrier_id = ? 
 					AND o.deleted_at IS NULL 
 					AND l.deleted_at IS NULL 
 					ORDER BY l.departure_date DESC`
