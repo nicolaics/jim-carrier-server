@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	// "log"
 
 	"github.com/nicolaics/jim-carrier-server/config"
 	"golang.org/x/oauth2"
@@ -23,9 +22,6 @@ func VerifyIDToken(idToken string) (*idtoken.Payload, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// log.Println("verify Id Token payload: ", payload)
-	// log.Println("verify Id Token payload claims: ", payload.Claims)
 	
 	return payload, nil
 }
