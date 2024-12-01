@@ -142,8 +142,8 @@ func CreateRefreshToken(userId int) (*types.TokenDetails, error) {
 	return tokenDetails, nil
 }
 
-func ExtractRefreshTokenFromClient(r *http.Request) (*types.AccessDetails, error) {
-	token, err := VerifyRefreshToken(r)
+func ExtractRefreshTokenFromClient(refreshToken string) (*types.AccessDetails, error) {
+	token, err := VerifyRefreshToken(refreshToken)
 	if err != nil {
 		log.Println("verify token error")
 		return nil, err
@@ -173,13 +173,8 @@ func ExtractRefreshTokenFromClient(r *http.Request) (*types.AccessDetails, error
 	return nil, err
 }
 
-func VerifyRefreshToken(r *http.Request) (*jwt.Token, error) {
-	tokenStr, err := extractToken(r)
-	if err != nil {
-		return nil, fmt.Errorf("unable to verify token: %v", err)
-	}
-
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+func VerifyRefreshToken(refreshToken string) (*jwt.Token, error) {
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		//Make sure that the token method conform to "SigningMethodHMAC"
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
