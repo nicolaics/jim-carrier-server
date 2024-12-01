@@ -1,4 +1,4 @@
-module github.com/nicolaics/jim-carrier
+module github.com/nicolaics/jim-carrier-server
 
 go 1.22.4
 
