@@ -405,6 +405,11 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	err = h.bankDetailStore.UpdateBankDetails(user.ID, payload.BankName, payload.AccountNumber, payload.AccountHolder)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("error update bank details for user %s:\n%v", user.Email, err))
+	}
+
 	err = h.listingStore.ModifyListing(listing.ID, types.Listing{
 		Destination:      payload.Destination,
 		WeightAvailable:  payload.WeightAvailable,

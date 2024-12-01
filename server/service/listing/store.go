@@ -109,9 +109,9 @@ func (s *Store) GetListingsByCarrierID(carrierId int) ([]types.ListingReturnFrom
 }
 
 func (s *Store) UpdateListingExpStatus() error {
-	query := `UPDATE listing SET exp_status = ? 
+	query := `UPDATE listing SET exp_status = ? AND last_modified_at = ? 
 				WHERE (departure_date < ? OR weight_available <= 0) AND deleted_at IS NULL`
-	_, err := s.db.Exec(query, constants.EXP_STATUS_EXPIRED, time.Now().UTC().Format("2006-01-02 15:04:05"))
+	_, err := s.db.Exec(query, constants.EXP_STATUS_EXPIRED, time.Now(), time.Now().UTC().Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,7 @@ func (s *Store) ModifyListing(id int, listing types.Listing) error {
 					price_per_kg = ?, currency_id = ?, 
 					departure_date = ?, last_received_date = ?, 
 					exp_status = ?, description = ?, last_modified_at = ? 
-				WHERE id = ? AND delete_at IS NULL`
+				WHERE id = ? AND deleted_at IS NULL`
 
 	_, err := s.db.Exec(query, listing.Destination, listing.WeightAvailable,
 		listing.PricePerKg, listing.CurrencyID, listing.DepartureDate, 
