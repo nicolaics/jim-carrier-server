@@ -673,10 +673,14 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// delete tokens issued to the user
-	err = h.store.DeleteToken(user.ID)
+	isAccessTokenExist, err := h.store.IsAccessTokenExist(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error delete tokens: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if isAccessTokenExist {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("logged in from other device"))
 		return
 	}
 
