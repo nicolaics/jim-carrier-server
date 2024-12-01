@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -15,10 +16,15 @@ func JWTMiddleware() mux.MiddlewareFunc {
 
 			// log.Println(r.Header)
 
-			token, err := VerifyToken(r)
+			token, err := VerifyAccessToken(r)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusForbidden)
-				return
+				accessTokenErr := err
+
+				token, err = VerifyRefreshToken(r)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("access token err: %v\nrefresh token err: %v", accessTokenErr, err), http.StatusForbidden)
+					return
+				}
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)

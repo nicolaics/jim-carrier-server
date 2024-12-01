@@ -41,3 +41,6 @@ const PACKAGE_IMG_DIR_PATH = "./static/img/package/"
 const PAYMENT_PROOF_MAX_BYTES = 10 << 20 // 10MB in bytes
 const PROFILE_IMG_MAX_BYTES = 5 << 20 // 5MB in bytes
 const PACKAGE_IMG_MAX_BYTES = 10 << 20 // 10MB in bytes
+
+const ACCESS_TOKEN = 0
+const REFRESH_TOKEN = 1

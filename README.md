@@ -1,6 +1,7 @@
 # Jim Carrier API Server
 
 ## Directory Structure
+
 ```
 .
 ├── cmd
@@ -22,7 +23,7 @@
 |   |   |   ├── jwt.go
 |   |   |   └── JwtMiddleware.go
 |   |   ├── oauth
-|   |   |   └── VerifyToken.go
+|   |   |   └── VerifyAccessToken.go
 |   |   ├── CorsMiddleware.go
 |   |   └── password.go
 |   ├── bank

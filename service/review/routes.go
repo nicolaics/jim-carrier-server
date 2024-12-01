@@ -13,19 +13,19 @@ import (
 )
 
 type Handler struct {
-	reviewStore types.ReviewStore
-	orderStore types.OrderStore
+	reviewStore  types.ReviewStore
+	orderStore   types.OrderStore
 	listingStore types.ListingStore
-	userStore  types.UserStore
+	userStore    types.UserStore
 }
 
-func NewHandler(reviewStore types.ReviewStore, orderStore types.OrderStore, 
-				listingStore types.ListingStore, userStore types.UserStore) *Handler {
+func NewHandler(reviewStore types.ReviewStore, orderStore types.OrderStore,
+	listingStore types.ListingStore, userStore types.UserStore) *Handler {
 	return &Handler{
-		reviewStore: reviewStore,
-		orderStore: orderStore,
+		reviewStore:  reviewStore,
+		orderStore:   orderStore,
 		listingStore: listingStore,
-		userStore:  userStore,
+		userStore:    userStore,
 	}
 }
 
@@ -60,7 +60,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	reviewer, err := h.userStore.ValidateUserToken(w, r)
+	reviewer, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -102,23 +102,22 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	var reviewType int
 	switch reviewer.ID {
-		case order.GiverID:
-			reviewType = constants.REVIEW_GIVER_TO_CARRIER
-		case listing.CarrierID:
-			reviewType = constants.REVIEW_CARRIER_TO_GIVER
-		default:
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("reviewer id error"))
-			return
+	case order.GiverID:
+		reviewType = constants.REVIEW_GIVER_TO_CARRIER
+	case listing.CarrierID:
+		reviewType = constants.REVIEW_CARRIER_TO_GIVER
+	default:
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("reviewer id error"))
+		return
 	}
 
 	err = h.reviewStore.CreateReview(types.Review{
-		OrderID: order.ID,
+		OrderID:    order.ID,
 		ReviewerID: reviewer.ID,
 		RevieweeID: reviewee.ID,
-		Content: payload.Content,
-		Rating: payload.Rating,
+		Content:    payload.Content,
+		Rating:     payload.Rating,
 		ReviewType: reviewType,
-
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create review: %v", err))
@@ -130,7 +129,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -192,7 +191,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -238,7 +237,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return

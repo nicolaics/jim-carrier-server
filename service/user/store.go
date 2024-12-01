@@ -381,11 +381,35 @@ func (s *Store) UpdateProfilePicture(id int, profPicUrl string) error {
 	return nil
 }
 
-func (s *Store) SaveToken(userId int, tokenDetails *types.TokenDetails) error {
-	tokenExp := time.Unix(tokenDetails.TokenExp, 0) //converting Unix to UTC(to Time object)
+func (s *Store) SaveToken(userId int, accessTokenDetails *types.TokenDetails, refreshTokenDetails *types.TokenDetails) error {
+	accessTokenExp := time.Unix(accessTokenDetails.TokenExp, 0)   //converting Unix to UTC(to Time object)
+	refreshTokenExp := time.Unix(refreshTokenDetails.TokenExp, 0) //converting Unix to UTC(to Time object)
 
-	query := "INSERT INTO verify_token(user_id, uuid, expired_at) VALUES (?, ?, ?)"
-	_, err := s.db.Exec(query, userId, tokenDetails.UUID, tokenExp)
+	query := "INSERT INTO verify_token(user_id, uuid, token_type, expired_at) VALUES (?, ?, ?, ?)"
+	_, err := s.db.Exec(query, userId, accessTokenDetails.UUID, constants.ACCESS_TOKEN, accessTokenExp)
+	if err != nil {
+		return err
+	}
+
+	query = `SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND token_type = ?`
+	row := s.db.QueryRow(query, userId, constants.REFRESH_TOKEN)
+	if row.Err() != nil {
+		return row.Err()
+	}
+
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		query = "INSERT INTO verify_token(user_id, uuid, token_type, expired_at) VALUES (?, ?, ?, ?)"
+		_, err = s.db.Exec(query, userId, refreshTokenDetails.UUID, constants.REFRESH_TOKEN, refreshTokenExp)
+	} else {
+		query = `UPDATE verify_token SET uuid = ?, expired_at = ? WHERE user_id = ? AND token_type = ?`
+		_, err = s.db.Exec(query, refreshTokenDetails.UUID, refreshTokenExp, userId, constants.REFRESH_TOKEN)
+	}
 	if err != nil {
 		return err
 	}
@@ -403,20 +427,20 @@ func (s *Store) DeleteToken(userId int) error {
 	return nil
 }
 
-func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request) (*types.User, error) {
+func (s *Store) ValidateUserAccessToken(w http.ResponseWriter, r *http.Request) (*types.User, error) {
 	query := "DELETE FROM verify_token WHERE expired_at < ?"
 	_, err := s.db.Exec(query, time.Now().UTC().Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return nil, fmt.Errorf("error deleting expired token: %v", err)
 	}
 
-	accessDetails, err := jwt.ExtractTokenFromClient(r)
+	accessDetails, err := jwt.ExtractAccessTokenFromClient(r)
 	if err != nil {
 		return nil, err
 	}
 
-	query = "SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND expired_at >= ?"
-	row := s.db.QueryRow(query, accessDetails.UserID, time.Now().UTC().Format("2006-01-02 15:04:05"))
+	query = `SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND expired_at >= ? AND token_type = ?`
+	row := s.db.QueryRow(query, accessDetails.UserID, time.Now().UTC().Format("2006-01-02 15:04:05"), constants.ACCESS_TOKEN)
 	if row.Err() != nil {
 		return nil, row.Err()
 	}
@@ -429,22 +453,24 @@ func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request) (*type
 
 	if count > 1 {
 		return nil, fmt.Errorf("logged in from other device")
+	} else if count == 0 {
+		return nil, fmt.Errorf("access token expired")
 	}
 
-	query = "SELECT user_id FROM verify_token WHERE uuid = ? AND user_id = ? AND expired_at >= ?"
-	rows, err := s.db.Query(query, accessDetails.UUID, accessDetails.UserID, time.Now().UTC().Format("2006-01-02 15:04:05"))
-	if err != nil {
-		return nil, err
+	query = `SELECT user_id FROM verify_token WHERE uuid = ? AND user_id = ? AND expired_at >= ? AND token_type = ?`
+	row = s.db.QueryRow(query, accessDetails.UUID, accessDetails.UserID, time.Now().UTC().Format("2006-01-02 15:04:05"), constants.ACCESS_TOKEN)
+	if row.Err() != nil {
+		if row.Err() == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, row.Err()
 	}
-	defer rows.Close()
 
 	var userId int
-
-	for rows.Next() {
-		err = rows.Scan(&userId)
-		if err != nil {
-			return nil, err
-		}
+	err = row.Scan(&userId)
+	if err != nil {
+		return nil, err
 	}
 
 	// check if user exist
@@ -455,10 +481,86 @@ func (s *Store) ValidateUserToken(w http.ResponseWriter, r *http.Request) (*type
 			return nil, fmt.Errorf("delete error: %v", delErr)
 		}
 
-		return nil, fmt.Errorf("token expired, log in again")
+		return nil, fmt.Errorf("account not found")
 	}
 
 	return user, nil
+}
+
+func (s *Store) ValidateUserRefreshToken(w http.ResponseWriter, r *http.Request) (*types.User, error) {
+	query := "DELETE FROM verify_token WHERE expired_at < ?"
+	_, err := s.db.Exec(query, time.Now().UTC().Format("2006-01-02 15:04:05"))
+	if err != nil {
+		return nil, fmt.Errorf("error deleting expired token: %v", err)
+	}
+
+	accessDetails, err := jwt.ExtractRefreshTokenFromClient(r)
+	if err != nil {
+		return nil, err
+	}
+
+	query = `SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND expired_at >= ? AND token_type = ?`
+	row := s.db.QueryRow(query, accessDetails.UserID, time.Now().UTC().Format("2006-01-02 15:04:05"), constants.REFRESH_TOKEN)
+	if row.Err() != nil {
+		return nil, row.Err()
+	}
+
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+
+	if count == 0 {
+		err = s.DeleteToken(accessDetails.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("delete error: %v", err)
+		}
+
+		return nil, fmt.Errorf("refresh token expired")
+	} else if count > 1 {
+		return nil, fmt.Errorf("contact admin")
+	}
+
+	query = `SELECT user_id FROM verify_token WHERE uuid = ? AND user_id = ? AND expired_at >= ? AND token_type = ?`
+	row = s.db.QueryRow(query, accessDetails.UUID, accessDetails.UserID, time.Now().UTC().Format("2006-01-02 15:04:05"), constants.REFRESH_TOKEN)
+	if row.Err() != nil {
+		if row.Err() == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, row.Err()
+	}
+
+	var userId int
+	err = row.Scan(&userId)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.GetUserByID(userId)
+	if err != nil {
+		delErr := s.DeleteToken(accessDetails.UserID)
+		if delErr != nil {
+			return nil, fmt.Errorf("delete error: %v", delErr)
+		}
+
+		return nil, fmt.Errorf("account not found")
+	}
+
+	return user, nil
+}
+
+func (s *Store) UpdateAccessToken(userId int, accessTokenDetails *types.TokenDetails) error {
+	accessTokenExp := time.Unix(accessTokenDetails.TokenExp, 0) //converting Unix to UTC(to Time object)
+
+	query := `INSERT INTO verify_token(user_id, uuid, token_type, expired_at) VALUES (?, ?, ?, ?)`
+	_, err := s.db.Exec(query, userId, accessTokenDetails.UUID, constants.ACCESS_TOKEN, accessTokenExp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {

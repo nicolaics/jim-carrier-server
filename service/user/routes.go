@@ -43,6 +43,9 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/user/logout", h.handleLogout).Methods(http.MethodPost)
 	router.HandleFunc("/user/logout", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/user/refresh", h.handleRefreshToken).Methods(http.MethodGet)
+	router.HandleFunc("/user/refresh", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
@@ -114,15 +117,21 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenDetails, err := jwt.CreateJWT(user.ID)
+	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate access token: %v", err))
 		return
 	}
 
-	err = h.store.SaveToken(user.ID, tokenDetails)
+	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate refresh token: %v", err))
+		return
+	}
+
+	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
 	}
 
@@ -140,7 +149,8 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokens := map[string]string{
-		"token": tokenDetails.Token,
+		"access_token":  accessTokenDetails.Token,
+		"refresh_token": refreshTokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, tokens)
@@ -249,7 +259,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	// validate token
-	user, err := h.store.ValidateUserToken(w, r)
+	user, err := h.store.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -292,7 +302,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	_, err := h.store.ValidateUserToken(w, r)
+	_, err := h.store.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -329,7 +339,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	_, err := h.store.ValidateUserToken(w, r)
+	_, err := h.store.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -354,7 +364,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
-	accessDetails, err := jwt.ExtractTokenFromClient(r)
+	accessDetails, err := jwt.ExtractAccessTokenFromClient(r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -499,7 +509,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	user, err := h.store.ValidateUserToken(w, r)
+	user, err := h.store.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -547,7 +557,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 	}
 
 	// validate token
-	user, err := h.store.ValidateUserToken(w, r)
+	user, err := h.store.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -659,9 +669,15 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenDetails, err := jwt.CreateJWT(user.ID)
+	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate access token: %v", err))
+		return
+	}
+
+	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate refresh token: %v", err))
 		return
 	}
 
@@ -673,15 +689,22 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		logger.WriteServerLog(logMsg)
 	}
 
-	err = h.store.SaveToken(user.ID, tokenDetails)
+	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
 	}
 
+	err = h.store.UpdateLastLoggedIn(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	response := map[string]interface{}{
-		"user":  user,
-		"token": tokenDetails.Token,
+		"user":          user,
+		"access_token":  accessTokenDetails.Token,
+		"refresh_token": refreshTokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response)
@@ -766,21 +789,55 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tokenDetails, err := jwt.CreateJWT(user.ID)
+	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate access token: %v", err))
 		return
 	}
 
-	err = h.store.SaveToken(user.ID, tokenDetails)
+	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate refresh token: %v", err))
+		return
+	}
+
+	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
 	}
 
 	tokens := map[string]string{
-		"token": tokenDetails.Token,
+		"access_token":  accessTokenDetails.Token,
+		"refresh_token": refreshTokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, tokens)
+}
+
+func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
+	// validate token
+	user, err := h.store.ValidateUserRefreshToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid refresh token: %v", err))
+		return
+	}
+
+	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate access token: %v", err))
+		return
+	}
+
+	err = h.store.UpdateAccessToken(user.ID, accessTokenDetails)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update access token: %v", err))
+		return
+	}
+
+	tokens := map[string]string{
+		"access_token":  accessTokenDetails.Token,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, tokens)
 }

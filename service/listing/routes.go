@@ -78,7 +78,7 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	carrier, err := h.userStore.ValidateUserToken(w, r)
+	carrier, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -161,7 +161,7 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -263,7 +263,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	_, err := h.userStore.ValidateUserToken(w, r)
+	_, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -306,7 +306,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -352,7 +352,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -430,7 +430,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -471,7 +471,7 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 	}
 
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -541,7 +541,7 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 
 func (h *Handler) handleCountOrders(w http.ResponseWriter, r *http.Request) {
 	// validate token
-	user, err := h.userStore.ValidateUserToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return

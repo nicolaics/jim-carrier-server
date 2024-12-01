@@ -23,9 +23,11 @@ type UserStore interface {
 	UpdatePassword(int, string) error
 	UpdateProfilePicture(id int, profPicUrl string) error
 
-	SaveToken(int, *TokenDetails) error
+	SaveToken(userId int, accessTokenDetails *TokenDetails, refreshTokenDetails *TokenDetails) error
 	DeleteToken(int) error
-	ValidateUserToken(http.ResponseWriter, *http.Request) (*User, error)
+	ValidateUserAccessToken(http.ResponseWriter, *http.Request) (*User, error)
+	ValidateUserRefreshToken(w http.ResponseWriter, r *http.Request) (*User, error)
+	UpdateAccessToken(userId int, accessTokenDetails *TokenDetails) error
 
 	DelayCodeWithinTime(email string, minutes int) (bool, error)
 	SaveVerificationCode(email, code string, requestType int) error
@@ -80,7 +82,7 @@ type GetOneUserPayload struct {
 type LoginUserPayload struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
-	FCMToken       string `json:"fcmToken" validate:"required"`
+	FCMToken string `json:"fcmToken" validate:"required"`
 }
 
 type LoginGooglePayload struct {
