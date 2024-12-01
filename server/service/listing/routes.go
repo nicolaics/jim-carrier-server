@@ -373,32 +373,32 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newDepartureDate, err := utils.ParseDate(payload.NewData.DepartureDate)
+	newDepartureDate, err := utils.ParseDate(payload.DepartureDate)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error parsing date"))
 		return
 	}
 
-	newLastReceivedDate, err := utils.ParseDate(payload.NewData.LastReceivedDate)
+	newLastReceivedDate, err := utils.ParseDate(payload.LastReceivedDate)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error parsing date"))
 		return
 	}
 
-	currency, err := h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if currency == nil {
-		err = h.currencyStore.CreateCurrency(payload.NewData.Currency)
+		err = h.currencyStore.CreateCurrency(payload.Currency)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
 			return
 		}
 
-		currency, err = h.currencyStore.GetCurrencyByName(payload.NewData.Currency)
+		currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return
@@ -406,14 +406,14 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.listingStore.ModifyListing(listing.ID, types.Listing{
-		Destination:      payload.NewData.Destination,
-		WeightAvailable:  payload.NewData.WeightAvailable,
-		PricePerKg:       payload.NewData.PricePerKg,
+		Destination:      payload.Destination,
+		WeightAvailable:  payload.WeightAvailable,
+		PricePerKg:       payload.PricePerKg,
 		CurrencyID:       currency.ID,
 		DepartureDate:    *newDepartureDate,
 		LastReceivedDate: *newLastReceivedDate,
 		ExpStatus:        constants.EXP_STATUS_AVAILABLE,
-		Description:      payload.NewData.Description,
+		Description:      payload.Description,
 	})
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify listing: %v", err))
