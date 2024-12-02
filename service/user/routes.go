@@ -66,6 +66,9 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 
 	router.HandleFunc("/user/refresh", h.handleRefreshToken).Methods(http.MethodPost)
 	router.HandleFunc("/user/refresh", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/user/auto-login", h.handleAutoLogin).Methods(http.MethodPost)
+	router.HandleFunc("/user/auto-login", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -832,8 +835,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	var payload types.RefreshTokenPayload
-	// validate token
-	
+
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error parsing JSON: %v", err))
 		return
@@ -862,10 +864,64 @@ func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update access token: %v", err))
 		return
+	}	
+
+	tokens := map[string]string{
+		"access_token":  accessTokenDetails.Token,
+	}
+
+	utils.WriteJSON(w, http.StatusOK, tokens)
+}
+
+func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
+	var payload types.RefreshTokenPayload
+
+	// validate token
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error parsing JSON: %v", err))
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	user, err := h.store.ValidateUserRefreshToken(payload.RefreshToken)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	err = h.store.DeleteToken(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error delete tokens: %v", err))
+		return
+	}
+
+	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate access token: %v", err))
+		return
+	}
+
+	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to generate refresh token: %v", err))
+		return
+	}
+
+	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
+		return
 	}
 
 	tokens := map[string]string{
 		"access_token":  accessTokenDetails.Token,
+		"refresh_token": refreshTokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, tokens)
