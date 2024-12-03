@@ -470,6 +470,9 @@ func (s *Store) ValidateUserAccessToken(w http.ResponseWriter, r *http.Request) 
 	var userId int
 	err = row.Scan(&userId)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -535,6 +538,10 @@ func (s *Store) ValidateUserRefreshToken(refreshToken string) (*types.User, erro
 	var userId int
 	err = row.Scan(&userId)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		
 		return nil, err
 	}
 
