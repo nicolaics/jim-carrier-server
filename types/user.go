@@ -50,6 +50,8 @@ type RegisterUserPayload struct {
 	PhoneNumber      string `json:"phoneNumber" validate:"required"`
 	ProfilePicture   []byte `json:"profilePicture"`
 	FCMToken         string `json:"fcmToken"`
+	PublicKeyE       []byte `json:"publicKeyE" validate:"required"`
+	PublicKeyM       []byte `json:"publicKeyM" validate:"required"`
 	VerificationCode string `json:"verificationCode" validate:"required"`
 }
 
@@ -60,6 +62,8 @@ type RegisterGooglePayload struct {
 	Name              string `json:"name" validate:"required"`
 	PhoneNumber       string `json:"phoneNumber" validate:"required"`
 	ProfilePictureURL string `json:"profilePictureUrl"`
+	PublicKeyE        []byte `json:"publicKeyE" validate:"required"`
+	PublicKeyM        []byte `json:"publicKeyM" validate:"required"`
 }
 
 // delete user account
@@ -81,15 +85,19 @@ type GetOneUserPayload struct {
 
 // normal log-in
 type LoginUserPayload struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
-	FCMToken string `json:"fcmToken" validate:"required"`
+	Email      string `json:"email" validate:"required,email"`
+	Password   string `json:"password" validate:"required"`
+	FCMToken   string `json:"fcmToken"`
+	PublicKeyE []byte `json:"publicKeyE" validate:"required"`
+	PublicKeyM []byte `json:"publicKeyM" validate:"required"`
 }
 
 type LoginGooglePayload struct {
 	IDToken        string `json:"idToken" validate:"required"`
 	ServerAuthCode string `json:"serverAuthCode" validate:"required"`
-	FCMToken       string `json:"fcmToken" validate:"required"`
+	FCMToken       string `json:"fcmToken"`
+	PublicKeyE     []byte `json:"publicKeyE" validate:"required"`
+	PublicKeyM     []byte `json:"publicKeyM" validate:"required"`
 }
 
 // request verification code payload
@@ -110,6 +118,13 @@ type ResetPasswordPayload LoginUserPayload
 
 type RefreshTokenPayload struct {
 	RefreshToken string `json:"refreshToken" validate:"required"`
+}
+
+type AutoLoginPayload struct {
+	RefreshToken string `json:"refreshToken" validate:"required"`
+	FCMToken     string `json:"fcmToken"`
+	PublicKeyE   []byte `json:"publicKeyE" validate:"required"`
+	PublicKeyM   []byte `json:"publicKeyM" validate:"required"`
 }
 
 type ReturnUserPayload struct {
