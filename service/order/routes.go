@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier-server/constants"
 	"github.com/nicolaics/jim-carrier-server/logger"
+	"github.com/nicolaics/jim-carrier-server/service/auth/rsa"
 	"github.com/nicolaics/jim-carrier-server/types"
 	"github.com/nicolaics/jim-carrier-server/utils"
 	"golang.org/x/text/cases"
@@ -23,11 +24,13 @@ type Handler struct {
 	currencyStore   types.CurrencyStore
 	fcmHistoryStore types.FCMHistoryStore
 	bankDetailStore types.BankDetailStore
+	publicKeyStore  types.PublicKeyStore
 }
 
 func NewHandler(orderStore types.OrderStore, userStore types.UserStore,
 	listingStore types.ListingStore, currencyStore types.CurrencyStore,
-	fcmHistoryStore types.FCMHistoryStore, bankDetailStore types.BankDetailStore) *Handler {
+	fcmHistoryStore types.FCMHistoryStore, bankDetailStore types.BankDetailStore,
+	publicKeyStore types.PublicKeyStore) *Handler {
 	return &Handler{
 		orderStore:      orderStore,
 		userStore:       userStore,
@@ -35,6 +38,7 @@ func NewHandler(orderStore types.OrderStore, userStore types.UserStore,
 		currencyStore:   currencyStore,
 		fcmHistoryStore: fcmHistoryStore,
 		bankDetailStore: bankDetailStore,
+		publicKeyStore:  publicKeyStore,
 	}
 }
 
@@ -1037,7 +1041,7 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 	}
 
 	// validate token
-	_, err := h.userStore.ValidateUserAccessToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -1053,25 +1057,40 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	publicKey, err := h.publicKeyStore.GetPublicKeyByUserID(user.ID)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("failed to get public key for user %s: %v", user.Email, err))
+	}
+
 	bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(carrier.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data: %v", err))
 		return
 	}
 
 	var returnMsg interface{}
 
-	if bankDetail == nil {
-		returnMsg = map[string]string{
-			"status":  "not exist",
-			"message": "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!",
+	if bankDetail != nil {
+		encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
 		}
-	} else {
+
+		encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
+		}
+
 		returnMsg = map[string]string{
 			"status":         "exist",
 			"bank_name":      bankDetail.BankName,
-			"account_number": bankDetail.AccountNumber,
-			"account_holder": bankDetail.AccountHolder,
+			"account_number": string(encryptedNumber),
+			"account_holder": string(encryptedHolder),
+		}
+	} else {
+		returnMsg = map[string]string{
+			"status":  "not exist",
+			"message": "Carrier hasn't updated his/her bank account! Please contact him/her directly using email!",
 		}
 	}
 

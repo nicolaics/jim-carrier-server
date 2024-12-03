@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier-server/constants"
 	"github.com/nicolaics/jim-carrier-server/logger"
+	"github.com/nicolaics/jim-carrier-server/service/auth/rsa"
 	"github.com/nicolaics/jim-carrier-server/types"
 	"github.com/nicolaics/jim-carrier-server/utils"
 )
@@ -21,12 +22,13 @@ type Handler struct {
 	bankDetailStore types.BankDetailStore
 	orderStore      types.OrderStore
 	fcmHistoryStore types.FCMHistoryStore
+	publicKeyStore  types.PublicKeyStore
 }
 
 func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 	currencyStore types.CurrencyStore, reviewStore types.ReviewStore,
 	bankDetailStore types.BankDetailStore, orderStore types.OrderStore,
-	fcmHistoryStore types.FCMHistoryStore) *Handler {
+	fcmHistoryStore types.FCMHistoryStore, publicKeyStore types.PublicKeyStore) *Handler {
 	return &Handler{
 		listingStore:    listingStore,
 		userStore:       userStore,
@@ -35,6 +37,7 @@ func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 		bankDetailStore: bankDetailStore,
 		orderStore:      orderStore,
 		fcmHistoryStore: fcmHistoryStore,
+		publicKeyStore:  publicKeyStore,
 	}
 }
 
@@ -220,10 +223,41 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		bankDetail, err := h.bankDetailStore.GetBankDataOfUser(carrier.ID)
+		publicKey, err := h.publicKeyStore.GetPublicKeyByUserID(user.ID)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("failed to get public key for user %s: %v", user.Email, err))
+		}
+
+		log.Println(publicKey)
+
+		bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(carrier.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data for %d: %v", listing.CarrierID, err))
 			return
+		}
+
+		var bankDetailReturn types.BankDetailReturn
+
+		if bankDetail != nil {
+			log.Println("bankDetail: ", bankDetail)
+
+			encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
+			if err != nil {
+				logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
+			}
+
+			log.Println("encryptedHolder: ", encryptedHolder)
+
+			encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
+			if err != nil {
+				logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
+			}
+
+			log.Println("encryptedNumber: ", encryptedNumber)
+
+			bankDetailReturn.BankName = bankDetail.BankName
+			bankDetailReturn.AccountNumber = string(encryptedNumber)
+			bankDetailReturn.AccountHolder = string(encryptedHolder)
 		}
 
 		response = append(response, types.ListingReturnPayload{
@@ -240,7 +274,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			Description:           listing.Description.String,
 			CarrierRating:         avgRating,
 			LastModifiedAt:        listing.LastModifiedAt,
-			BankDetail:            *bankDetail,
+			BankDetail:            bankDetailReturn,
 		})
 	}
 
@@ -446,13 +480,42 @@ func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bankDetail, err := h.bankDetailStore.GetBankDataOfUser(user.ID)
+	publicKey, err := h.publicKeyStore.GetPublicKeyByUserID(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		logger.WriteServerLog(fmt.Errorf("failed to get public key for user %s: %v", user.Email, err))
+	}
+
+	bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data: %v", err))
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, bankDetail)
+	var bankDetailReturn types.BankDetailReturn
+
+	if bankDetail != nil {
+		log.Println("bankDetail: ", bankDetail)
+
+		encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
+		}
+
+		log.Println("encryptedHolder: ", encryptedHolder)
+
+		encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
+		}
+
+		log.Println("encryptedNumber: ", encryptedNumber)
+
+		bankDetailReturn.BankName = bankDetail.BankName
+		bankDetailReturn.AccountNumber = string(encryptedNumber)
+		bankDetailReturn.AccountHolder = string(encryptedHolder)
+	}
+
+	utils.WriteJSON(w, http.StatusOK, bankDetailReturn)
 }
 
 func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Request) {
