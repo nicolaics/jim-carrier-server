@@ -15,6 +15,7 @@ import (
 	"github.com/nicolaics/jim-carrier-server/service/fcm"
 	"github.com/nicolaics/jim-carrier-server/service/listing"
 	"github.com/nicolaics/jim-carrier-server/service/order"
+	"github.com/nicolaics/jim-carrier-server/service/publickey"
 	"github.com/nicolaics/jim-carrier-server/service/review"
 	"github.com/nicolaics/jim-carrier-server/service/user"
 )
@@ -46,15 +47,18 @@ func (s *APIServer) Run() error {
 	currencyStore := currency.NewStore(s.db)
 	fcmStore := fcm.NewStore(s.db)
 	bankDetailStore := bank.NewStore(s.db)
+	publicKeyStore := publickey.NewStore(s.db)
 
-	userHandler := user.NewHandler(userStore)
+	userHandler := user.NewHandler(userStore, publicKeyStore)
 	userHandler.RegisterRoutes(subrouter)
 	userHandler.RegisterUnprotectedRoutes(subrouterUnprotected)
 
-	listingHandler := listing.NewHandler(listingStore, userStore, currencyStore, reviewStore, bankDetailStore, orderStore, fcmStore)
+	listingHandler := listing.NewHandler(listingStore, userStore, currencyStore, reviewStore,
+										bankDetailStore, orderStore, fcmStore, publicKeyStore)
 	listingHandler.RegisterRoutes(subrouter)
 
-	orderHandler := order.NewHandler(orderStore, userStore, listingStore, currencyStore, fcmStore, bankDetailStore)
+	orderHandler := order.NewHandler(orderStore, userStore, listingStore, currencyStore, fcmStore, 
+									bankDetailStore, publicKeyStore)
 	orderHandler.RegisterRoutes(subrouter)
 
 	reviewHandler := review.NewHandler(reviewStore, orderStore, listingStore, userStore)
