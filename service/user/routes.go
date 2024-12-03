@@ -18,11 +18,12 @@ import (
 )
 
 type Handler struct {
-	store types.UserStore
+	userStore      types.UserStore
+	publicKeyStore types.PublicKeyStore
 }
 
-func NewHandler(store types.UserStore) *Handler {
-	return &Handler{store: store}
+func NewHandler(userStore types.UserStore, publicKeyStore types.PublicKeyStore) *Handler {
+	return &Handler{userStore: userStore, publicKeyStore: publicKeyStore}
 }
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
@@ -88,7 +89,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check whether the provider is email or not
-	exists, provider, err := h.store.CheckProvider(payload.Email)
+	exists, provider, err := h.userStore.CheckProvider(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -102,13 +103,13 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.store.GetUserByEmail(payload.Email)
+	user, err := h.userStore.GetUserByEmail(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user not found: %v", err))
 		return
 	}
 
-	password, err := h.store.GetUserPasswordByEmail(payload.Email)
+	password, err := h.userStore.GetUserPasswordByEmail(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -120,7 +121,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isAccessTokenExist, err := h.store.IsAccessTokenExist(user.ID)
+	isAccessTokenExist, err := h.userStore.IsAccessTokenExist(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -143,23 +144,28 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
+	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
 	}
 
-	err = h.store.UpdateLastLoggedIn(user.ID)
+	err = h.userStore.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if user.FCMToken != payload.FCMToken {
-		err = h.store.UpdateFCMToken(user.ID, payload.FCMToken)
+		err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
 		}
+	}
+
+	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", payload.Email, err))
 	}
 
 	tokens := map[string]string{
@@ -187,7 +193,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// verify the code within 5 minutes
-	valid, err := h.store.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5)
+	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("code validation error: %v", err))
 		return
@@ -198,14 +204,14 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE)
+	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error updating verification code: %v", err))
 		return
 	}
 
 	// check if the newly created user exists
-	exist, _, err := h.store.CheckProvider(payload.Email)
+	exist, _, err := h.userStore.CheckProvider(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -222,7 +228,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.CreateUser(types.User{
+	err = h.userStore.CreateUser(types.User{
 		Name:        payload.Name,
 		Email:       payload.Email,
 		Password:    hashedPassword,
@@ -234,7 +240,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 	}
 
-	user, _ := h.store.GetUserByEmail(payload.Email)
+	user, _ := h.userStore.GetUserByEmail(payload.Email)
 
 	if len(payload.ProfilePicture) > constants.PROFILE_IMG_MAX_BYTES {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("image size exceeds the limit of 5MB"))
@@ -261,11 +267,16 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if imageURL != "" {
-			err = h.store.UpdateProfilePicture(user.ID, imageURL)
+			err = h.userStore.UpdateProfilePicture(user.ID, imageURL)
 			if err != nil {
 				logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", payload.Email, err))
 			}
 		}
+	}
+
+	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", payload.Email, err))
 	}
 
 	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("user %s successfully created", payload.Name))
@@ -273,7 +284,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	// validate token
-	user, err := h.store.ValidateUserAccessToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -316,19 +327,19 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	_, err := h.store.ValidateUserAccessToken(w, r)
+	_, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
-	user, err := h.store.GetUserByID(payload.ID)
+	user, err := h.userStore.GetUserByID(payload.ID)
 	if user == nil || err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	err = h.store.DeleteUser(user)
+	err = h.userStore.DeleteUser(user)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -353,19 +364,19 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	_, err := h.store.ValidateUserAccessToken(w, r)
+	_, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
-	user, err := h.store.GetUserByID(payload.ID)
+	user, err := h.userStore.GetUserByID(payload.ID)
 	if user == nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	err = h.store.ModifyUser(user.ID, types.User{
+	err = h.userStore.ModifyUser(user.ID, types.User{
 		Name:        payload.Name,
 		PhoneNumber: payload.PhoneNumber,
 	})
@@ -385,19 +396,19 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check user exists or not
-	_, err = h.store.GetUserByID(accessDetails.UserID)
+	_, err = h.userStore.GetUserByID(accessDetails.UserID)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user id %d doesn't exists", accessDetails.UserID))
 		return
 	}
 
-	err = h.store.UpdateLastLoggedIn(accessDetails.UserID)
+	err = h.userStore.UpdateLastLoggedIn(accessDetails.UserID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	err = h.store.DeleteToken(accessDetails.UserID)
+	err = h.userStore.DeleteToken(accessDetails.UserID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -421,14 +432,14 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	isUserExist, err := h.store.IsUserExist(payload.Email)
+	isUserExist, err := h.userStore.IsUserExist(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user table error: %v", err))
 		return
 	}
 
 	// check whether there is an active verification code that has been sent within 1 minute
-	valid, err := h.store.DelayCodeWithinTime(payload.Email, 1)
+	valid, err := h.userStore.DelayCodeWithinTime(payload.Email, 1)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("verify code table error: %v", err))
 		return
@@ -462,7 +473,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	}
 
 	// if signup request type is 0, forget password 1
-	err = h.store.SaveVerificationCode(payload.Email, code, requestType)
+	err = h.userStore.SaveVerificationCode(payload.Email, code, requestType)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving verification code: %v", err))
 		return
@@ -486,7 +497,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.store.GetUserByEmail(payload.Email)
+	user, err := h.userStore.GetUserByEmail(payload.Email)
 	if user == nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
@@ -498,7 +509,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.UpdatePassword(user.ID, hashedPassword)
+	err = h.userStore.UpdatePassword(user.ID, hashedPassword)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -523,13 +534,13 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	user, err := h.store.ValidateUserAccessToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
-	password, err := h.store.GetUserPasswordByEmail(user.Email)
+	password, err := h.userStore.GetUserPasswordByEmail(user.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -546,7 +557,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.UpdatePassword(user.ID, hashedPassword)
+	err = h.userStore.UpdatePassword(user.ID, hashedPassword)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -571,7 +582,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 	}
 
 	// validate token
-	user, err := h.store.ValidateUserAccessToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
@@ -602,13 +613,13 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		err = h.store.UpdateProfilePicture(user.ID, imageURL)
+		err = h.userStore.UpdateProfilePicture(user.ID, imageURL)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
 			return
 		}
 	} else {
-		err = h.store.UpdateProfilePicture(user.ID, (constants.PROFILE_IMG_DIR_PATH + "default.png"))
+		err = h.userStore.UpdateProfilePicture(user.ID, (constants.PROFILE_IMG_DIR_PATH + "default.png"))
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
 			return
@@ -648,7 +659,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check whether the provider is google or not
-	exists, provider, err := h.store.CheckProvider(email)
+	exists, provider, err := h.userStore.CheckProvider(email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -663,20 +674,20 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the user
-	user, err := h.store.GetUserByEmail(email)
+	user, err := h.userStore.GetUserByEmail(email)
 	if err != nil || user == nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if user.FCMToken != payload.FCMToken {
-		err = h.store.UpdateFCMToken(user.ID, payload.FCMToken)
+		err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
 		}
 	}
 
-	isAccessTokenExist, err := h.store.IsAccessTokenExist(user.ID)
+	isAccessTokenExist, err := h.userStore.IsAccessTokenExist(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -701,22 +712,27 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 
 	log.Print("FCM token: ", payload.FCMToken)
 
-	err = h.store.UpdateFCMToken(user.ID, payload.FCMToken)
+	err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
 	if err != nil {
 		logMsg := fmt.Sprintf("%s failed to update FCM Token: %s", user.Email, payload.FCMToken)
 		logger.WriteServerLog(logMsg)
 	}
 
-	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
+	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
 	}
 
-	err = h.store.UpdateLastLoggedIn(user.ID)
+	err = h.userStore.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", user.Email, err))
 	}
 
 	response := map[string]interface{}{
@@ -757,7 +773,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exist, _, err := h.store.CheckProvider(email)
+	exist, _, err := h.userStore.CheckProvider(email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -769,7 +785,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 
 	log.Print("Regist google FCM token: ", payload.FCMToken)
 
-	err = h.store.CreateUser(types.User{
+	err = h.userStore.CreateUser(types.User{
 		Name:        payload.Name,
 		Email:       email,
 		PhoneNumber: payload.PhoneNumber,
@@ -781,7 +797,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.store.GetUserByEmail(email)
+	user, err := h.userStore.GetUserByEmail(email)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -799,7 +815,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if imageURL != "" {
-				err = h.store.UpdateProfilePicture(user.ID, imageURL)
+				err = h.userStore.UpdateProfilePicture(user.ID, imageURL)
 				if err != nil {
 					logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", email, err))
 				}
@@ -819,10 +835,15 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
+	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
+	}
+
+	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", user.Email, err))
 	}
 
 	tokens := map[string]string{
@@ -848,7 +869,7 @@ func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.store.ValidateUserRefreshToken(payload.RefreshToken)
+	user, err := h.userStore.ValidateUserRefreshToken(payload.RefreshToken)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, err)
 		return
@@ -860,21 +881,21 @@ func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.UpdateAccessToken(user.ID, accessTokenDetails)
+	err = h.userStore.UpdateAccessToken(user.ID, accessTokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update access token: %v", err))
 		return
-	}	
+	}
 
 	tokens := map[string]string{
-		"access_token":  accessTokenDetails.Token,
+		"access_token": accessTokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, tokens)
 }
 
 func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
-	var payload types.RefreshTokenPayload
+	var payload types.AutoLoginPayload
 
 	// validate token
 	if err := utils.ParseJSON(r, &payload); err != nil {
@@ -889,13 +910,13 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.store.ValidateUserRefreshToken(payload.RefreshToken)
+	user, err := h.userStore.ValidateUserRefreshToken(payload.RefreshToken)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	err = h.store.DeleteToken(user.ID)
+	err = h.userStore.DeleteToken(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error delete tokens: %v", err))
 		return
@@ -913,10 +934,22 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
+	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving token: %v", err))
 		return
+	}
+
+	if user.FCMToken != payload.FCMToken {
+		err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
+		if err != nil {
+			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
+		}
+	}
+
+	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
+	if err != nil {
+		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", user.Email, err))
 	}
 
 	tokens := map[string]string{
