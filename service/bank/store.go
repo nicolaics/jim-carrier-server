@@ -2,6 +2,7 @@ package bank
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/nicolaics/jim-carrier-server/types"
 )
@@ -28,9 +29,9 @@ func (s *Store) UpdateBankDetails(uid int, bankName, accountNumber, accountHolde
 	}
 
 	if count == 1 {
-		query = `UPDATE bank_detail SET bank_name = ?, account_number = ?, account_holder = ? 
+		query = `UPDATE bank_detail SET bank_name = ?, account_number = ?, account_holder = ?, last_modified_at = ?  
 					WHERE user_id = ?`
-		_, err = s.db.Exec(query, bankName, accountNumber, accountHolder, uid)
+		_, err = s.db.Exec(query, bankName, accountNumber, accountHolder, time.Now(), uid)
 		if err != nil {
 			return err
 		}
@@ -77,6 +78,10 @@ func (s *Store) GetBankDetailByUserID(uid int) (*types.BankDetail, error) {
 	)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -102,6 +107,9 @@ func (s *Store) GetBankDataOfUser(uid int) (*types.BankDetailReturn, error) {
 		&bankDetail.AccountHolder,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 
