@@ -239,25 +239,19 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		var bankDetailReturn types.BankDetailReturn
 
 		if bankDetail != nil {
-			log.Println("bankDetail: ", bankDetail)
-
 			encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
 			if err != nil {
 				logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
 			}
-
-			log.Println("encryptedHolder: ", encryptedHolder)
 
 			encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
 			if err != nil {
 				logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
 			}
 
-			log.Println("encryptedNumber: ", encryptedNumber)
-
 			bankDetailReturn.BankName = bankDetail.BankName
-			bankDetailReturn.AccountNumber = string(encryptedNumber)
-			bankDetailReturn.AccountHolder = string(encryptedHolder)
+			bankDetailReturn.AccountNumber = encryptedNumber
+			bankDetailReturn.AccountHolder = encryptedHolder
 		}
 
 		response = append(response, types.ListingReturnPayload{
@@ -494,25 +488,19 @@ func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 	var bankDetailReturn types.BankDetailReturn
 
 	if bankDetail != nil {
-		log.Println("bankDetail: ", bankDetail)
-
 		encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
 		}
-
-		log.Println("encryptedHolder: ", encryptedHolder)
 
 		encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
 		}
 
-		log.Println("encryptedNumber: ", encryptedNumber)
-
 		bankDetailReturn.BankName = bankDetail.BankName
-		bankDetailReturn.AccountNumber = string(encryptedNumber)
-		bankDetailReturn.AccountHolder = string(encryptedHolder)
+		bankDetailReturn.AccountNumber = encryptedNumber
+		bankDetailReturn.AccountHolder = encryptedHolder
 	}
 
 	utils.WriteJSON(w, http.StatusOK, bankDetailReturn)

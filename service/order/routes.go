@@ -2,6 +2,7 @@ package order
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -272,7 +273,6 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 		for _, order := range orders {
 			paymentStatus := utils.PaymentStatusIntToString(order.PaymentStatus)
-
 			orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
 			packageImage, err := utils.GetImage(order.PackageImageURL)
@@ -1073,19 +1073,25 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 	if bankDetail != nil {
 		encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
 		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
+			err = logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
+			if err != nil {
+				log.Println("err: ", err.Error())
+			}
 		}
 
 		encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
 		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
+			err = logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
+			if err != nil {
+				log.Println("err: ", err.Error())
+			}
 		}
 
 		returnMsg = map[string]string{
 			"status":         "exist",
 			"bank_name":      bankDetail.BankName,
-			"account_number": string(encryptedNumber),
-			"account_holder": string(encryptedHolder),
+			"account_number": encryptedNumber,
+			"account_holder": encryptedHolder,
 		}
 	} else {
 		returnMsg = map[string]string{

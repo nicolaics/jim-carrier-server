@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"math/big"
@@ -11,18 +12,17 @@ import (
 )
 
 // EncryptData encrypts data with public key
-func EncryptData(msg []byte, pubE string, pubM string) ([]byte, error) {
+func EncryptData(msg []byte, pubE string, pubM string) (string, error) {
 	m := new(big.Int)
 	m, ok := m.SetString(pubM, 10)
 	if !ok {
-		return nil, fmt.Errorf("error set string")
+		return "", fmt.Errorf("error set string")
 	}
 
 	e, err := strconv.Atoi(pubE)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	log.Println("Ok3")
 
 	publicKey := &rsa.PublicKey{
 		N: m,
@@ -33,8 +33,9 @@ func EncryptData(msg []byte, pubE string, pubM string) ([]byte, error) {
 
 	encrypted, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, msg, nil)
 	if err != nil {
-		return nil, err
+		log.Println("error encrypted: ", err.Error())
+		return "", err
 	}
 
-	return encrypted, nil
+	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
