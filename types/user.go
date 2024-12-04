@@ -114,7 +114,10 @@ type UpdateProfilePicturePayload struct {
 	ProfilePicture []byte `json:"profilePicture"`
 }
 
-type ResetPasswordPayload LoginUserPayload
+type ResetPasswordPayload struct {
+	Email       string `json:"email" validate:"required,email"`
+	NewPassword string `json:"newPassword" validate:"required,min=3,max=130"`
+}
 
 type RefreshTokenPayload struct {
 	RefreshToken string `json:"refreshToken" validate:"required"`
