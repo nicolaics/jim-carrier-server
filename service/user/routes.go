@@ -53,6 +53,9 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 	router.HandleFunc("/user/send-verification", h.handleSendVerification).Methods(http.MethodPost)
 	router.HandleFunc("/user/send-verification", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
+	router.HandleFunc("/user/verify-verification", h.handleVerifyVerification).Methods(http.MethodPost)
+	router.HandleFunc("/user/verify-verification", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
 	router.HandleFunc("/user/register", h.handleRegister).Methods(http.MethodPost)
 	router.HandleFunc("/user/register", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
@@ -193,7 +196,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// verify the code within 5 minutes
-	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5)
+	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5, constants.SIGNUP)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("code validation error: %v", err))
 		return
@@ -204,7 +207,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE)
+	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE, constants.SIGNUP)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error updating verification code: %v", err))
 		return
@@ -503,7 +506,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedPassword, err := auth.HashPassword(payload.Password)
+	hashedPassword, err := auth.HashPassword(payload.NewPassword)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -958,4 +961,40 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, tokens)
+}
+
+func (h *Handler) handleVerifyVerification(w http.ResponseWriter, r *http.Request) {
+	var payload types.VerifyVerificationCodePayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// verify the code within 5 minutes
+	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5, constants.FORGET_PASSWORD)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("code validation error: %v", err))
+		return
+	}
+
+	if !valid {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("wrong verification code or code has expired"))
+		return
+	}
+
+	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE, constants.FORGET_PASSWORD)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error updating verification code: %v", err))
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, "Verification successful!")
 }

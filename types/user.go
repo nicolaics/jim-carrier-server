@@ -32,8 +32,8 @@ type UserStore interface {
 
 	DelayCodeWithinTime(email string, minutes int) (bool, error)
 	SaveVerificationCode(email, code string, requestType int) error
-	ValidateLoginCodeWithinTime(email, code string, minutes int) (bool, error)
-	UpdateVerificationCodeStatus(email string, status int) error
+	ValidateLoginCodeWithinTime(email, code string, minutes, reqType int) (bool, error)
+	UpdateVerificationCodeStatus(email string, status, reqType int) error
 
 	IsUserExist(email string) (bool, error)
 

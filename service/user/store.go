@@ -595,7 +595,7 @@ func (s *Store) DelayCodeWithinTime(email string, minutes int) (bool, error) {
 	return count > 0, nil
 }
 
-func (s *Store) ValidateLoginCodeWithinTime(email, code string, minutes int) (bool, error) {
+func (s *Store) ValidateLoginCodeWithinTime(email, code string, minutes, reqType int) (bool, error) {
 	query := `DELETE FROM verify_code 
 			  WHERE email = ? AND status = ? 
 			  AND TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP) > ?`
@@ -605,12 +605,12 @@ func (s *Store) ValidateLoginCodeWithinTime(email, code string, minutes int) (bo
 	}
 
 	query = `SELECT COUNT(*) FROM verify_code 
-			  WHERE email = ? AND code = ? AND status = ? 
+			  WHERE email = ? AND code = ? AND status = ? AND request_type = ? 
 			  AND TIMESTAMPDIFF(MINUTE, created_at, UTC_TIMESTAMP) <= ?`
 
 	var count int
 
-	err = s.db.QueryRow(query, email, code, constants.VERIFY_CODE_WAITING, minutes).Scan(&count)
+	err = s.db.QueryRow(query, email, code, constants.VERIFY_CODE_WAITING, reqType, minutes).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("failed to validate login code: %v", err)
 	}
@@ -628,9 +628,9 @@ func (s *Store) SaveVerificationCode(email, code string, requestType int) error 
 	return nil
 }
 
-func (s *Store) UpdateVerificationCodeStatus(email string, status int) error {
-	query := "UPDATE verify_code SET status = ? WHERE email = ?"
-	_, err := s.db.Exec(query, status, email)
+func (s *Store) UpdateVerificationCodeStatus(email string, status, reqType int) error {
+	query := "UPDATE verify_code SET status = ? WHERE email = ? AND request_type = ?"
+	_, err := s.db.Exec(query, status, email, reqType)
 	if err != nil {
 		return err
 	}
