@@ -119,6 +119,11 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if payload.Weight > listing.WeightAvailable {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("ordered weight is greater than available weight"))
+		return
+	}
+
 	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
