@@ -182,7 +182,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	var listings []types.ListingReturnFromDB
 
 	if reqType == "all" {
-		listings, err = h.listingStore.GetAllListings()
+		listings, err = h.listingStore.GetAllListings(user.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, err)
 			return

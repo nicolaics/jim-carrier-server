@@ -7,7 +7,7 @@ import (
 
 type ListingStore interface {
 	CreateListing(Listing) error
-	GetAllListings() ([]ListingReturnFromDB, error)
+	GetAllListings(carrierId int) ([]ListingReturnFromDB, error)
 	GetListingsByCarrierID(carrierId int) ([]ListingReturnFromDB, error)
 
 	UpdateListingExpStatus() error

@@ -39,7 +39,7 @@ func (s *Store) CreateListing(listing types.Listing) error {
 	return nil
 }
 
-func (s *Store) GetAllListings() ([]types.ListingReturnFromDB, error) {
+func (s *Store) GetAllListings(carrierId int) ([]types.ListingReturnFromDB, error) {
 	err := s.UpdateListingExpStatus()
 	if err != nil {
 		return nil, fmt.Errorf("error updating listing status: %v", err)
@@ -55,9 +55,10 @@ func (s *Store) GetAllListings() ([]types.ListingReturnFromDB, error) {
 				JOIN user ON user.id = l.carrier_id 
 				JOIN currency AS c ON c.id = l.currency_id 
 				WHERE l.exp_status = ? 
+				AND l.carrier_id != ? 
 				AND l.deleted_at IS NULL 
 				ORDER BY l.departure_date DESC`
-	rows, err := s.db.Query(query, constants.EXP_STATUS_AVAILABLE)
+	rows, err := s.db.Query(query, constants.EXP_STATUS_AVAILABLE, carrierId)
 	if err != nil {
 		return nil, err
 	}
