@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"math/big"
 	"strconv"
 )
@@ -33,7 +32,6 @@ func EncryptData(msg []byte, pubE string, pubM string) (string, error) {
 
 	encrypted, err := rsa.EncryptOAEP(hash, rand.Reader, publicKey, msg, nil)
 	if err != nil {
-		log.Println("error encrypted: ", err.Error())
 		return "", err
 	}
 

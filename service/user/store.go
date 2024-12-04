@@ -3,7 +3,6 @@ package user
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -115,8 +114,6 @@ func (s *Store) GetUserBySearchName(name string) ([]types.User, error) {
 					FROM user WHERE name LIKE ?`
 		searchVal := "%"
 
-		log.Println("search val user: ", searchVal)
-
 		for _, val := range name {
 			if string(val) != " " {
 				searchVal += (string(val) + "%")
@@ -186,8 +183,6 @@ func (s *Store) GetUserBySearchPhoneNumber(phoneNumber string) ([]types.User, er
 					last_logged_in, created_at 
 					FROM user WHERE phone_number LIKE ?`
 		searchVal := "%"
-
-		log.Println("search val user: ", searchVal)
 
 		for _, val := range phoneNumber {
 			if string(val) != " " {

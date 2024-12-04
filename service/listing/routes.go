@@ -2,7 +2,6 @@ package listing
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -102,9 +101,6 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error parsing date"))
 		return
 	}
-
-	log.Println("original departure date: ", payload.DepartureDate)
-	log.Println("parsed departure date: ", departureDate)
 
 	lastReceivedDate, err := utils.ParseDate(payload.LastReceivedDate)
 	if err != nil {
@@ -223,12 +219,18 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// go func() {
+		// 	imageBytes, err := utils.GetImage(carrier.ProfilePictureURL)
+		// 	if err != nil {
+		// 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching profile picture for %d: %v", listing.CarrierID, err))
+		// 		return
+		// 	}
+		// }
+
 		publicKey, err := h.publicKeyStore.GetPublicKeyByUserID(user.ID)
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("failed to get public key for user %s: %v", user.Email, err))
 		}
-
-		log.Println(publicKey)
 
 		bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(carrier.ID)
 		if err != nil {
