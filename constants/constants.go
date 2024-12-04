@@ -45,4 +45,4 @@ const PACKAGE_IMG_MAX_BYTES = 10 << 20 // 10MB in bytes
 const ACCESS_TOKEN = 0
 const REFRESH_TOKEN = 1
 
-const DEFAULT_PROFILE_IMG_PATH = PROFILE_IMG_DIR_PATH + "default.png"
+// const DEFAULT_PROFILE_IMG_PATH = PROFILE_IMG_DIR_PATH + "default.png"
