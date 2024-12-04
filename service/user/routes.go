@@ -275,6 +275,11 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 				logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", payload.Email, err))
 			}
 		}
+	} else {
+		err = h.userStore.UpdateProfilePicture(user.ID, constants.DEFAULT_PROFILE_IMG_PATH)
+		if err != nil {
+			logger.WriteServerLog(fmt.Sprintf("user %s created but error update profile picture: %v", payload.Email, err))
+		}
 	}
 
 	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
@@ -622,7 +627,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 			return
 		}
 	} else {
-		err = h.userStore.UpdateProfilePicture(user.ID, (constants.PROFILE_IMG_DIR_PATH + "default.png"))
+		err = h.userStore.UpdateProfilePicture(user.ID, constants.DEFAULT_PROFILE_IMG_PATH)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update profile picture: %v", err))
 			return
