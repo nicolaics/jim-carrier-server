@@ -120,8 +120,8 @@ type ResetPasswordPayload struct {
 }
 
 type VerifyVerificationCodePayload struct {
-	Email string `json:"email" validate:"required,email"`
-	VerificationCode string `json:"verificationCode" validate:""
+	Email            string `json:"email" validate:"required,email"`
+	VerificationCode string `json:"verificationCode" validate:"required"`
 }
 
 type RefreshTokenPayload struct {
