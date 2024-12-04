@@ -119,6 +119,11 @@ type ResetPasswordPayload struct {
 	NewPassword string `json:"newPassword" validate:"required,min=3,max=130"`
 }
 
+type VerifyVerificationCodePayload struct {
+	Email string `json:"email" validate:"required,email"`
+	VerificationCode string `json:"verificationCode" validate:""
+}
+
 type RefreshTokenPayload struct {
 	RefreshToken string `json:"refreshToken" validate:"required"`
 }
