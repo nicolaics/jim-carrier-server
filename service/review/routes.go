@@ -33,8 +33,11 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/review", h.handleRegister).Methods(http.MethodPost)
 	router.HandleFunc("/review", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	router.HandleFunc("/review/{reqType}", h.handleGetAll).Methods(http.MethodGet)
-	router.HandleFunc("/review/{reqType}", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+	router.HandleFunc("/review/sent", h.handleGetAllSent).Methods(http.MethodGet)
+	router.HandleFunc("/review/sent", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+
+	router.HandleFunc("/review/received", h.handleGetAllReceived).Methods(http.MethodPost)
+	router.HandleFunc("/review/received", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	// router.HandleFunc("/review/{reqType}/detail", h.handleGetDetail).Methods(http.MethodPost)
 	// router.HandleFunc("/review/{reqType}/detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
@@ -127,7 +130,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusCreated, "review created")
 }
 
-func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleGetAllSent(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
@@ -145,30 +148,40 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	reqType := vars["reqType"]
-	// filterType := vars["filter"]
+	reviews, err := h.reviewStore.GetSentReviewsByUserID(user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-	// var filter int
-	// switch filterType {
-	// 	case "carrier"
-	// }
+	utils.WriteJSON(w, http.StatusOK, reviews)
+}
 
-	var reviews interface{}
-	if reqType == "receive" {
-		reviews, err = h.reviewStore.GetReceivedReviewsByUserID(user.ID)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
-			return
-		}
-	} else if reqType == "send" {
-		reviews, err = h.reviewStore.GetSentReviewsByUserID(user.ID)
-		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
-			return
-		}
-	} else {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("unknown request parameter"))
+func (h *Handler) handleGetAllReceived(w http.ResponseWriter, r *http.Request) {
+	var payload types.ReceivedReviewPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
+	// validate token
+	_, err := h.userStore.ValidateUserAccessToken(w, r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		return
+	}
+
+	reviews, err := h.reviewStore.GetReceivedReviewsByUserID(payload.CarrierID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 

@@ -38,6 +38,10 @@ type ModifyReviewPayload struct {
 	Rating  float64 `json:"rating" validate:"required"`
 }
 
+type ReceivedReviewPayload struct {
+	CarrierID int `json:"carrierId" validate:"required"`
+}
+
 type ReceivedReviewReturnPayload struct {
 	ID                 int       `json:"id"`
 	ReviewerID         int       `json:"reviewerId"`
