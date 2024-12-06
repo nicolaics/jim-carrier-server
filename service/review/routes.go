@@ -2,12 +2,15 @@ package review
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 
 	"github.com/nicolaics/jim-carrier-server/constants"
+	"github.com/nicolaics/jim-carrier-server/logger"
 	"github.com/nicolaics/jim-carrier-server/types"
 	"github.com/nicolaics/jim-carrier-server/utils"
 )
@@ -51,21 +54,27 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var payload types.RegisterReviewPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	reviewer, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -75,19 +84,25 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	order, err := h.orderStore.GetOrderByID(payload.OrderID)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order id %d not found: %v", payload.OrderID, err))
+		log.Printf("order id %d not found: %v", payload.OrderID, err)
+		logger.WriteServerLog(fmt.Errorf("order id %d not found: %v", payload.OrderID, err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found"))
 		return
 	}
 
 	reviewee, err := h.userStore.GetUserByName(payload.RevieweeName)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found: %v", err))
+		log.Printf("reviewee account not found: %v", err)
+		logger.WriteServerLog(fmt.Errorf("reviewee account not found: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("reviewee account not found"))
 		return
 	}
 
@@ -99,7 +114,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	listing, err := h.listingStore.GetListingByID(order.ListingID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("listing id %d not found", order.ListingID))
+		log.Printf("listing id %d not found", order.ListingID)
+		logger.WriteServerLog(fmt.Errorf("listing id %d not found", order.ListingID))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("listing not found"))
 		return
 	}
 
@@ -123,7 +140,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		ReviewType: reviewType,
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create review: %v", err))
+		log.Printf("error create review: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error create review: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -134,7 +153,9 @@ func (h *Handler) handleGetAllSent(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -144,13 +165,17 @@ func (h *Handler) handleGetAllSent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	reviews, err := h.reviewStore.GetSentReviewsByUserID(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -161,27 +186,35 @@ func (h *Handler) handleGetAllReceived(w http.ResponseWriter, r *http.Request) {
 	var payload types.ReceivedReviewPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	_, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
 	reviews, err := h.reviewStore.GetReceivedReviewsByUserID(payload.CarrierID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -192,21 +225,27 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	var payload types.DeleteReviewPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -216,18 +255,22 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	if user.ID != review.ReviewerID {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("not the author"))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you aren't the reviewer"))
 		return
 	}
 
 	err = h.reviewStore.DeleteReview(payload.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error delete review: %v", err))
+		log.Printf("error delete review: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error delete review: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -238,21 +281,27 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	var payload types.ModifyReviewPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -262,18 +311,22 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	if review.ReviewerID != user.ID {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not the owner of the review"))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not the reviewier"))
 		return
 	}
 
 	err = h.reviewStore.ModifyReview(review.ID, payload.Content, payload.Rating)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify review: %v", err))
+		log.Printf("error modify review: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error modify review: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 

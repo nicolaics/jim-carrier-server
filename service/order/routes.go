@@ -2,6 +2,7 @@ package order
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -60,21 +61,27 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var payload types.RegisterOrderPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -84,13 +91,17 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	listing, err := h.listingStore.GetListingByID(payload.ListingID)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing id %d not found: %v", payload.ListingID, err))
+		log.Printf("listing id %d not found: %v", payload.ListingID, err)
+		logger.WriteServerLog(fmt.Errorf("listing id %d not found: %v", payload.ListingID, err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing not found"))
 		return
 	}
 
@@ -100,7 +111,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -110,7 +123,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -121,20 +136,26 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	if currency == nil {
 		err = h.currencyStore.CreateCurrency(payload.Currency)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
+			log.Printf("error create currency: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error create currency: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 	}
@@ -188,7 +209,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		Notes:           payload.Notes,
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create order: %v", err))
+		log.Printf("error create order: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error create order: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -203,7 +226,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		Notes:           payload.Notes,
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error finding order ID: %v", err))
+		log.Printf("error finding order ID: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error finding order ID: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -244,7 +269,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -254,7 +281,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -265,7 +294,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	if reqType == "carrier" {
 		orders, err := h.orderStore.GetOrdersByCarrierID(user.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -277,7 +308,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 			packageImage, err := utils.GetImage(order.PackageImageURL)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+				log.Printf("error reading the picture: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error reading the picture: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
@@ -307,7 +340,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	} else if reqType == "giver" {
 		orders, err := h.orderStore.GetOrdersByGiverID(user.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -319,7 +354,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 			packageImage, err := utils.GetImage(order.PackageImageURL)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+				log.Printf("error reading the picture: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error reading the picture: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
@@ -357,21 +394,27 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	var payload types.ViewOrderDetailPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -381,7 +424,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -393,7 +438,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	if reqType == "carrier" {
 		order, err := h.orderStore.GetCarrierOrderByID(payload.ID, user.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -403,7 +450,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		packageImage, err := utils.GetImage(order.PackageImageURL)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+			log.Printf("error reading the picture: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error reading the picture: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -429,7 +478,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	} else if reqType == "giver" {
 		order, err := h.orderStore.GetGiverOrderByID(payload.ID, user.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -439,7 +490,9 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		packageImage, err := utils.GetImage(order.PackageImageURL)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reading the picture: %v", err))
+			log.Printf("error reading the picture: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error reading the picture: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -472,21 +525,27 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	var payload types.DeleteOrderPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -496,13 +555,17 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	err = h.orderStore.DeleteOrder(payload.ID, user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error deleting order: %v", err))
+		log.Printf("error deleting order: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error deleting order: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -516,7 +579,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -526,7 +591,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -536,26 +603,34 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		var payload types.ModifyOrderPayload
 
 		if err := utils.ParseJSON(r, &payload); err != nil {
-			utils.WriteError(w, http.StatusBadRequest, err)
+			log.Printf("payload error: %v \n", err)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 			return
 		}
 
 		// validate the payload
 		if err := utils.Validate.Struct(payload); err != nil {
 			errors := err.(validator.ValidationErrors)
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			log.Printf("invalid payload: %v", errors)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 			return
 		}
 
 		order, err := h.orderStore.GetOrderByID(payload.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			log.Printf("order not found: %v", err)
+			logger.WriteServerLog(fmt.Errorf("order not found: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found"))
 			return
 		}
 
 		listing, err := h.listingStore.GetListingByID(payload.ListingID)
 		if err != nil {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing id %d not found: %v", payload.ListingID, err))
+			log.Printf("listing id %d not found: %v", payload.ListingID, err)
+			logger.WriteServerLog(fmt.Errorf("listing id %d not found: %v", payload.ListingID, err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing not found"))
 			return
 		}
 
@@ -573,20 +648,26 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		if currency == nil {
 			err = h.currencyStore.CreateCurrency(payload.Currency)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
+				log.Printf("error create currency: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error create currency: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
 			currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, err)
+				log.Println(err)
+				logger.WriteServerLog(fmt.Errorf("%v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 		}
@@ -633,7 +714,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		err = h.listingStore.AddWeightAvailable(listing.ID, order.Weight)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error reset weight available: %v", err))
+			log.Printf("error reset weight available: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error reset weight available: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -649,7 +732,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			Notes:           payload.Notes,
 		})
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify order: %v", err))
+			log.Printf("error modify order: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error modify order: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("modify order failed"))
 			return
 		}
 
@@ -688,20 +773,26 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		var payload types.UpdatePackageLocationPayload
 
 		if err := utils.ParseJSON(r, &payload); err != nil {
-			utils.WriteError(w, http.StatusBadRequest, err)
+			log.Printf("payload error: %v \n", err)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 			return
 		}
 
 		// validate the payload
 		if err := utils.Validate.Struct(payload); err != nil {
 			errors := err.(validator.ValidationErrors)
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			log.Printf("invalid payload: %v", errors)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 			return
 		}
 
 		order, err := h.orderStore.GetOrderByID(payload.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			log.Printf("order not found: %v", err)
+			logger.WriteServerLog(fmt.Errorf("order not found: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found"))
 			return
 		}
 
@@ -709,6 +800,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		listing, err := h.listingStore.GetListingByID(order.ListingID)
 		if err != nil {
+			log.Printf("listing id %d not found: %v", order.ListingID, err)
+			logger.WriteServerLog(fmt.Errorf("listing id %d not found: %v", order.ListingID, err))
 			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("listing not found"))
 			return
 		}
@@ -732,7 +825,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		err = h.orderStore.UpdatePackageLocation(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update package location: %v", err))
+			log.Printf("error update package location: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error update package location: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -770,20 +865,26 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		var payload types.UpdatePaymentStatusPayload
 
 		if err := utils.ParseJSON(r, &payload); err != nil {
-			utils.WriteError(w, http.StatusBadRequest, err)
+			log.Printf("payload error: %v \n", err)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 			return
 		}
 
 		// validate the payload
 		if err := utils.Validate.Struct(payload); err != nil {
 			errors := err.(validator.ValidationErrors)
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			log.Printf("invalid payload: %v", errors)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 			return
 		}
 
 		order, err := h.orderStore.GetOrderByID(payload.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			log.Printf("order not found: %v", err)
+			logger.WriteServerLog(fmt.Errorf("order not found: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found"))
 			return
 		}
 
@@ -829,19 +930,25 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 			err = utils.SavePaymentProof(payload.PaymentProof, filePath)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error saving payment proof: %v", err))
+				log.Printf("error saving payment proof: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error saving payment proof: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
 			listing, err := h.listingStore.GetListingByID(order.ListingID)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get listing: %v", err))
+				log.Printf("error get listing: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error get listing: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
 			carrier, err := h.userStore.GetUserByID(listing.CarrierID)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get carrier: %v", err))
+				log.Printf("error get carrier: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error get carrier: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
@@ -851,7 +958,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 			err = utils.SendEmail(carrier.Email, subject, body, filePath, "Payment Proof")
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error sending payment completion email to carrier: %v", err))
+				log.Printf("error sending payment completion email to carrier: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error sending payment completion email to carrier: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
@@ -881,7 +990,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		err = h.orderStore.UpdatePaymentStatus(order.ID, paymentStatus, paymentProofUrl)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update payment status: %v", err))
+			log.Printf("error update payment status: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error update payment status: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -890,20 +1001,26 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		var payload types.UpdateOrderStatusPayload
 
 		if err := utils.ParseJSON(r, &payload); err != nil {
-			utils.WriteError(w, http.StatusBadRequest, err)
+			log.Printf("payload error: %v \n", err)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 			return
 		}
 
 		// validate the payload
 		if err := utils.Validate.Struct(payload); err != nil {
 			errors := err.(validator.ValidationErrors)
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+			log.Printf("invalid payload: %v", errors)
+			logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 			return
 		}
 
 		order, err := h.orderStore.GetOrderByID(payload.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found: %v", err))
+			log.Printf("order not found: %v", err)
+			logger.WriteServerLog(fmt.Errorf("order not found: %v", err))
+			utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("order not found"))
 			return
 		}
 
@@ -920,7 +1037,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, err)
+				log.Println(err)
+				logger.WriteServerLog(fmt.Errorf("%v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 
@@ -940,7 +1059,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			if order.OrderConfirmationDeadline.After(deadline) {
 				err = h.orderStore.UpdateOrderStatus(order.ID, constants.ORDER_STATUS_CANCELLED, "")
 				if err != nil {
-					utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
+					log.Printf("error update order status: %v", err)
+					logger.WriteServerLog(fmt.Errorf("error update order status: %v", err))
+					utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 					return
 				}
 
@@ -955,26 +1076,34 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 			err = h.listingStore.SubtractWeightAvailable(listing.ID, order.Weight)
 			if err != nil {
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update weight available: %v", err))
+				log.Printf("error update weight available: %v", err)
+				logger.WriteServerLog(fmt.Errorf("error update weight available: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 				return
 			}
 		}
 
 		err = h.orderStore.UpdateOrderStatus(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error update order status: %v", err))
+			log.Printf("error update order status: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error update order status: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		listing, err := h.listingStore.GetListingByID(order.ListingID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get listing: %v", err))
+			log.Printf("error get listing: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error get listing: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		giver, err := h.userStore.GetUserByID(order.GiverID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error get giver: %v", err))
+			log.Printf("error get giver: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error get giver: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -994,7 +1123,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 		err = utils.SendEmail(giver.Email, subject, emailBody, "", "")
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error sending update order status email to carrier: %v", err))
+			log.Printf("error sending update order status email to carrier: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error sending update order status email to carrier: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
@@ -1029,21 +1160,27 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 	var payload types.GetPaymentDetailsPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	_, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -1053,13 +1190,17 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(carrier.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data: %v", err))
+		log.Printf("error fetching bank data: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error fetching bank data: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 

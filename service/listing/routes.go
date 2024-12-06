@@ -2,7 +2,9 @@ package listing
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -65,21 +67,27 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 	var payload types.PostListingPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v", err)
+		logger.WriteServerLog(fmt.Errorf("post listing payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	carrier, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("invalid token: %v", err)
+		logger.WriteServerLog(fmt.Errorf("post listing invalid token: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -89,7 +97,9 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Printf("get user at listing: %v", err)
+		logger.WriteServerLog(fmt.Errorf("get user at listing: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -113,7 +123,9 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 
 	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -126,7 +138,9 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 
 		currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Printf("get currency at listing: %v", err)
+			logger.WriteServerLog(fmt.Errorf("get currency at listing: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 	}
@@ -143,7 +157,9 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		Description:      payload.Description,
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create listing: %v", err))
+		log.Printf("error create listing: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error create listing: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to create new listing"))
 		return
 	}
 
@@ -152,14 +168,16 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		logger.WriteServerLog(fmt.Errorf("failed to update bank details: %v", err))
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, "listing created")
+	utils.WriteJSON(w, http.StatusCreated, "listing successfully created")
 }
 
 func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -169,7 +187,9 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -181,13 +201,17 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	if reqType == "all" {
 		listings, err = h.listingStore.GetAllListings(user.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 	} else if reqType == "carrier" {
 		listings, err = h.listingStore.GetListingsByCarrierID(user.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 	} else {
@@ -200,43 +224,51 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	for _, listing := range listings {
 		avgRating, err := h.reviewStore.GetAverageRating(listing.CarrierID, constants.REVIEW_GIVER_TO_CARRIER)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		carrier, err := h.userStore.GetUserByID(listing.CarrierID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("carrier %d not found", listing.CarrierID))
+			log.Printf("carrier %d not found: %v", listing.CarrierID, err)
+			logger.WriteServerLog(fmt.Errorf("carrier %d not found: %v", listing.CarrierID, err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		imageBytes, err := utils.GetImage(carrier.ProfilePictureURL)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching profile picture for %d: %v", listing.CarrierID, err))
+			log.Printf("error fetching profile picture for %d: %v", listing.CarrierID, err)
+			logger.WriteServerLog(fmt.Errorf("error fetching profile picture for %d: %v", listing.CarrierID, err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		bankDetail, err := h.bankDetailStore.GetBankDataOfUser(carrier.ID)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data for %d: %v", listing.CarrierID, err))
+			log.Printf("error fetching bank data for %d: %v", listing.CarrierID, err)
+			logger.WriteServerLog(fmt.Errorf("error fetching bank data for %d: %v", listing.CarrierID, err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		response = append(response, types.ListingReturnPayload{
-			ID:          listing.ID,
-			CarrierID:   listing.CarrierID,
-			CarrierName: listing.CarrierName,
+			ID:                    listing.ID,
+			CarrierID:             listing.CarrierID,
+			CarrierName:           listing.CarrierName,
 			CarrierProfilePicture: imageBytes,
-			Destination:      listing.Destination,
-			WeightAvailable:  listing.WeightAvailable,
-			PricePerKg:       listing.PricePerKg,
-			Currency:         listing.Currency,
-			DepartureDate:    listing.DepartureDate,
-			LastReceivedDate: listing.LastReceivedDate,
-			Description:      listing.Description.String,
-			CarrierRating:    avgRating,
-			LastModifiedAt:   listing.LastModifiedAt,
-			BankDetail:       *bankDetail,
+			Destination:           listing.Destination,
+			WeightAvailable:       listing.WeightAvailable,
+			PricePerKg:            listing.PricePerKg,
+			Currency:              listing.Currency,
+			DepartureDate:         listing.DepartureDate,
+			LastReceivedDate:      listing.LastReceivedDate,
+			Description:           listing.Description.String,
+			CarrierRating:         avgRating,
+			LastModifiedAt:        listing.LastModifiedAt,
+			BankDetail:            *bankDetail,
 		})
 	}
 
@@ -247,21 +279,27 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	var payload types.GetListingDetailPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	_, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -271,13 +309,17 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	avgRating, err := h.reviewStore.GetAverageRating(listing.CarrierID, constants.REVIEW_GIVER_TO_CARRIER)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -290,21 +332,27 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	var payload types.DeleteListingPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -314,7 +362,9 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -325,6 +375,8 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 	err = h.listingStore.DeleteListing(payload.ID)
 	if err != nil {
+		log.Printf("error delete listing: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error delete listing: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error delete listing: %v", err))
 		return
 	}
@@ -336,21 +388,27 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	var payload types.ModifyListingPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -360,7 +418,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -383,20 +443,26 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	if currency == nil {
 		err = h.currencyStore.CreateCurrency(payload.Currency)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error create currency: %v", err))
+			log.Printf("error create currency: %v", err)
+			logger.WriteServerLog(fmt.Errorf("error create currency: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 
 		currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, err)
+			log.Println(err)
+			logger.WriteServerLog(fmt.Errorf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
 	}
@@ -417,7 +483,9 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		Description:      payload.Description,
 	})
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error modify listing: %v", err))
+		log.Printf("error modify listing: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error modify listing: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("modify listing failed"))
 		return
 	}
 
@@ -428,7 +496,9 @@ func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -438,13 +508,17 @@ func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
 	bankDetail, err := h.bankDetailStore.GetBankDataOfUser(user.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data: %v", err))
+		log.Printf("error fetching bank data: %v", err)
+		logger.WriteServerLog(fmt.Errorf("error fetching bank data: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -455,21 +529,27 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 	var payload types.UpdateBulkPackageLocationPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
@@ -479,7 +559,9 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 		return
 	}
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -490,7 +572,9 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 
 	orders, err := h.orderStore.GetOrdersByListingID(listing.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -539,27 +623,35 @@ func (h *Handler) handleCountOrdersForOneListing(w http.ResponseWriter, r *http.
 	var payload types.GetListingDetailPayload
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+		log.Printf("payload error: %v \n", err)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
 
 	// validate the payload
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		log.Printf("invalid payload: %v", errors)
+		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
 
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
+		log.Printf("token invalid: %v", err)
+		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
 
 	listing, err := h.listingStore.GetListingByID(payload.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
@@ -570,7 +662,9 @@ func (h *Handler) handleCountOrdersForOneListing(w http.ResponseWriter, r *http.
 
 	orderCount, err := h.orderStore.GetOrderCountByListingID(listing.ID)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
 
