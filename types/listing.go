@@ -38,7 +38,7 @@ type PostListingPayload struct {
 }
 
 type GetListingDetailPayload struct {
-	ID int `json:"id"`
+	ID int `json:"id" validate:"required"`
 }
 
 type DeleteListingPayload GetListingDetailPayload

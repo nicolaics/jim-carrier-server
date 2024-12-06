@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier-server/constants"
 	"github.com/nicolaics/jim-carrier-server/logger"
-	"github.com/nicolaics/jim-carrier-server/service/auth/rsa"
 	"github.com/nicolaics/jim-carrier-server/types"
 	"github.com/nicolaics/jim-carrier-server/utils"
 )
@@ -21,13 +20,12 @@ type Handler struct {
 	bankDetailStore types.BankDetailStore
 	orderStore      types.OrderStore
 	fcmHistoryStore types.FCMHistoryStore
-	publicKeyStore  types.PublicKeyStore
 }
 
 func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 	currencyStore types.CurrencyStore, reviewStore types.ReviewStore,
 	bankDetailStore types.BankDetailStore, orderStore types.OrderStore,
-	fcmHistoryStore types.FCMHistoryStore, publicKeyStore types.PublicKeyStore) *Handler {
+	fcmHistoryStore types.FCMHistoryStore) *Handler {
 	return &Handler{
 		listingStore:    listingStore,
 		userStore:       userStore,
@@ -36,7 +34,6 @@ func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 		bankDetailStore: bankDetailStore,
 		orderStore:      orderStore,
 		fcmHistoryStore: fcmHistoryStore,
-		publicKeyStore:  publicKeyStore,
 	}
 }
 
@@ -60,7 +57,7 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/listing/bank-detail", h.handleGetBankDetail).Methods(http.MethodGet)
 	router.HandleFunc("/listing/bank-detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	router.HandleFunc("/listing/count-orders", h.handleCountOrders).Methods(http.MethodGet)
+	router.HandleFunc("/listing/count-orders", h.handleCountOrdersForOneListing).Methods(http.MethodPost)
 	router.HandleFunc("/listing/count-orders", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
@@ -219,58 +216,27 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// go func() {
-		// 	imageBytes, err := utils.GetImage(carrier.ProfilePictureURL)
-		// 	if err != nil {
-		// 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching profile picture for %d: %v", listing.CarrierID, err))
-		// 		return
-		// 	}
-		// }
-
-		publicKey, err := h.publicKeyStore.GetPublicKeyByUserID(user.ID)
-		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("failed to get public key for user %s: %v", user.Email, err))
-		}
-
-		bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(carrier.ID)
+		bankDetail, err := h.bankDetailStore.GetBankDataOfUser(carrier.ID)
 		if err != nil {
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data for %d: %v", listing.CarrierID, err))
 			return
 		}
 
-		var bankDetailReturn types.BankDetailReturn
-
-		if bankDetail != nil {
-			encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
-			if err != nil {
-				logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
-			}
-
-			encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
-			if err != nil {
-				logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
-			}
-
-			bankDetailReturn.BankName = bankDetail.BankName
-			bankDetailReturn.AccountNumber = encryptedNumber
-			bankDetailReturn.AccountHolder = encryptedHolder
-		}
-
 		response = append(response, types.ListingReturnPayload{
-			ID:                    listing.ID,
-			CarrierID:             listing.CarrierID,
-			CarrierName:           listing.CarrierName,
+			ID:          listing.ID,
+			CarrierID:   listing.CarrierID,
+			CarrierName: listing.CarrierName,
 			CarrierProfilePicture: imageBytes,
-			Destination:           listing.Destination,
-			WeightAvailable:       listing.WeightAvailable,
-			PricePerKg:            listing.PricePerKg,
-			Currency:              listing.Currency,
-			DepartureDate:         listing.DepartureDate,
-			LastReceivedDate:      listing.LastReceivedDate,
-			Description:           listing.Description.String,
-			CarrierRating:         avgRating,
-			LastModifiedAt:        listing.LastModifiedAt,
-			BankDetail:            bankDetailReturn,
+			Destination:      listing.Destination,
+			WeightAvailable:  listing.WeightAvailable,
+			PricePerKg:       listing.PricePerKg,
+			Currency:         listing.Currency,
+			DepartureDate:    listing.DepartureDate,
+			LastReceivedDate: listing.LastReceivedDate,
+			Description:      listing.Description.String,
+			CarrierRating:    avgRating,
+			LastModifiedAt:   listing.LastModifiedAt,
+			BankDetail:       *bankDetail,
 		})
 	}
 
@@ -476,36 +442,13 @@ func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	publicKey, err := h.publicKeyStore.GetPublicKeyByUserID(user.ID)
-	if err != nil {
-		logger.WriteServerLog(fmt.Errorf("failed to get public key for user %s: %v", user.Email, err))
-	}
-
-	bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(user.ID)
+	bankDetail, err := h.bankDetailStore.GetBankDataOfUser(user.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error fetching bank data: %v", err))
 		return
 	}
 
-	var bankDetailReturn types.BankDetailReturn
-
-	if bankDetail != nil {
-		encryptedHolder, err := rsa.EncryptData([]byte(bankDetail.AccountHolder), publicKey.E, publicKey.M)
-		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("error encrypt account holder for user %s: %v", user.Email, err))
-		}
-
-		encryptedNumber, err := rsa.EncryptData([]byte(bankDetail.AccountNumber), publicKey.E, publicKey.M)
-		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("error encrypt account number for user %s: %v", user.Email, err))
-		}
-
-		bankDetailReturn.BankName = bankDetail.BankName
-		bankDetailReturn.AccountNumber = encryptedNumber
-		bankDetailReturn.AccountHolder = encryptedHolder
-	}
-
-	utils.WriteJSON(w, http.StatusOK, bankDetailReturn)
+	utils.WriteJSON(w, http.StatusOK, bankDetail)
 }
 
 func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Request) {
@@ -592,7 +535,21 @@ func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Req
 	utils.WriteJSON(w, http.StatusOK, "package location updated")
 }
 
-func (h *Handler) handleCountOrders(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) handleCountOrdersForOneListing(w http.ResponseWriter, r *http.Request) {
+	var payload types.GetListingDetailPayload
+
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// validate the payload
+	if err := utils.Validate.Struct(payload); err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload: %v", errors))
+		return
+	}
+
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
@@ -600,24 +557,26 @@ func (h *Handler) handleCountOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderCount, err := h.orderStore.GetOrderCountByCarrierID(user.ID)
+	listing, err := h.listingStore.GetListingByID(payload.ID)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	var returnMsg map[string]bool
+	if listing.CarrierID != user.ID {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("you are not the owner of the listing"))
+		return
+	}
+
+	orderCount, err := h.orderStore.GetOrderCountByListingID(listing.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	if orderCount == 0 {
-		returnMsg = map[string]bool{
-			"modify": true,
-		}
-
-		utils.WriteJSON(w, http.StatusOK, returnMsg)
+		utils.WriteJSON(w, http.StatusOK, "modify allowed")
 	} else {
-		returnMsg = map[string]bool{
-			"modify": false,
-		}
-
-		utils.WriteJSON(w, http.StatusForbidden, returnMsg)
+		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("there are orders for this listing"))
 	}
 }

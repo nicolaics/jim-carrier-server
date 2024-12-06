@@ -19,11 +19,10 @@ import (
 
 type Handler struct {
 	userStore      types.UserStore
-	publicKeyStore types.PublicKeyStore
 }
 
-func NewHandler(userStore types.UserStore, publicKeyStore types.PublicKeyStore) *Handler {
-	return &Handler{userStore: userStore, publicKeyStore: publicKeyStore}
+func NewHandler(userStore types.UserStore) *Handler {
+	return &Handler{userStore: userStore}
 }
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
@@ -166,11 +165,6 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
-	if err != nil {
-		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", payload.Email, err))
-	}
-
 	tokens := map[string]string{
 		"access_token":  accessTokenDetails.Token,
 		"refresh_token": refreshTokenDetails.Token,
@@ -277,11 +271,6 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
-	if err != nil {
-		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", payload.Email, err))
-	}
-
 	utils.WriteJSON(w, http.StatusCreated, fmt.Sprintf("user %s successfully created", payload.Name))
 }
 
@@ -367,13 +356,13 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate token
-	_, err := h.userStore.ValidateUserAccessToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid token: %v", err))
 		return
 	}
 
-	user, err := h.userStore.GetUserByID(payload.ID)
+	user, err = h.userStore.GetUserByID(user.ID)
 	if user == nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
@@ -733,11 +722,6 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
-	if err != nil {
-		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", user.Email, err))
-	}
-
 	response := map[string]interface{}{
 		"user":          user,
 		"access_token":  accessTokenDetails.Token,
@@ -844,11 +828,6 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
-	if err != nil {
-		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", user.Email, err))
-	}
-
 	tokens := map[string]string{
 		"access_token":  accessTokenDetails.Token,
 		"refresh_token": refreshTokenDetails.Token,
@@ -948,11 +927,6 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
 		}
-	}
-
-	err = h.publicKeyStore.UpdatePublicKey(user.ID, payload.PublicKeyE, payload.PublicKeyM)
-	if err != nil {
-		logger.WriteServerLog(fmt.Errorf("error update public key user %s: %v", user.Email, err))
 	}
 
 	tokens := map[string]string{
