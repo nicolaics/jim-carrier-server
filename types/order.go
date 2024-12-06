@@ -8,7 +8,6 @@ import (
 type OrderStore interface {
 	CreateOrder(Order) error
 	GetOrderByID(int) (*Order, error)
-	// GetOrderByPaymentProofURL(paymentProofUrl string) (*Order, error)
 
 	GetOrdersByCarrierID(int) ([]OrderCarrierReturnFromDB, error)
 	GetOrdersByGiverID(int) ([]OrderGiverReturnFromDB, error)
@@ -32,7 +31,7 @@ type OrderStore interface {
 	GetOrdersByListingID(listingId int) ([]OrderBulk, error)
 	GetOrderID(order Order) (int, error)
 
-	GetOrderCountByCarrierID(id int) (int, error)
+	GetOrderCountByListingID(listingId int) (int, error)
 }
 
 type RegisterOrderPayload struct {

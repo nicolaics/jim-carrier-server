@@ -375,7 +375,7 @@ func (s *Store) IsPackageImageURLExist(packageImgUrl string) bool {
 	return (count > 0)
 }
 
-func (s *Store) UpdateOrderStatusByDeadline() error {
+func (s *Store) UpdateOrderStatusByDeadline() error {	
 	query := `UPDATE order_list SET order_status = ?, last_modified_at = ? 
 				WHERE order_confirmation_deadline < ? 
 				AND order_status = ? 
@@ -449,7 +449,7 @@ func (s *Store) GetOrderID(order types.Order) (int, error) {
 	return id, nil
 }
 
-func (s *Store) GetOrderCountByCarrierID(id int) (int, error) {
+func (s *Store) GetOrderCountByListingID(listingId int) (int, error) {
 	err := s.UpdateOrderStatusByDeadline()
 	if err != nil {
 		return 0, err
@@ -458,10 +458,10 @@ func (s *Store) GetOrderCountByCarrierID(id int) (int, error) {
 	query := `SELECT COUNT(*)
 				FROM order_list AS o 
 				JOIN listing AS l ON l.id = o.listing_id 
-				WHERE l.carrier_id = ? 
+				WHERE l.id = ? 
 				AND o.deleted_at IS NULL 
 				AND l.deleted_at IS NULL`
-	row := s.db.QueryRow(query, id)
+	row := s.db.QueryRow(query, listingId)
 	if row.Err() != nil {
 		return 0, row.Err()
 	}
