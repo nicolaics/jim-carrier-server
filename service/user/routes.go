@@ -81,7 +81,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -90,7 +90,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -99,7 +99,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	exists, provider, err := h.userStore.CheckProvider(payload.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -115,7 +115,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.GetUserByEmail(payload.Email)
 	if err != nil {
 		log.Printf("user not found: %v", err)
-		logger.WriteServerLog(fmt.Errorf("user not found: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("user not found: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user not found"))
 		return
 	}
@@ -123,7 +123,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	password, err := h.userStore.GetUserPasswordByEmail(payload.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -137,7 +137,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	isAccessTokenExist, err := h.userStore.IsAccessTokenExist(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -150,7 +150,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate access token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -158,7 +158,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate refresh token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -166,7 +166,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error saving token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -174,7 +174,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -182,7 +182,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if user.FCMToken != payload.FCMToken {
 		err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
 		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
+			logger.WriteServerLog(fmt.Sprintf("error update FCM token for user %s: %v", user.Email, err))
 		}
 	}
 
@@ -200,7 +200,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -209,7 +209,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -218,7 +218,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5, constants.SIGNUP)
 	if err != nil {
 		log.Printf("code validation error: %v", err)
-		logger.WriteServerLog(fmt.Errorf("code validation error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("code validation error: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -231,7 +231,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE, constants.SIGNUP)
 	if err != nil {
 		log.Printf("error update verification code: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error update verification code: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error update verification code: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -240,7 +240,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	exist, _, err := h.userStore.CheckProvider(payload.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -253,7 +253,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := auth.HashPassword(payload.Password)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -268,7 +268,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error create user: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error create user: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error create user: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 	}
 
@@ -314,7 +314,7 @@ func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		log.Printf("token invalid: %v", err)
-		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
@@ -322,7 +322,7 @@ func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	imageBytes, err := utils.GetImage(user.ProfilePictureURL)
 	if err != nil {
 		log.Printf("error reading the picture: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error reading the picture: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -347,7 +347,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -356,7 +356,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -365,7 +365,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	_, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		log.Printf("token invalid: %v", err)
-		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
@@ -373,7 +373,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.GetUserByID(payload.ID)
 	if user == nil || err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -381,7 +381,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.DeleteUser(user)
 	if err != nil {
 		log.Printf("error delete user: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error delete user: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error delete user: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -394,7 +394,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -403,7 +403,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -412,7 +412,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		log.Printf("token invalid: %v", err)
-		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
@@ -420,7 +420,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	user, err = h.userStore.GetUserByID(user.ID)
 	if user == nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -431,7 +431,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error modify user: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error modify user: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error modify user: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -443,7 +443,7 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	accessDetails, err := jwt.ExtractAccessTokenFromClient(r)
 	if err != nil {
 		log.Printf("token invalid: %v", err)
-		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
@@ -452,7 +452,7 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	_, err = h.userStore.GetUserByID(accessDetails.UserID)
 	if err != nil {
 		log.Printf("user id %d doesn't exists: %v", accessDetails.UserID, err)
-		logger.WriteServerLog(fmt.Errorf("user id %d doesn't exists: %v", accessDetails.UserID, err))
+		logger.WriteServerLog(fmt.Sprintf("user id %d doesn't exists: %v", accessDetails.UserID, err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user doesn't exists"))
 		return
 	}
@@ -460,7 +460,7 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdateLastLoggedIn(accessDetails.UserID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -468,7 +468,7 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.DeleteToken(accessDetails.UserID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -481,7 +481,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -490,7 +490,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -498,7 +498,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	isUserExist, err := h.userStore.IsUserExist(payload.Email)
 	if err != nil {
 		log.Printf("user table error: %v", err)
-		logger.WriteServerLog(fmt.Errorf("user table error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("user table error: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -507,7 +507,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	valid, err := h.userStore.DelayCodeWithinTime(payload.Email, 1)
 	if err != nil {
 		log.Printf("verify code table error: %v", err)
-		logger.WriteServerLog(fmt.Errorf("verify code table error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("verify code table error: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -536,7 +536,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	err = utils.SendEmail(payload.Email, subject, body, "", "")
 	if err != nil {
 		log.Printf("failed to send email: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to send email: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to send email: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("failed to send verification code email"))
 		return
 	}
@@ -545,7 +545,7 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	err = h.userStore.SaveVerificationCode(payload.Email, code, requestType)
 	if err != nil {
 		log.Printf("error saving verification code: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error saving verification code: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error saving verification code: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -558,7 +558,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -567,7 +567,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -575,7 +575,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.GetUserByEmail(payload.Email)
 	if user == nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -583,7 +583,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := auth.HashPassword(payload.NewPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -591,7 +591,7 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdatePassword(user.ID, hashedPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -604,7 +604,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -613,7 +613,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -622,7 +622,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		log.Printf("token invalid: %v", err)
-		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
@@ -630,7 +630,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	password, err := h.userStore.GetUserPasswordByEmail(user.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -643,7 +643,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := auth.HashPassword(payload.NewPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -651,7 +651,7 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdatePassword(user.ID, hashedPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -664,7 +664,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -673,7 +673,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -682,7 +682,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		log.Printf("token invalid: %v", err)
-		logger.WriteServerLog(fmt.Errorf("token invalid: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
 		return
 	}
@@ -709,7 +709,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
 		if err != nil {
 			log.Printf("failed to save image: %v", err)
-			logger.WriteServerLog(fmt.Errorf("failed to save image: %v", err))
+			logger.WriteServerLog(fmt.Sprintf("failed to save image: %v", err))
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
@@ -717,7 +717,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		err = h.userStore.UpdateProfilePicture(user.ID, imageURL)
 		if err != nil {
 			log.Printf("error update profile picture: %v", err)
-			logger.WriteServerLog(fmt.Errorf("error update profile picture: %v", err))
+			logger.WriteServerLog(fmt.Sprintf("error update profile picture: %v", err))
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
@@ -725,7 +725,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		err = h.userStore.UpdateProfilePicture(user.ID, "")
 		if err != nil {
 			log.Printf("error update profile picture: %v", err)
-			logger.WriteServerLog(fmt.Errorf("error update profile picture: %v", err))
+			logger.WriteServerLog(fmt.Sprintf("error update profile picture: %v", err))
 			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 			return
 		}
@@ -739,7 +739,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -748,7 +748,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -757,7 +757,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	tokenInfo, err := oauth.VerifyIDToken(payload.IDToken)
 	if err != nil {
 		log.Printf("error verifying id token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error verifying id token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error verifying id token: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error verifying id token"))
 		return
 	}
@@ -766,7 +766,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		// there's no email key or something happened
 		log.Printf("invalid email claim: %v", err)
-		logger.WriteServerLog(fmt.Errorf("invalid email claim: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("invalid email claim: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid email claim"))
 		return
 	}
@@ -775,7 +775,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	exists, provider, err := h.userStore.CheckProvider(email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -792,7 +792,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.GetUserByEmail(email)
 	if err != nil || user == nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -800,14 +800,14 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	if user.FCMToken != payload.FCMToken {
 		err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
 		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
+			logger.WriteServerLog(fmt.Sprintf("error update FCM token for user %s: %v", user.Email, err))
 		}
 	}
 
 	isAccessTokenExist, err := h.userStore.IsAccessTokenExist(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -820,7 +820,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate access token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -828,7 +828,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate refresh token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -837,14 +837,13 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 
 	err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
 	if err != nil {
-		logMsg := fmt.Errorf("%s failed to update FCM Token: %v", user.Email, err)
-		logger.WriteServerLog(logMsg)
+		logger.WriteServerLog(fmt.Sprintf("%s failed to update FCM Token: %v", user.Email, err))
 	}
 
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error saving token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -852,7 +851,7 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -871,7 +870,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -880,7 +879,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -889,7 +888,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	tokenInfo, err := oauth.VerifyIDToken(payload.IDToken)
 	if err != nil {
 		log.Printf("error verifying id token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error verifying id token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error verifying id token: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("error verifying id token"))
 		return
 	}
@@ -898,7 +897,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		// there's no email key or something happened
 		log.Printf("invalid email claim: %v", err)
-		logger.WriteServerLog(fmt.Errorf("invalid email claim: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("invalid email claim: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid email claim"))
 		return
 	}
@@ -906,7 +905,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	exist, _, err := h.userStore.CheckProvider(email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -926,7 +925,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error create user: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error create user: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error create user: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -934,7 +933,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.GetUserByEmail(email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Errorf("%v", err))
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -962,7 +961,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate access token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -970,7 +969,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate refresh token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -978,7 +977,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error saving token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -996,7 +995,7 @@ func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -1005,7 +1004,7 @@ func (h *Handler) handleRefreshToken(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -1041,7 +1040,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -1050,7 +1049,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -1058,7 +1057,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.ValidateUserRefreshToken(payload.RefreshToken)
 	if err != nil {
 		log.Printf("error validate user refresh token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error validate user refresh token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error validate user refresh token: %v", err))
 		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("unauthorized"))
 		return
 	}
@@ -1066,7 +1065,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.DeleteToken(user.ID)
 	if err != nil {
 		log.Printf("error delete token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error delete token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error delete token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -1074,7 +1073,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate access token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -1082,7 +1081,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("failed to generate refresh token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -1090,7 +1089,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error saving token: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -1098,7 +1097,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	if user.FCMToken != payload.FCMToken {
 		err = h.userStore.UpdateFCMToken(user.ID, payload.FCMToken)
 		if err != nil {
-			logger.WriteServerLog(fmt.Errorf("error update FCM token for user %s: %v", user.Email, err))
+			logger.WriteServerLog(fmt.Sprintf("error update FCM token for user %s: %v", user.Email, err))
 		}
 	}
 
@@ -1115,7 +1114,7 @@ func (h *Handler) handleVerifyVerification(w http.ResponseWriter, r *http.Reques
 
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
 		return
 	}
@@ -1124,7 +1123,7 @@ func (h *Handler) handleVerifyVerification(w http.ResponseWriter, r *http.Reques
 	if err := utils.Validate.Struct(payload); err != nil {
 		errors := err.(validator.ValidationErrors)
 		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Errorf("payload error: %v", errors))
+		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
 		return
 	}
@@ -1133,7 +1132,7 @@ func (h *Handler) handleVerifyVerification(w http.ResponseWriter, r *http.Reques
 	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5, constants.FORGET_PASSWORD)
 	if err != nil {
 		log.Printf("code validation error: %v", err)
-		logger.WriteServerLog(fmt.Errorf("code validation error: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("code validation error: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
@@ -1146,7 +1145,7 @@ func (h *Handler) handleVerifyVerification(w http.ResponseWriter, r *http.Reques
 	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE, constants.FORGET_PASSWORD)
 	if err != nil {
 		log.Printf("error updating verification code: %v", err)
-		logger.WriteServerLog(fmt.Errorf("error updating verification code: %v", err))
+		logger.WriteServerLog(fmt.Sprintf("error updating verification code: %v", err))
 		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
 		return
 	}
