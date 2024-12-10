@@ -46,10 +46,9 @@ func (m *LogMiddleware) Func() mux.MiddlewareFunc {
 			next.ServeHTTP(logRespWriter, r)
 
 			m.logger.Printf(
-				"duration=%s status=%d body=%s",
+				"duration=%s status=%d",
 				time.Since(startTime).String(),
-				logRespWriter.statusCode,
-				logRespWriter.buf.String())
+				logRespWriter.statusCode)
 		})
 	}
 }

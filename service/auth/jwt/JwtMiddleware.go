@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/golang-jwt/jwt"
@@ -11,7 +10,7 @@ import (
 func JWTMiddleware() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Println("auth middleware ok!")
+			// log.Println("auth middleware ok!")
 
 			// log.Println(r.Header)
 

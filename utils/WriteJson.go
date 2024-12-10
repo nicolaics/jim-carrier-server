@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -14,8 +13,8 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Range")
 	w.WriteHeader(status)
 
-	log.Println("JSON")
-	log.Println(w.Header())
+	// log.Println("JSON")
+	// log.Println(w.Header())
 
 	return json.NewEncoder(w).Encode(v)
 }
@@ -28,8 +27,8 @@ func WriteJSONForOptions(w http.ResponseWriter, status int, v any) error {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(status)
 
-	log.Println("JSON Options")
-	log.Println(w)
+	// log.Println("JSON Options")
+	// log.Println(w)
 
 	return json.NewEncoder(w).Encode(v)
 }
