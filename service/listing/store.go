@@ -78,6 +78,11 @@ func (s *Store) GetAllListings(carrierId int) ([]types.ListingReturnFromDB, erro
 }
 
 func (s *Store) GetListingsByCarrierID(carrierId int) ([]types.ListingReturnFromDB, error) {
+	err := s.UpdateListingExpStatus()
+	if err != nil {
+		return nil, fmt.Errorf("error updating listing status: %v", err)
+	}
+
 	query := `SELECT l.id, l.carrier_id, user.name, l.destination, 
 					l.weight_available, l.price_per_kg, 
 					c.name, 
