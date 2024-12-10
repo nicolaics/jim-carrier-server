@@ -151,6 +151,7 @@ type OrderCarrierReturnFromDB struct {
 	ID               int            `json:"id"`
 	GiverName        string         `json:"giverName"`
 	GiverPhoneNumber string         `json:"giverPhoneNumber"`
+	GiverEmail       string         `json:"giverEmail"`
 	Weight           float64        `json:"weight"`
 	Price            float64        `json:"price"`
 	Currency         string         `json:"currency"`
@@ -176,6 +177,7 @@ type OrderCarrierReturnPayload struct {
 	ID               int       `json:"id"`
 	GiverName        string    `json:"giverName"`
 	GiverPhoneNumber string    `json:"giverPhoneNumber"`
+	GiverEmail       string    `json:"giverEmail"`
 	Weight           float64   `json:"weight"`
 	Price            float64   `json:"price"`
 	Currency         string    `json:"currency"`

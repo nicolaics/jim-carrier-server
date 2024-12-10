@@ -319,6 +319,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				ID:               order.ID,
 				GiverName:        order.GiverName,
 				GiverPhoneNumber: order.GiverPhoneNumber,
+				GiverEmail:       order.GiverEmail,
 				Weight:           order.Weight,
 				Price:            order.Price,
 				Currency:         order.Currency,
