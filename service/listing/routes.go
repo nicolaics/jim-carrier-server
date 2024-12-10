@@ -258,6 +258,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			ID:                    listing.ID,
 			CarrierID:             listing.CarrierID,
 			CarrierName:           listing.CarrierName,
+			CarrierEmail:          listing.CarrierEmail,
 			CarrierProfilePicture: imageBytes,
 			Destination:           listing.Destination,
 			WeightAvailable:       listing.WeightAvailable,
