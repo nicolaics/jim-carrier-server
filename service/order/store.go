@@ -459,9 +459,13 @@ func (s *Store) GetOrderCountByListingID(listingId int) (int, error) {
 				FROM order_list AS o 
 				JOIN listing AS l ON l.id = o.listing_id 
 				WHERE l.id = ? 
+				AND (o.order_status = ? OR o.order_status = ?) 
+				AND o.payment_status != ? 
 				AND o.deleted_at IS NULL 
 				AND l.deleted_at IS NULL`
-	row := s.db.QueryRow(query, listingId)
+	row := s.db.QueryRow(query, listingId, 
+						constants.ORDER_STATUS_CANCELLED, constants.ORDER_STATUS_WAITING,
+						constants.PAYMENT_STATUS_COMPLETED)
 	if row.Err() != nil {
 		return 0, row.Err()
 	}
