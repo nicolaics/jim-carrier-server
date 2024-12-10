@@ -373,6 +373,19 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orderCount, err := h.orderStore.GetOrderCountByListingID(listing.ID)
+	if err != nil {
+		log.Println(err)
+		logger.WriteServerLog(fmt.Errorf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		return
+	}
+
+	if orderCount > 0 {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("there are active orders"))
+		return
+	}
+
 	err = h.listingStore.DeleteListing(payload.ID)
 	if err != nil {
 		log.Printf("error delete listing: %v", err)
