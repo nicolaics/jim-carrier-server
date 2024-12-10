@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -27,15 +26,10 @@ func WriteServerLog(errorMessage string) error {
 	}
 	defer file.Close()
 
-	// change the data into JSON
-	log.Println("Error msg: ", errorMessage)
-	jsonData, err := json.Marshal(errorMessage)
-	if err != nil {
-		return err
-	}
-
 	// store the data into the file
-	_, err = file.WriteString(fmt.Sprintf("%s\n", jsonData))
+	msg := fmt.Sprintf("[Error %s]\n", time.Now().Format("2006-01-02 T150405"))
+	msg += errorMessage
+	_, err = file.WriteString(msg)
 	if err != nil {
 		log.Printf("error write string: %v", err)
 		return err
