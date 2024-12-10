@@ -66,6 +66,7 @@ type ListingReturnPayload struct {
 	ID                    int              `json:"id"`
 	CarrierID             int              `json:"carrierId"`
 	CarrierName           string           `json:"carrierName"`
+	CarrierEmail          string           `json:"carrierEmail"`
 	CarrierProfilePicture []byte           `json:"carrierProfilePicture"`
 	Destination           string           `json:"destination"`
 	WeightAvailable       float64          `json:"weightAvailable"`
@@ -83,6 +84,7 @@ type ListingReturnFromDB struct {
 	ID               int            `json:"id"`
 	CarrierID        int            `json:"carrierId"`
 	CarrierName      string         `json:"carrierName"`
+	CarrierEmail     string         `json:"carrierEmail"`
 	Destination      string         `json:"destination"`
 	WeightAvailable  float64        `json:"weightAvailable"`
 	PricePerKg       float64        `json:"pricePerKg"`

@@ -45,7 +45,8 @@ func (s *Store) GetAllListings(carrierId int) ([]types.ListingReturnFromDB, erro
 		return nil, fmt.Errorf("error updating listing status: %v", err)
 	}
 
-	query := `SELECT l.id, l.carrier_id, user.name, l.destination, 
+	query := `SELECT l.id, l.carrier_id, user.name, user.email, 
+					l.destination, 
 					l.weight_available, l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
@@ -83,7 +84,8 @@ func (s *Store) GetListingsByCarrierID(carrierId int) ([]types.ListingReturnFrom
 		return nil, fmt.Errorf("error updating listing status: %v", err)
 	}
 
-	query := `SELECT l.id, l.carrier_id, user.name, l.destination, 
+	query := `SELECT l.id, l.carrier_id, user.name, user.email, 
+					l.destination, 
 					l.weight_available, l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
@@ -148,7 +150,8 @@ func (s *Store) IsListingDuplicate(carrierId int, destination string, weightAvai
 }
 
 func (s *Store) GetListingByPayload(carrierName string, destination string, weightAvailable float64, pricePerKg float64, departureDate time.Time) (*types.ListingReturnFromDB, error) {
-	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
+	query := `SELECT l.id, l.carrier_id, user.name, user.email, 
+					l.destination, l.weight_available, 
 					l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
@@ -184,7 +187,8 @@ func (s *Store) GetListingByPayload(carrierName string, destination string, weig
 }
 
 func (s *Store) GetListingByID(id int) (*types.ListingReturnFromDB, error) {
-	query := `SELECT l.id, l.carrier_id, user.name, l.destination, l.weight_available, 
+	query := `SELECT l.id, l.carrier_id, user.name, user.email, 
+					l.destination, l.weight_available, 
 					l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
@@ -301,6 +305,7 @@ func scanRowIntoListingReturn(rows *sql.Rows) (*types.ListingReturnFromDB, error
 		&listing.ID,
 		&listing.CarrierID,
 		&listing.CarrierName,
+		&listing.CarrierEmail,
 		&listing.Destination,
 		&listing.WeightAvailable,
 		&listing.PricePerKg,
