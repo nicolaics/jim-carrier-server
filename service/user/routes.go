@@ -343,26 +343,8 @@ func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
-	var payload types.RemoveUserPayload
-
-	if err := utils.ParseJSON(r, &payload); err != nil {
-		log.Printf("payload error: %v \n", err)
-		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("payload error"))
-		return
-	}
-
-	// validate the payload
-	if err := utils.Validate.Struct(payload); err != nil {
-		errors := err.(validator.ValidationErrors)
-		log.Printf("invalid payload: %v", errors)
-		logger.WriteServerLog(fmt.Sprintf("payload error: %v", errors))
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("invalid payload"))
-		return
-	}
-
 	// validate token
-	_, err := h.userStore.ValidateUserAccessToken(w, r)
+	user, err := h.userStore.ValidateUserAccessToken(w, r)
 	if err != nil {
 		log.Printf("token invalid: %v", err)
 		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
@@ -370,7 +352,7 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userStore.GetUserByID(payload.ID)
+	user, err = h.userStore.GetUserByID(user.ID)
 	if user == nil || err != nil {
 		log.Printf("payload error: %v \n", err)
 		logger.WriteServerLog(fmt.Sprintf("payload error: %v", err))
@@ -1099,6 +1081,14 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.WriteServerLog(fmt.Sprintf("error update FCM token for user %s: %v", user.Email, err))
 		}
+	}
+
+	err = h.userStore.UpdateLastLoggedIn(user.ID)
+	if err != nil {
+		log.Println(err)
+		logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		return
 	}
 
 	tokens := map[string]string{
