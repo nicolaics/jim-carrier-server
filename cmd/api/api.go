@@ -62,6 +62,9 @@ func (s *APIServer) Run() error {
 	reviewHandler := review.NewHandler(reviewStore, orderStore, listingStore, userStore)
 	reviewHandler.RegisterRoutes(subrouter)
 
+	bankDetailHandler := bank.NewHandler(bankDetailStore, userStore)
+	bankDetailHandler.RegisterRoutes(subrouter)
+
 	log.Println("Listening on: ", s.addr)
 
 	logMiddleware := logger.NewLogMiddleware(loggerVar)

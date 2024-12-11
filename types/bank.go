@@ -8,6 +8,12 @@ type BankDetailStore interface {
 	GetBankDataOfUser(uid int) (*BankDetailReturn, error)
 }
 
+type UpdateBankDetailPayload struct {
+	BankName       string    `json:"bankName" validate:"required"`
+	AccountNumber  string    `json:"accountNumber" validate:"required"`
+	AccountHolder  string    `json:"accountHolder" validate:"required"`
+}
+
 type BankDetailReturn struct {
 	BankName       string    `json:"bankName"`
 	AccountNumber  string    `json:"accountNumber"`
