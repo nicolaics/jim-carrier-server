@@ -40,6 +40,8 @@ type UserStore interface {
 	CheckProvider(email string) (bool, string, error)
 
 	UpdateFCMToken(id int, fcmToken string) error
+
+	IsDeleteUserAllowed(id int) (bool, error)
 }
 
 // register new user
@@ -60,11 +62,6 @@ type RegisterGooglePayload struct {
 	Name              string `json:"name" validate:"required"`
 	PhoneNumber       string `json:"phoneNumber" validate:"required"`
 	ProfilePictureURL string `json:"profilePictureUrl"`
-}
-
-// delete user account
-type RemoveUserPayload struct {
-	ID int `json:"id" validate:"required"`
 }
 
 // modify the data of the user

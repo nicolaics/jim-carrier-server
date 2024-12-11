@@ -360,6 +360,19 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isAllowed, err := h.userStore.IsDeleteUserAllowed(user.ID)
+	if err != nil {
+		log.Printf("is delete user error: %v \n", err)
+		logger.WriteServerLog(fmt.Sprintf("is delete user error: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		return
+	}
+
+	if !isAllowed {
+		utils.WriteError(w, http.StatusForbidden, fmt.Errorf("there are still ongoing listings/orders"))
+		return
+	}
+
 	err = h.userStore.DeleteUser(user)
 	if err != nil {
 		log.Printf("error delete user: %v", err)

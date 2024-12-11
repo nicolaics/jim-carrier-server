@@ -380,19 +380,35 @@ func (s *Store) SaveToken(userId int, accessTokenDetails *types.TokenDetails, re
 	accessTokenExp := time.Unix(accessTokenDetails.TokenExp, 0)   //converting Unix to UTC(to Time object)
 	refreshTokenExp := time.Unix(refreshTokenDetails.TokenExp, 0) //converting Unix to UTC(to Time object)
 
-	query := "INSERT INTO verify_token(user_id, uuid, token_type, expired_at) VALUES (?, ?, ?, ?)"
-	_, err := s.db.Exec(query, userId, accessTokenDetails.UUID, constants.ACCESS_TOKEN, accessTokenExp)
-	if err != nil {
-		return err
-	}
-
-	query = `SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND token_type = ?`
-	row := s.db.QueryRow(query, userId, constants.REFRESH_TOKEN)
+	query := `SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND token_type = ?`
+	row := s.db.QueryRow(query, userId, constants.ACCESS_TOKEN)
 	if row.Err() != nil {
 		return row.Err()
 	}
 
 	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		query = "INSERT INTO verify_token(user_id, uuid, token_type, expired_at) VALUES (?, ?, ?, ?)"
+		_, err = s.db.Exec(query, userId, accessTokenDetails.UUID, constants.ACCESS_TOKEN, accessTokenExp)
+	} else {
+		query = `UPDATE verify_token SET uuid = ?, expired_at = ? WHERE user_id = ? AND token_type = ?`
+		_, err = s.db.Exec(query, accessTokenDetails.UUID, accessTokenExp, userId, constants.ACCESS_TOKEN)
+	}
+	if err != nil {
+		return err
+	}
+
+	query = `SELECT COUNT(*) FROM verify_token WHERE user_id = ? AND token_type = ?`
+	row = s.db.QueryRow(query, userId, constants.REFRESH_TOKEN)
+	if row.Err() != nil {
+		return row.Err()
+	}
+	
 	err = row.Scan(&count)
 	if err != nil {
 		return err
@@ -536,7 +552,7 @@ func (s *Store) ValidateUserRefreshToken(refreshToken string) (*types.User, erro
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-		
+
 		return nil, err
 	}
 
@@ -677,6 +693,42 @@ func (s *Store) UpdateFCMToken(id int, fcmToken string) error {
 	}
 
 	return nil
+}
+
+func (s *Store) IsDeleteUserAllowed(id int) (bool, error) {
+	query := `SELECT COUNT(*) FROM order_list 
+				WHERE giver_id = ? 
+				AND (
+					(order_status NOT IN (?, ?) AND payment_status = ?) 
+					OR (order_status != ? AND payment_status = ?) 
+				) 
+				AND deleted_at IS NULL`
+	row := s.db.QueryRow(query, id, constants.ORDER_STATUS_WAITING, constants.ORDER_STATUS_CANCELLED, 
+						constants.PAYMENT_STATUS_PENDING, constants.ORDER_STATUS_COMPLETED, 
+						constants.PAYMENT_STATUS_COMPLETED)
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	if count > 0 {
+		return false, nil
+	}
+
+	query = `SELECT COUNT(*) FROM listing 
+				WHERE carrier_id = ? 
+				AND exp_status = ? 
+				AND deleted_at IS NULL`
+	row = s.db.QueryRow(query, id, constants.EXP_STATUS_AVAILABLE)
+
+	err = row.Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return (count == 0), nil
 }
 
 func scanRowIntoUser(rows *sql.Rows) (*types.User, error) {
