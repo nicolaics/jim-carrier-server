@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -99,8 +98,8 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	exists, provider, err := h.userStore.CheckProvider(payload.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -123,8 +122,8 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	password, err := h.userStore.GetUserPasswordByEmail(payload.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -137,8 +136,8 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	isAccessTokenExist, err := h.userStore.IsAccessTokenExist(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -150,32 +149,32 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -218,8 +217,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5, constants.SIGNUP)
 	if err != nil {
 		log.Printf("code validation error: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("code validation error: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("code validation error: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -231,8 +230,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE, constants.SIGNUP)
 	if err != nil {
 		log.Printf("error update verification code: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error update verification code: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update verification code: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -240,8 +239,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	exist, _, err := h.userStore.CheckProvider(payload.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 	if exist {
@@ -253,8 +252,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := auth.HashPassword(payload.Password)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -268,8 +267,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error create user: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error create user: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error create user: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 	}
 
 	user, _ := h.userStore.GetUserByEmail(payload.Email)
@@ -322,8 +321,8 @@ func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	imageBytes, err := utils.GetImage(user.ProfilePictureURL)
 	if err != nil {
 		log.Printf("error reading the picture: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -363,8 +362,8 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	isAllowed, err := h.userStore.IsDeleteUserAllowed(user.ID)
 	if err != nil {
 		log.Printf("is delete user error: %v \n", err)
-		logger.WriteServerLog(fmt.Sprintf("is delete user error: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("is delete user error: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -376,8 +375,8 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.DeleteUser(user)
 	if err != nil {
 		log.Printf("error delete user: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error delete user: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error delete user: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -426,8 +425,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error modify user: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error modify user: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error modify user: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -455,16 +454,16 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdateLastLoggedIn(accessDetails.UserID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.DeleteToken(accessDetails.UserID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -493,8 +492,8 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	isUserExist, err := h.userStore.IsUserExist(payload.Email)
 	if err != nil {
 		log.Printf("user table error: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("user table error: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("user table error: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -502,8 +501,8 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	valid, err := h.userStore.DelayCodeWithinTime(payload.Email, 1)
 	if err != nil {
 		log.Printf("verify code table error: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("verify code table error: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("verify code table error: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -540,8 +539,8 @@ func (h *Handler) handleSendVerification(w http.ResponseWriter, r *http.Request)
 	err = h.userStore.SaveVerificationCode(payload.Email, code, requestType)
 	if err != nil {
 		log.Printf("error saving verification code: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error saving verification code: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving verification code: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -578,16 +577,16 @@ func (h *Handler) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := auth.HashPassword(payload.NewPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.UpdatePassword(user.ID, hashedPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -625,8 +624,8 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	password, err := h.userStore.GetUserPasswordByEmail(user.Email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -638,16 +637,16 @@ func (h *Handler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := auth.HashPassword(payload.NewPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.UpdatePassword(user.ID, hashedPassword)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -704,24 +703,24 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
 		if err != nil {
 			log.Printf("failed to save image: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("failed to save image: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to save image: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
 		err = h.userStore.UpdateProfilePicture(user.ID, imageURL)
 		if err != nil {
 			log.Printf("error update profile picture: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error update profile picture: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update profile picture: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 	} else {
 		err = h.userStore.UpdateProfilePicture(user.ID, "")
 		if err != nil {
 			log.Printf("error update profile picture: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error update profile picture: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update profile picture: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 	}
@@ -770,8 +769,8 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	exists, provider, err := h.userStore.CheckProvider(email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -787,8 +786,8 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.GetUserByEmail(email)
 	if err != nil || user == nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -802,8 +801,8 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	isAccessTokenExist, err := h.userStore.IsAccessTokenExist(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -815,16 +814,16 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -838,16 +837,16 @@ func (h *Handler) handleLoginGoogle(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -900,8 +899,8 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	exist, _, err := h.userStore.CheckProvider(email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 	if exist {
@@ -920,16 +919,16 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error create user: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error create user: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error create user: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	user, err := h.userStore.GetUserByEmail(email)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -956,24 +955,24 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -1060,32 +1059,32 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.DeleteToken(user.ID)
 	if err != nil {
 		log.Printf("error delete token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error delete token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error delete token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	accessTokenDetails, err := jwt.CreateAccessToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate access token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate access token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
 	if err != nil {
 		log.Printf("failed to generate refresh token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -1099,8 +1098,8 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	err = h.userStore.UpdateLastLoggedIn(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -1135,8 +1134,8 @@ func (h *Handler) handleVerifyVerification(w http.ResponseWriter, r *http.Reques
 	valid, err := h.userStore.ValidateLoginCodeWithinTime(payload.Email, payload.VerificationCode, 5, constants.FORGET_PASSWORD)
 	if err != nil {
 		log.Printf("code validation error: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("code validation error: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("code validation error: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -1148,8 +1147,8 @@ func (h *Handler) handleVerifyVerification(w http.ResponseWriter, r *http.Reques
 	err = h.userStore.UpdateVerificationCodeStatus(payload.Email, constants.VERIFY_CODE_COMPLETE, constants.FORGET_PASSWORD)
 	if err != nil {
 		log.Printf("error updating verification code: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error updating verification code: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error updating verification code: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 

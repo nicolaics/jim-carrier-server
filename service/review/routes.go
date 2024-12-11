@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -82,8 +81,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -138,8 +137,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error create review: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error create review: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error create review: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -163,16 +162,16 @@ func (h *Handler) handleGetAllSent(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	reviews, err := h.reviewStore.GetSentReviewsByUserID(user.ID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -210,8 +209,8 @@ func (h *Handler) handleGetAllReceived(w http.ResponseWriter, r *http.Request) {
 	reviews, err := h.reviewStore.GetReceivedReviewsByUserID(payload.CarrierID)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -253,8 +252,8 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -266,8 +265,8 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	err = h.reviewStore.DeleteReview(payload.ID)
 	if err != nil {
 		log.Printf("error delete review: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error delete review: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error delete review: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -309,8 +308,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -322,8 +321,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	err = h.reviewStore.ModifyReview(review.ID, payload.Content, payload.Rating)
 	if err != nil {
 		log.Printf("error modify review: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error modify review: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error modify review: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 

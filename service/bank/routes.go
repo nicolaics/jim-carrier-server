@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -69,8 +68,8 @@ func (h *Handler) handleUpdateBankDetail(w http.ResponseWriter, r *http.Request)
 	err = h.bankDetailStore.UpdateBankDetails(user.ID, payload.BankName, payload.AccountNumber, payload.AccountHolder)
 	if err != nil {
 		log.Printf("error update bank detail: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error update bank detail: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update bank detail: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -98,8 +97,8 @@ func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
 	bankDetail, err := h.bankDetailStore.GetBankDataOfUser(user.ID)
 	if err != nil {
 		log.Printf("error get bank detail: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error get bank detail: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error get bank detail: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 

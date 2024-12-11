@@ -92,8 +92,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -112,8 +112,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -124,8 +124,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -137,8 +137,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -146,16 +146,16 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		err = h.currencyStore.CreateCurrency(payload.Currency)
 		if err != nil {
 			log.Printf("error create currency: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error create currency: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error create currency: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
 		currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
 			log.Println(err)
-			logger.WriteServerLog(fmt.Sprintf("%v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 	}
@@ -210,8 +210,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error create order: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error create order: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error create order: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -227,8 +227,8 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error finding order ID: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error finding order ID: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error finding order ID: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -282,8 +282,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -295,8 +295,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		orders, err := h.orderStore.GetOrdersByCarrierID(user.ID)
 		if err != nil {
 			log.Println(err)
-			logger.WriteServerLog(fmt.Sprintf("%v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -309,8 +309,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			packageImage, err := utils.GetImage(order.PackageImageURL)
 			if err != nil {
 				log.Printf("error reading the picture: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
@@ -342,8 +342,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 		orders, err := h.orderStore.GetOrdersByGiverID(user.ID)
 		if err != nil {
 			log.Println(err)
-			logger.WriteServerLog(fmt.Sprintf("%v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -356,8 +356,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			packageImage, err := utils.GetImage(order.PackageImageURL)
 			if err != nil {
 				log.Printf("error reading the picture: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
@@ -426,8 +426,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -440,8 +440,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 		order, err := h.orderStore.GetCarrierOrderByID(payload.ID, user.ID)
 		if err != nil {
 			log.Println(err)
-			logger.WriteServerLog(fmt.Sprintf("%v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -452,8 +452,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 		packageImage, err := utils.GetImage(order.PackageImageURL)
 		if err != nil {
 			log.Printf("error reading the picture: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -480,8 +480,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 		order, err := h.orderStore.GetGiverOrderByID(payload.ID, user.ID)
 		if err != nil {
 			log.Println(err)
-			logger.WriteServerLog(fmt.Sprintf("%v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -492,8 +492,8 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 		packageImage, err := utils.GetImage(order.PackageImageURL)
 		if err != nil {
 			log.Printf("error reading the picture: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -557,16 +557,16 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	err = h.orderStore.DeleteOrder(payload.ID, user.ID)
 	if err != nil {
 		log.Printf("error deleting order: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error deleting order: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error deleting order: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -593,8 +593,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
@@ -650,8 +650,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		currency, err := h.currencyStore.GetCurrencyByName(payload.Currency)
 		if err != nil {
 			log.Println(err)
-			logger.WriteServerLog(fmt.Sprintf("%v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -659,16 +659,16 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			err = h.currencyStore.CreateCurrency(payload.Currency)
 			if err != nil {
 				log.Printf("error create currency: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error create currency: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error create currency: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
 			currency, err = h.currencyStore.GetCurrencyByName(payload.Currency)
 			if err != nil {
 				log.Println(err)
-				logger.WriteServerLog(fmt.Sprintf("%v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 		}
@@ -716,8 +716,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		err = h.listingStore.AddWeightAvailable(listing.ID, order.Weight)
 		if err != nil {
 			log.Printf("error reset weight available: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error reset weight available: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reset weight available: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -827,8 +827,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		err = h.orderStore.UpdatePackageLocation(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
 			log.Printf("error update package location: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error update package location: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update package location: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -932,24 +932,24 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			err = utils.SavePaymentProof(payload.PaymentProof, filePath)
 			if err != nil {
 				log.Printf("error saving payment proof: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error saving payment proof: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving payment proof: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
 			listing, err := h.listingStore.GetListingByID(order.ListingID)
 			if err != nil {
 				log.Printf("error get listing: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error get listing: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error get listing: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
 			carrier, err := h.userStore.GetUserByID(listing.CarrierID)
 			if err != nil {
 				log.Printf("error get carrier: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error get carrier: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error get carrier: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
@@ -960,8 +960,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			err = utils.SendEmail(carrier.Email, subject, body, filePath, "Payment Proof")
 			if err != nil {
 				log.Printf("error sending payment completion email to carrier: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error sending payment completion email to carrier: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error sending payment completion email to carrier: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
@@ -992,8 +992,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		err = h.orderStore.UpdatePaymentStatus(order.ID, paymentStatus, paymentProofUrl)
 		if err != nil {
 			log.Printf("error update payment status: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error update payment status: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update payment status: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -1039,8 +1039,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			}
 			if err != nil {
 				log.Println(err)
-				logger.WriteServerLog(fmt.Sprintf("%v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 
@@ -1061,8 +1061,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				err = h.orderStore.UpdateOrderStatus(order.ID, constants.ORDER_STATUS_CANCELLED, "")
 				if err != nil {
 					log.Printf("error update order status: %v", err)
-					logger.WriteServerLog(fmt.Sprintf("error update order status: %v", err))
-					utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+					logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update order status: %v", err))
+					utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 					return
 				}
 
@@ -1078,8 +1078,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 			err = h.listingStore.SubtractWeightAvailable(listing.ID, order.Weight)
 			if err != nil {
 				log.Printf("error update weight available: %v", err)
-				logger.WriteServerLog(fmt.Sprintf("error update weight available: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update weight available: %v", err))
+				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 				return
 			}
 		}
@@ -1087,24 +1087,24 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		err = h.orderStore.UpdateOrderStatus(order.ID, orderStatus, payload.PackageLocation)
 		if err != nil {
 			log.Printf("error update order status: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error update order status: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error update order status: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
 		listing, err := h.listingStore.GetListingByID(order.ListingID)
 		if err != nil {
 			log.Printf("error get listing: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error get listing: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error get listing: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
 		giver, err := h.userStore.GetUserByID(order.GiverID)
 		if err != nil {
 			log.Printf("error get giver: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error get giver: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error get giver: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -1125,8 +1125,8 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		err = utils.SendEmail(giver.Email, subject, emailBody, "", "")
 		if err != nil {
 			log.Printf("error sending update order status email to carrier: %v", err)
-			logger.WriteServerLog(fmt.Sprintf("error sending update order status email to carrier: %v", err))
-			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error sending update order status email to carrier: %v", err))
+			utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 			return
 		}
 
@@ -1192,16 +1192,16 @@ func (h *Handler) handleGetPaymentDetails(w http.ResponseWriter, r *http.Request
 	}
 	if err != nil {
 		log.Println(err)
-		logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
 	bankDetail, err := h.bankDetailStore.GetBankDetailByUserID(carrier.ID)
 	if err != nil {
 		log.Printf("error fetching bank data: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("error fetching bank data: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", time.Now().UTC()))
+		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error fetching bank data: %v", err))
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
 		return
 	}
 
