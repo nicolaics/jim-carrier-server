@@ -31,8 +31,7 @@ func WriteServerLog(errorMessage string) (string, error) {
 	defer file.Close()
 
 	// store the data into the file
-	msg := fmt.Sprintf("[Error %s]\n", time.Now().Format("2006-01-02 T15:04:05"))
-	msg += errorMessage
+	msg := fmt.Sprintf("[Error %s]\n%s\n\n", time.Now().Format("2006/01/02 15:04:05"), errorMessage)
 	_, err = file.WriteString(msg)
 	if err != nil {
 		log.Printf("error write string: %v", err)
