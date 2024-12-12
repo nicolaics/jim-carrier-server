@@ -73,3 +73,15 @@ func PaymentStatusIntToString(paymentStatus int) string {
 
 	return paymentStr
 }
+
+func ExpStatusIntToString(expStatus int) string {
+	var expStatusStr string
+	switch expStatus {
+	case constants.EXP_STATUS_AVAILABLE:
+		expStatusStr = constants.AVAILABLE_STATUS_STR
+	case constants.EXP_STATUS_EXPIRED:
+		expStatusStr = constants.EXPIRED_STATUS_STR
+	}
+
+	return expStatusStr
+}
