@@ -50,7 +50,9 @@ func (s *Store) GetAllListings(carrierId int) ([]types.ListingReturnFromDB, erro
 					l.weight_available, l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
-					l.last_received_date, l.description, 
+					l.last_received_date, 
+					l.exp_status, 
+					l.description, 
 					l.last_modified_at  
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
@@ -89,7 +91,9 @@ func (s *Store) GetListingsByCarrierID(carrierId int) ([]types.ListingReturnFrom
 					l.weight_available, l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
-					l.last_received_date, l.description, 
+					l.last_received_date, 
+					l.exp_status, 
+					l.description, 
 					l.last_modified_at  
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
@@ -155,7 +159,9 @@ func (s *Store) GetListingByPayload(carrierName string, destination string, weig
 					l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
-					l.last_received_date, l.description, 
+					l.last_received_date, 
+					l.exp_status, 
+					l.description, 
 					l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
@@ -192,7 +198,9 @@ func (s *Store) GetListingByID(id int) (*types.ListingReturnFromDB, error) {
 					l.price_per_kg, 
 					c.name, 
 					l.departure_date, 
-					l.last_received_date, l.description, 
+					l.last_received_date, 
+					l.exp_status, 
+					l.description, 
 					l.last_modified_at 
 				FROM listing AS l 
 				JOIN user ON user.id = l.carrier_id 
@@ -312,6 +320,7 @@ func scanRowIntoListingReturn(rows *sql.Rows) (*types.ListingReturnFromDB, error
 		&listing.Currency,
 		&listing.DepartureDate,
 		&listing.LastReceivedDate,
+		&listing.ExpStatus,
 		&listing.Description,
 		&listing.LastModifiedAt,
 	)

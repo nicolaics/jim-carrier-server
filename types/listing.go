@@ -32,9 +32,6 @@ type PostListingPayload struct {
 	DepartureDate    string  `json:"departureDate" validate:"required"`
 	LastReceivedDate string  `json:"lastReceivedDate" validate:"required"`
 	Description      string  `json:"description"`
-	BankName         string  `json:"bankName" validate:"required"`
-	AccountNumber    string  `json:"accountNumber" validate:"required"`
-	AccountHolder    string  `json:"accountHolder" validate:"required"`
 }
 
 type GetListingDetailPayload struct {
@@ -57,9 +54,6 @@ type ModifyListingPayload struct {
 	DepartureDate    string  `json:"departureDate" validate:"required"`
 	LastReceivedDate string  `json:"lastReceivedDate" validate:"required"`
 	Description      string  `json:"description"`
-	BankName         string  `json:"bankName" validate:"required"`
-	AccountNumber    string  `json:"accountNumber" validate:"required"`
-	AccountHolder    string  `json:"accountHolder" validate:"required"`
 }
 
 type ListingReturnPayload struct {
@@ -74,6 +68,7 @@ type ListingReturnPayload struct {
 	Currency              string           `json:"currency"`
 	DepartureDate         time.Time        `json:"departureDate"`
 	LastReceivedDate      time.Time        `json:"lastReceivedDate"`
+	ExpStatus             string           `json:"expStatus"`
 	Description           string           `json:"description"`
 	CarrierRating         float64          `json:"carrierRating"`
 	LastModifiedAt        time.Time        `json:"lastModifiedAt"`
@@ -91,6 +86,7 @@ type ListingReturnFromDB struct {
 	Currency         string         `json:"currency"`
 	DepartureDate    time.Time      `json:"departureDate"`
 	LastReceivedDate time.Time      `json:"lastReceivedDate"`
+	ExpStatus        int            `json:"expStatus"`
 	Description      sql.NullString `json:"description"`
 	CarrierRating    float64        `json:"carrierRating"`
 	LastModifiedAt   time.Time      `json:"lastModifiedAt"`
