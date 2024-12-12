@@ -70,8 +70,8 @@ func (h *Handler) RegisterUnprotectedRoutes(router *mux.Router) {
 	router.HandleFunc("/user/refresh", h.handleRefreshToken).Methods(http.MethodPost)
 	router.HandleFunc("/user/refresh", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	router.HandleFunc("/user/auto-login", h.handleAutoLogin).Methods(http.MethodPost)
-	router.HandleFunc("/user/auto-login", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+	router.HandleFunc("/user/login/auto", h.handleAutoLogin).Methods(http.MethodPost)
+	router.HandleFunc("/user/login/auto", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
