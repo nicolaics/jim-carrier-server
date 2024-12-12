@@ -35,8 +35,8 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/review", h.handleRegister).Methods(http.MethodPost)
 	router.HandleFunc("/review", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	router.HandleFunc("/review/sent", h.handleGetAllSent).Methods(http.MethodGet)
-	router.HandleFunc("/review/sent", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+	// router.HandleFunc("/review/sent", h.handleGetAllSent).Methods(http.MethodGet)
+	// router.HandleFunc("/review/sent", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	router.HandleFunc("/review/received", h.handleGetAllReceived).Methods(http.MethodPost)
 	router.HandleFunc("/review/received", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
@@ -145,6 +145,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusCreated, "review created")
 }
 
+/*
 func (h *Handler) handleGetAllSent(w http.ResponseWriter, r *http.Request) {
 	// validate token
 	user, err := h.userStore.ValidateUserAccessToken(w, r)
@@ -177,6 +178,7 @@ func (h *Handler) handleGetAllSent(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSON(w, http.StatusOK, reviews)
 }
+*/
 
 func (h *Handler) handleGetAllReceived(w http.ResponseWriter, r *http.Request) {
 	var payload types.ReceivedReviewPayload
