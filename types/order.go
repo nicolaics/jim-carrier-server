@@ -72,7 +72,7 @@ type UpdatePackageLocationPayload struct {
 type UpdatePaymentStatusPayload struct {
 	ID            int    `json:"id" validate:"required"`
 	PaymentStatus string `json:"paymentStatus" validate:"required"`
-	PaymentProof  []byte `json:"paymentProof"`
+	PaymentProof  []byte `json:"paymentProof" validate:"required"`
 }
 
 type UpdateOrderStatusPayload struct {
