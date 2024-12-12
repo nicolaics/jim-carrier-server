@@ -86,7 +86,7 @@ type LoginGooglePayload struct {
 	IDToken        string `json:"idToken" validate:"required"`
 	ServerAuthCode string `json:"serverAuthCode" validate:"required"`
 	FCMToken       string `json:"fcmToken"`
-}
+}	
 
 // request verification code payload
 type UserVerificationCodePayload struct {
