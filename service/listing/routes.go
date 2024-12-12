@@ -45,8 +45,8 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/listing/{reqType}", h.handleGetAll).Methods(http.MethodGet)
 	router.HandleFunc("/listing/{reqType}", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
-	router.HandleFunc("/listing/detail", h.handleGetDetail).Methods(http.MethodPost)
-	router.HandleFunc("/listing/detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
+	// router.HandleFunc("/listing/detail", h.handleGetDetail).Methods(http.MethodPost)
+	// router.HandleFunc("/listing/detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	router.HandleFunc("/listing", h.handleDelete).Methods(http.MethodDelete)
 
@@ -54,9 +54,6 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 
 	router.HandleFunc("/listing/package-location", h.handleUpdatePackageLocation).Methods(http.MethodPatch)
 	router.HandleFunc("/listing/package-location", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
-
-	router.HandleFunc("/listing/bank-detail", h.handleGetBankDetail).Methods(http.MethodGet)
-	router.HandleFunc("/listing/bank-detail", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
 
 	router.HandleFunc("/listing/count-orders", h.handleCountOrdersForOneListing).Methods(http.MethodPost)
 	router.HandleFunc("/listing/count-orders", func(w http.ResponseWriter, r *http.Request) { utils.WriteJSONForOptions(w, http.StatusOK, nil) }).Methods(http.MethodOptions)
@@ -162,11 +159,6 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.bankDetailStore.UpdateBankDetails(carrier.ID, payload.BankName, payload.AccountNumber, payload.AccountHolder)
-	if err != nil {
-		logger.WriteServerLog(fmt.Sprintf("failed to update bank details: %v", err))
-	}
-
 	utils.WriteJSON(w, http.StatusCreated, "listing successfully created")
 }
 
@@ -253,6 +245,8 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		expStatus := utils.ExpStatusIntToString(listing.ExpStatus)
+
 		response = append(response, types.ListingReturnPayload{
 			ID:                    listing.ID,
 			CarrierID:             listing.CarrierID,
@@ -265,6 +259,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			Currency:              listing.Currency,
 			DepartureDate:         listing.DepartureDate,
 			LastReceivedDate:      listing.LastReceivedDate,
+			ExpStatus:             expStatus,
 			Description:           listing.Description.String,
 			CarrierRating:         avgRating,
 			LastModifiedAt:        listing.LastModifiedAt,
@@ -275,6 +270,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, response)
 }
 
+/*
 func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 	var payload types.GetListingDetailPayload
 
@@ -327,6 +323,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSON(w, http.StatusOK, listing)
 }
+*/
 
 func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	var payload types.DeleteListingPayload
@@ -480,11 +477,6 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.bankDetailStore.UpdateBankDetails(user.ID, payload.BankName, payload.AccountNumber, payload.AccountHolder)
-	if err != nil {
-		logger.WriteServerLog(fmt.Sprintf("error update bank details for user %s:\n%v", user.Email, err))
-	}
-
 	err = h.listingStore.ModifyListing(listing.ID, types.Listing{
 		Destination:      payload.Destination,
 		WeightAvailable:  payload.WeightAvailable,
@@ -503,39 +495,6 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSON(w, http.StatusOK, "modify success")
-}
-
-func (h *Handler) handleGetBankDetail(w http.ResponseWriter, r *http.Request) {
-	// validate token
-	user, err := h.userStore.ValidateUserAccessToken(w, r)
-	if err != nil {
-		log.Printf("token invalid: %v", err)
-		logger.WriteServerLog(fmt.Sprintf("token invalid: %v", err))
-		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("token invalid"))
-		return
-	}
-
-	user, err = h.userStore.GetUserByID(user.ID)
-	if user == nil {
-		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("account not found"))
-		return
-	}
-	if err != nil {
-		log.Println(err)
-		logFile, _ := logger.WriteServerLog(fmt.Sprintf("%v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
-		return
-	}
-
-	bankDetail, err := h.bankDetailStore.GetBankDataOfUser(user.ID)
-	if err != nil {
-		log.Printf("error fetching bank data: %v", err)
-		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error fetching bank data: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
-		return
-	}
-
-	utils.WriteJSON(w, http.StatusOK, bankDetail)
 }
 
 func (h *Handler) handleUpdatePackageLocation(w http.ResponseWriter, r *http.Request) {
