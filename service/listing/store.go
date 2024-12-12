@@ -30,7 +30,7 @@ func (s *Store) CreateListing(listing types.Listing) error {
 					VALUES (` + values + `)`
 
 	_, err := s.db.Exec(query, listing.CarrierID, listing.Destination, listing.WeightAvailable,
-		listing.PricePerKg, listing.CurrencyID, listing.DepartureDate, 
+		listing.PricePerKg, listing.CurrencyID, listing.DepartureDate,
 		listing.LastReceivedDate, listing.ExpStatus, listing.Description)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func (s *Store) GetAllListings(carrierId int) ([]types.ListingReturnFromDB, erro
 				WHERE l.exp_status = ? 
 				AND l.carrier_id != ? 
 				AND l.deleted_at IS NULL 
-				ORDER BY l.departure_date DESC`
+				ORDER BY l.departure_date ASC`
 	rows, err := s.db.Query(query, constants.EXP_STATUS_AVAILABLE, carrierId)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (s *Store) GetListingsByCarrierID(carrierId int) ([]types.ListingReturnFrom
 				JOIN currency AS c ON c.id = l.currency_id 
 				WHERE l.carrier_id = ? 
 				AND l.deleted_at IS NULL 
-				ORDER BY l.departure_date DESC`
+				ORDER BY l.exp_status ASC, l.departure_date ASC`
 	rows, err := s.db.Query(query, carrierId)
 	if err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func (s *Store) ModifyListing(id int, listing types.Listing) error {
 				WHERE id = ? AND deleted_at IS NULL`
 
 	_, err := s.db.Exec(query, listing.Destination, listing.WeightAvailable,
-		listing.PricePerKg, listing.CurrencyID, listing.DepartureDate, 
+		listing.PricePerKg, listing.CurrencyID, listing.DepartureDate,
 		listing.LastReceivedDate, listing.ExpStatus,
 		listing.Description, time.Now(), id)
 	if err != nil {

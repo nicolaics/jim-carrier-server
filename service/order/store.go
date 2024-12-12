@@ -90,7 +90,7 @@ func (s *Store) GetOrdersByCarrierID(id int) ([]types.OrderCarrierReturnFromDB, 
 					WHERE l.carrier_id = ? 
 					AND o.deleted_at IS NULL 
 					AND l.deleted_at IS NULL 
-					ORDER BY l.departure_date DESC`
+					ORDER BY l.departure_date ASC`
 	rows, err := s.db.Query(query, id)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (s *Store) GetOrdersByGiverID(id int) ([]types.OrderGiverReturnFromDB, erro
 					WHERE o.giver_id = ? 
 					AND o.deleted_at IS NULL 
 					AND l.deleted_at IS NULL 
-					ORDER BY l.departure_date DESC`
+					ORDER BY o.order_status ASC, l.departure_date ASC`
 	rows, err := s.db.Query(query, id)
 	if err != nil {
 		return nil, err
@@ -169,7 +169,7 @@ func (s *Store) GetCarrierOrderByID(orderId int, userId int) (*types.OrderCarrie
 					AND l.carrier_id = ? 
 					AND o.deleted_at IS NULL 
 					AND l.deleted_at IS NULL 
-					ORDER BY l.departure_date DESC`
+					ORDER BY l.departure_date ASC`
 	rows, err := s.db.Query(query, orderId, userId)
 	if err != nil {
 		return nil, err
@@ -211,7 +211,7 @@ func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverRet
 					AND o.giver_id = ? 
 					AND o.deleted_at IS NULL 
 					AND l.deleted_at IS NULL 
-					ORDER BY l.departure_date DESC`
+					ORDER BY l.departure_date ASC`
 	rows, err := s.db.Query(query, orderId, userId)
 	if err != nil {
 		return nil, err
@@ -376,7 +376,7 @@ func (s *Store) IsPackageImageURLExist(packageImgUrl string) bool {
 	return (count > 0)
 }
 
-func (s *Store) UpdateOrderStatusByDeadline() error {	
+func (s *Store) UpdateOrderStatusByDeadline() error {
 	query := `UPDATE order_list SET order_status = ?, last_modified_at = ? 
 				WHERE order_confirmation_deadline < ? 
 				AND order_status = ? 
@@ -464,9 +464,9 @@ func (s *Store) GetOrderCountByListingID(listingId int) (int, error) {
 				AND o.payment_status != ? 
 				AND o.deleted_at IS NULL 
 				AND l.deleted_at IS NULL`
-	row := s.db.QueryRow(query, listingId, 
-						constants.ORDER_STATUS_CANCELLED, constants.ORDER_STATUS_WAITING,
-						constants.PAYMENT_STATUS_COMPLETED)
+	row := s.db.QueryRow(query, listingId,
+		constants.ORDER_STATUS_CANCELLED, constants.ORDER_STATUS_WAITING,
+		constants.PAYMENT_STATUS_COMPLETED)
 	if row.Err() != nil {
 		return 0, row.Err()
 	}
