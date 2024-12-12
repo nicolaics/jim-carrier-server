@@ -16,9 +16,9 @@ func WriteServerLog(errorMessage string) (string, error) {
 		return "", err
 	}
 
-	// currentDate := time.Now().Format("060102-150405") // YYMMDD-HHmmss
+	currentDate := time.Now().Format("060102-150405") // YYMMDD-HHmmss
 
-	fileName := fmt.Sprintf("%s-%s", utils.GenerateRandomCodeAlphanumeric(6), utils.GenerateRandomCodeAlphanumeric(6))
+	fileName := fmt.Sprintf("%s-%s", currentDate, utils.GenerateRandomCodeAlphanumeric(6))
 
 	filePath := fmt.Sprintf("%s/%s.log", logFolder, fileName)
 
