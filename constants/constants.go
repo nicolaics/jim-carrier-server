@@ -21,6 +21,8 @@ const CONFIRMED_STATUS_STR = "confirmed"
 const EN_ROUTE_STATUS_STR = "en-route"
 const PENDING_STATUS_STR = "pending"
 const REFUNDED_STATUS_STR = "refunded"
+const EXPIRED_STATUS_STR = "expired"
+const AVAILABLE_STATUS_STR = "available"
 
 const VERIFY_CODE_WAITING = 0
 const VERIFY_CODE_COMPLETE = 1
@@ -44,5 +46,3 @@ const PACKAGE_IMG_MAX_BYTES = 10 << 20 // 10MB in bytes
 
 const ACCESS_TOKEN = 0
 const REFRESH_TOKEN = 1
-
-// const DEFAULT_PROFILE_IMG_PATH = PROFILE_IMG_DIR_PATH + "default.png"
