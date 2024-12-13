@@ -353,13 +353,13 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 
 			orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
-			packageImage, err := utils.GetImage(order.PackageImageURL)
-			if err != nil {
-				log.Printf("error reading the picture: %v", err)
-				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
-				utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
-				return
-			}
+			// packageImage, err := utils.GetImage(order.PackageImageURL)
+			// if err != nil {
+			// 	log.Printf("error reading the picture: %v", err)
+			// 	logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
+			// 	utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
+			// 	return
+			// }
 
 			temp := types.OrderGiverReturnPayload{
 				Listing:         order.Listing,
@@ -368,7 +368,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 				Price:           order.Price,
 				Currency:        order.Currency,
 				PackageContent:  order.PackageContent,
-				PackageImage:    packageImage,
+				// PackageImage:    packageImage,
 				PaymentStatus:   paymentStatus,
 				PaidAt:          order.PaidAt.Time,
 				PaymentProofURL: order.PaymentProofURL.String,

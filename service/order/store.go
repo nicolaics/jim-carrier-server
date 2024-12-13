@@ -120,6 +120,7 @@ func (s *Store) GetOrdersByGiverID(id int) ([]types.OrderGiverReturnFromDB, erro
 						o.order_status, o.package_location, 
 						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
+						l.carrier_id, 
 						user.name, 
 						l.destination, l.departure_date 
 					FROM order_list AS o 
@@ -201,6 +202,7 @@ func (s *Store) GetGiverOrderByID(orderId int, userId int) (*types.OrderGiverRet
 						o.order_status, o.package_location, 
 						o.notes, o.created_at, o.last_modified_at, 
 						l.id, 
+						l.carrier_id, 
 						user.name, 
 						l.destination, l.departure_date 
 					FROM order_list AS o 
@@ -614,6 +616,7 @@ func scanRowIntoOrderForGiver(rows *sql.Rows) (*types.OrderGiverReturnFromDB, er
 		&order.CreatedAt,
 		&order.LastModifiedAt,
 		&order.Listing.ID,
+		&order.Listing.CarrierID,
 		&order.Listing.CarrierName,
 		&order.Listing.Destination,
 		&order.Listing.DepartureDate,

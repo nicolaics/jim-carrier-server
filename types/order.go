@@ -111,6 +111,7 @@ type OrderGiverReturnFromDB struct {
 
 	Listing struct {
 		ID            int       `json:"id"`
+		CarrierID     int       `json:"carrierId"`
 		CarrierName   string    `json:"carrierName"`
 		Destination   string    `json:"destination"`
 		DepartureDate time.Time `json:"departureDate"`
@@ -135,6 +136,7 @@ type OrderGiverReturnPayload struct {
 
 	Listing struct {
 		ID            int       `json:"id"`
+		CarrierID     int       `json:"carrierId"`
 		CarrierName   string    `json:"carrierName"`
 		Destination   string    `json:"destination"`
 		DepartureDate time.Time `json:"departureDate"`
