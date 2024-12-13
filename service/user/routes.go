@@ -20,7 +20,7 @@ import (
 
 type Handler struct {
 	userStore types.UserStore
-	bucket *s3.S3
+	bucket    *s3.S3
 }
 
 func NewHandler(userStore types.UserStore, bucket *s3.S3) *Handler {
@@ -294,7 +294,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// save the image
-		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension, h.bucket)
+		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, user.ProfilePictureURL, imageExtension, h.bucket)
 		if err != nil {
 			logger.WriteServerLog(fmt.Sprintf("user %s created but error saving profile picture: %v", payload.Email, err))
 		}
@@ -702,7 +702,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		}
 
 		// save the image
-		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension, h.bucket)
+		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension, user.ProfilePictureURL, h.bucket)
 		if err != nil {
 			log.Printf("failed to save image: %v", err)
 			logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to save image: %v", err))
@@ -940,7 +940,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 			logger.WriteServerLog(fmt.Sprintf("user %s created but error download profile picture: %v", email, err))
 		} else {
 			// save the image
-			imageURL, err := utils.SaveProfilePicture(user.ID, imageData, imageExtension, h.bucket)
+			imageURL, err := utils.SaveProfilePicture(user.ID, imageData, imageExtension, user.ProfilePictureURL, h.bucket)
 			if err != nil {
 				logger.WriteServerLog(fmt.Sprintf("user %s created but error saving profile picture: %v", email, err))
 			}
@@ -1098,7 +1098,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokens := map[string]string{
-		"access_token":  accessTokenDetails.Token,
+		"access_token": accessTokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, tokens)

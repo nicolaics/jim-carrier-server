@@ -193,7 +193,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// save the image
-		err := utils.SavePackageImage(payload.PackageImage, filePath)
+		err := utils.SaveImage(payload.PackageImage, filePath, h.bucket)
 		if err != nil {
 			logger.WriteServerLog(fmt.Sprintf("error saving package image: %v", err))
 		}
@@ -707,7 +707,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// save the image
-				err := utils.SavePackageImage(payload.PackageImage, filePath)
+				err := utils.SaveImage(payload.PackageImage, filePath, h.bucket)
 				if err != nil {
 					logger.WriteServerLog(fmt.Sprintf("error saving package image: %v", err))
 				}
@@ -932,7 +932,7 @@ func (h *Handler) handleModify(w http.ResponseWriter, r *http.Request) {
 				isPaymentProofUrlExist = h.orderStore.IsPaymentProofURLExist(filePath)
 			}
 
-			err = utils.SavePaymentProof(payload.PaymentProof, filePath)
+			err = utils.SaveImage(payload.PaymentProof, filePath, h.bucket)
 			if err != nil {
 				log.Printf("error saving payment proof: %v", err)
 				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving payment proof: %v", err))

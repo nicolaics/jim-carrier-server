@@ -23,12 +23,6 @@ func GetImage(imageURL string, s3Bucket *s3.S3) ([]byte, error) {
     if err != nil {
         return nil, fmt.Errorf("error read data: %v", err)
     }
-
 	
-	// buf := new(bytes.Buffer)
-	// buf.ReadFrom(rawObject.Body)
-
-	// imageBytes, err := os.ReadFile(imageURL)
-
 	return imageBytes, nil
 }
