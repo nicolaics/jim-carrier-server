@@ -36,9 +36,9 @@ const PROVIDER_GMAIL = "gmail"
 const REVIEW_GIVER_TO_CARRIER = 0
 const REVIEW_CARRIER_TO_GIVER = 1
 
-const PAYMENT_PROOF_DIR_PATH = "./static/img/payment_proof/"
-const PROFILE_IMG_DIR_PATH = "./static/img/profile_img/"
-const PACKAGE_IMG_DIR_PATH = "./static/img/package/"
+const PAYMENT_PROOF_DIR_PATH = "static/img/payment_proof/"
+const PROFILE_IMG_DIR_PATH = "static/img/profile_img/"
+const PACKAGE_IMG_DIR_PATH = "static/img/package/"
 
 const PAYMENT_PROOF_MAX_BYTES = 10 << 20 // 10MB in bytes
 const PROFILE_IMG_MAX_BYTES = 5 << 20 // 5MB in bytes

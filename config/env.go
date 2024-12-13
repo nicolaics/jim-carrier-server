@@ -24,6 +24,8 @@ type Config struct {
 	GoogleClientID                   string
 	GoogleClientSecret               string
 	GoogleApplicationCredentialsPath string
+	BucketName                       string
+	AWSRegion                        string
 }
 
 var Envs = initConfig()
@@ -39,15 +41,17 @@ func initConfig() Config {
 		DBAddress: fmt.Sprintf("%s:%s", getEnv("DB_HOST", "127.0.0.1"),
 			getEnv("DB_PORT", "3306")),
 		DBName:                           getEnv("DB_NAME", "jim_carrier"),
-		JWTAccessExpInSeconds:           getEnvAsInt("JWT_ACCESS_EXP", (3600 * 6)), // for 6 hours
-		JWTAccessSecret:                        getEnv("JWT_ACCESS_SECRET", "access-secret"),
+		JWTAccessExpInSeconds:            getEnvAsInt("JWT_ACCESS_EXP", (3600 * 6)), // for 6 hours
+		JWTAccessSecret:                  getEnv("JWT_ACCESS_SECRET", "access-secret"),
 		JWTRefreshExpInSeconds:           getEnvAsInt("JWT_REFRESH_EXP", (3600 * 24 * 7)), // for 1 week
-		JWTRefreshSecret:                        getEnv("JWT_REFRESH_SECRET", "access-secret"),
+		JWTRefreshSecret:                 getEnv("JWT_REFRESH_SECRET", "access-secret"),
 		CompanyEmail:                     getEnv("COMPANY_EMAIL", "abc@gmail.com"),
 		CompanyEmailPassword:             getEnv("COMPANY_EMAIL_PASSWORD", "1234"),
 		GoogleClientID:                   getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret:               getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleApplicationCredentialsPath: getEnv("GOOGLE_APPLICATION_CREDENTIALS_PATH", ""),
+		BucketName:                       getEnv("BUCKET_NAME", "jim"),
+		AWSRegion:                        getEnv("AWS_REGION", "us"),
 	}
 }
 

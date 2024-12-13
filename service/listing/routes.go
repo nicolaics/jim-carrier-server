@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier-server/constants"
@@ -21,12 +22,13 @@ type Handler struct {
 	bankDetailStore types.BankDetailStore
 	orderStore      types.OrderStore
 	fcmHistoryStore types.FCMHistoryStore
+	bucket *s3.S3
 }
 
 func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 	currencyStore types.CurrencyStore, reviewStore types.ReviewStore,
 	bankDetailStore types.BankDetailStore, orderStore types.OrderStore,
-	fcmHistoryStore types.FCMHistoryStore) *Handler {
+	fcmHistoryStore types.FCMHistoryStore, bucket *s3.S3) *Handler {
 	return &Handler{
 		listingStore:    listingStore,
 		userStore:       userStore,
@@ -35,6 +37,7 @@ func NewHandler(listingStore types.ListingStore, userStore types.UserStore,
 		bankDetailStore: bankDetailStore,
 		orderStore:      orderStore,
 		fcmHistoryStore: fcmHistoryStore,
+		bucket: bucket,
 	}
 }
 
@@ -229,7 +232,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		imageBytes, err := utils.GetImage(carrier.ProfilePictureURL)
+		imageBytes, err := utils.GetImage(carrier.ProfilePictureURL, h.bucket)
 		if err != nil {
 			log.Printf("error fetching profile picture for %d: %v", listing.CarrierID, err)
 			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error fetching profile picture for %d: %v", listing.CarrierID, err))

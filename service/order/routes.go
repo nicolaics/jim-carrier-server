@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier-server/constants"
@@ -24,11 +25,12 @@ type Handler struct {
 	currencyStore   types.CurrencyStore
 	fcmHistoryStore types.FCMHistoryStore
 	bankDetailStore types.BankDetailStore
+	bucket          *s3.S3
 }
 
 func NewHandler(orderStore types.OrderStore, userStore types.UserStore,
 	listingStore types.ListingStore, currencyStore types.CurrencyStore,
-	fcmHistoryStore types.FCMHistoryStore, bankDetailStore types.BankDetailStore) *Handler {
+	fcmHistoryStore types.FCMHistoryStore, bankDetailStore types.BankDetailStore, bucket *s3.S3) *Handler {
 	return &Handler{
 		orderStore:      orderStore,
 		userStore:       userStore,
@@ -36,6 +38,7 @@ func NewHandler(orderStore types.OrderStore, userStore types.UserStore,
 		currencyStore:   currencyStore,
 		fcmHistoryStore: fcmHistoryStore,
 		bankDetailStore: bankDetailStore,
+		bucket:          bucket,
 	}
 }
 
@@ -306,7 +309,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			paymentStatus := utils.PaymentStatusIntToString(order.PaymentStatus)
 			orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
-			packageImage, err := utils.GetImage(order.PackageImageURL)
+			packageImage, err := utils.GetImage(order.PackageImageURL, h.bucket)
 			if err != nil {
 				log.Printf("error reading the picture: %v", err)
 				logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
@@ -362,12 +365,12 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 			// }
 
 			temp := types.OrderGiverReturnPayload{
-				Listing:         order.Listing,
-				ID:              order.ID,
-				Weight:          order.Weight,
-				Price:           order.Price,
-				Currency:        order.Currency,
-				PackageContent:  order.PackageContent,
+				Listing:        order.Listing,
+				ID:             order.ID,
+				Weight:         order.Weight,
+				Price:          order.Price,
+				Currency:       order.Currency,
+				PackageContent: order.PackageContent,
 				// PackageImage:    packageImage,
 				PaymentStatus:   paymentStatus,
 				PaidAt:          order.PaidAt.Time,
@@ -449,7 +452,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
-		packageImage, err := utils.GetImage(order.PackageImageURL)
+		packageImage, err := utils.GetImage(order.PackageImageURL, h.bucket)
 		if err != nil {
 			log.Printf("error reading the picture: %v", err)
 			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
@@ -489,7 +492,7 @@ func (h *Handler) handleGetDetail(w http.ResponseWriter, r *http.Request) {
 
 		orderStatus := utils.OrderStatusIntToString(order.OrderStatus)
 
-		packageImage, err := utils.GetImage(order.PackageImageURL)
+		packageImage, err := utils.GetImage(order.PackageImageURL, h.bucket)
 		if err != nil {
 			log.Printf("error reading the picture: %v", err)
 			logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))

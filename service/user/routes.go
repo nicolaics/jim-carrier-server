@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier-server/constants"
@@ -19,10 +20,11 @@ import (
 
 type Handler struct {
 	userStore types.UserStore
+	bucket *s3.S3
 }
 
-func NewHandler(userStore types.UserStore) *Handler {
-	return &Handler{userStore: userStore}
+func NewHandler(userStore types.UserStore, bucket *s3.S3) *Handler {
+	return &Handler{userStore: userStore, bucket: bucket}
 }
 
 func (h *Handler) RegisterRoutes(router *mux.Router) {
@@ -292,7 +294,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// save the image
-		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
+		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension, h.bucket)
 		if err != nil {
 			logger.WriteServerLog(fmt.Sprintf("user %s created but error saving profile picture: %v", payload.Email, err))
 		}
@@ -318,7 +320,7 @@ func (h *Handler) handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageBytes, err := utils.GetImage(user.ProfilePictureURL)
+	imageBytes, err := utils.GetImage(user.ProfilePictureURL, h.bucket)
 	if err != nil {
 		log.Printf("error reading the picture: %v", err)
 		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error reading the picture: %v", err))
@@ -700,7 +702,7 @@ func (h *Handler) handleUpdateProfilePicture(w http.ResponseWriter, r *http.Requ
 		}
 
 		// save the image
-		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension)
+		imageURL, err := utils.SaveProfilePicture(user.ID, payload.ProfilePicture, imageExtension, h.bucket)
 		if err != nil {
 			log.Printf("failed to save image: %v", err)
 			logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to save image: %v", err))
@@ -938,7 +940,7 @@ func (h *Handler) handleRegisterGoogle(w http.ResponseWriter, r *http.Request) {
 			logger.WriteServerLog(fmt.Sprintf("user %s created but error download profile picture: %v", email, err))
 		} else {
 			// save the image
-			imageURL, err := utils.SaveProfilePicture(user.ID, imageData, imageExtension)
+			imageURL, err := utils.SaveProfilePicture(user.ID, imageData, imageExtension, h.bucket)
 			if err != nil {
 				logger.WriteServerLog(fmt.Sprintf("user %s created but error saving profile picture: %v", email, err))
 			}
@@ -1072,15 +1074,7 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshTokenDetails, err := jwt.CreateRefreshToken(user.ID)
-	if err != nil {
-		log.Printf("failed to generate refresh token: %v", err)
-		logFile, _ := logger.WriteServerLog(fmt.Sprintf("failed to generate refresh token: %v", err))
-		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("internal server error\n(%s)", logFile))
-		return
-	}
-
-	err = h.userStore.SaveToken(user.ID, accessTokenDetails, refreshTokenDetails)
+	err = h.userStore.UpdateAccessToken(user.ID, accessTokenDetails)
 	if err != nil {
 		log.Printf("error saving token: %v", err)
 		logFile, _ := logger.WriteServerLog(fmt.Sprintf("error saving token: %v", err))
@@ -1105,7 +1099,6 @@ func (h *Handler) handleAutoLogin(w http.ResponseWriter, r *http.Request) {
 
 	tokens := map[string]string{
 		"access_token":  accessTokenDetails.Token,
-		"refresh_token": refreshTokenDetails.Token,
 	}
 
 	utils.WriteJSON(w, http.StatusOK, tokens)

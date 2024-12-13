@@ -1,63 +1,42 @@
 package utils
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
-	"regexp"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/nicolaics/jim-carrier-server/config"
 	"github.com/nicolaics/jim-carrier-server/constants"
 )
 
-func SaveProfilePicture(id int, imageData []byte, fileExtension string) (string, error) {
-	if err := os.MkdirAll(constants.PROFILE_IMG_DIR_PATH, 0744); err != nil {
-		return "", err
-	}
-
+func SaveProfilePicture(id int, imageData []byte, fileExtension string, bucket *s3.S3) (string, error) {
 	// set the image file name
 	randomNumber := GenerateRandomCodeNumbers(12)
 	fileName := fmt.Sprintf("%s-%d%s", randomNumber, id, fileExtension)
 	imagePath := constants.PROFILE_IMG_DIR_PATH + fileName
 
-	pattern := fmt.Sprintf(`-%d.(jpg|png)$`, id)
-	re := regexp.MustCompile(pattern)
+	bucket.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(config.Envs.BucketName),
+		Key:    aws.String(imagePath),
+	})
 
-	// Read all files in the specified folder
-	files, err := os.ReadDir(constants.PROFILE_IMG_DIR_PATH)
+	// var buf bytes.Buffer
+	// if _, err := io.Copy(&buf, file); err != nil {
+	// 	fmt.Fprintln(os.Stderr, "Error reading file:", err)
+	// 	return
+	// }
+
+	_, err := bucket.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(config.Envs.BucketName),
+		Key:    aws.String(imagePath),
+		Body:   bytes.NewReader(imageData),
+	})
 	if err != nil {
-		return "", err
-	}
-
-	for _, file := range files {
-		if !file.IsDir() {
-			if re.MatchString(file.Name()) {
-				// Full path of the file
-				fullPath := filepath.Join(constants.PROFILE_IMG_DIR_PATH, file.Name())
-
-				// Delete the previous profile picture
-				err := os.Remove(fullPath)
-				if err != nil {
-					return "", fmt.Errorf("error delete old profile picture: %v", err)
-				}
-
-				break
-			}
-		}
-	}
-
-	// create the empty file for the image
-	file, err := os.Create(imagePath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	// save the image data
-	_, err = file.Write(imageData)
-	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error uploading file: %v", err)
 	}
 
 	return imagePath, nil

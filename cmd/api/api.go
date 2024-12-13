@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gorilla/mux"
 	"github.com/nicolaics/jim-carrier-server/logger"
 	"github.com/nicolaics/jim-carrier-server/service/auth"
@@ -23,13 +24,15 @@ type APIServer struct {
 	addr string
 	db   *sql.DB
 	router *mux.Router
+	bucket *s3.S3
 }
 
-func NewAPIServer(addr string, db *sql.DB, router *mux.Router) *APIServer {
+func NewAPIServer(addr string, db *sql.DB, router *mux.Router, bucket *s3.S3) *APIServer {
 	return &APIServer{
 		addr: addr,
 		db:   db,
 		router: router,
+		bucket: bucket,
 	}
 }
 
@@ -47,16 +50,16 @@ func (s *APIServer) Run() error {
 	fcmStore := fcm.NewStore(s.db)
 	bankDetailStore := bank.NewStore(s.db)
 
-	userHandler := user.NewHandler(userStore)
+	userHandler := user.NewHandler(userStore, s.bucket)
 	userHandler.RegisterRoutes(subrouter)
 	userHandler.RegisterUnprotectedRoutes(subrouterUnprotected)
 
 	listingHandler := listing.NewHandler(listingStore, userStore, currencyStore, reviewStore,
-										bankDetailStore, orderStore, fcmStore)
+										bankDetailStore, orderStore, fcmStore, s.bucket)
 	listingHandler.RegisterRoutes(subrouter)
 
 	orderHandler := order.NewHandler(orderStore, userStore, listingStore, currencyStore, fcmStore, 
-									bankDetailStore)
+									bankDetailStore, s.bucket)
 	orderHandler.RegisterRoutes(subrouter)
 
 	reviewHandler := review.NewHandler(reviewStore, orderStore, listingStore, userStore)
